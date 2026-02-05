@@ -354,6 +354,7 @@ export default function Index() {
           language={language}
           t={t}
           onUpdateRoomNotes={updateRoomNotes}
+          onUpdatePhoto={handleUpdatePhoto}
         />
 
         <SideMenu

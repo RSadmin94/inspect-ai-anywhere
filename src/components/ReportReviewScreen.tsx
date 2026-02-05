@@ -4,7 +4,7 @@
    Building, AlertTriangle, CheckCircle, Clock, Camera, MessageSquare,
   Loader2, Eye, EyeOff, BookOpen, Mic, Pencil
  } from 'lucide-react';
- import { PhotoRecord, InspectionRecord, Phrase, getAllPhrases, Category, Severity } from '@/lib/db';
+import { PhotoRecord, InspectionRecord, Phrase, getAllPhrases, Category, Severity } from '@/lib/db';
  import { blobToDataUrl } from '@/lib/imageUtils';
  import { Language } from '@/lib/i18n';
  import { generateReportPDF } from '@/lib/reportPdfGenerator';
@@ -12,6 +12,8 @@
  import { PhraseLibrary } from './PhraseLibrary';
 import { useVoiceDictation } from '@/hooks/useVoiceDictation';
 import { Textarea } from './ui/textarea';
+import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
  
  interface ReportReviewScreenProps {
    isOpen: boolean;
@@ -21,6 +23,7 @@ import { Textarea } from './ui/textarea';
    language: Language;
    t: (key: string) => string;
   onUpdateRoomNotes?: (room: string, notes: string) => Promise<void>;
+  onUpdatePhoto?: (photoId: string, updates: Partial<PhotoRecord>) => Promise<void>;
  }
  
  type ReportLanguage = 'en' | 'es' | 'both';
@@ -33,7 +36,7 @@ type TabType = 'overview' | 'findings' | 'photos';
    minor: 'text-muted-foreground',
  };
  
-export function ReportReviewScreen({ isOpen, onClose, inspection, photos, language, t, onUpdateRoomNotes }: ReportReviewScreenProps) {
+export function ReportReviewScreen({ isOpen, onClose, inspection, photos, language, t, onUpdateRoomNotes, onUpdatePhoto }: ReportReviewScreenProps) {
    const [activeTab, setActiveTab] = useState<TabType>('overview');
    const [reportLanguage, setReportLanguage] = useState<ReportLanguage>('en');
    const [isGenerating, setIsGenerating] = useState(false);
@@ -43,6 +46,13 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
    const [includedPhotos, setIncludedPhotos] = useState<Set<string>>(new Set(photos.map(p => p.id)));
   const [editingRoom, setEditingRoom] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState('');
+  const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
+  const [editFinding, setEditFinding] = useState<{
+    title: string;
+    description: string;
+    severity: Severity;
+    category: Category;
+  }>({ title: '', description: '', severity: 'minor', category: 'general' });
   const [dictatingRoom, setDictatingRoom] = useState<string | null>(null);
   
   const {
@@ -389,24 +399,124 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
                       {/* Room Findings */}
                       {roomFindings.map(photo => {
                         const severity = photo.aiSeverity || photo.manualSeverity || 'minor';
+                        const title = photo.manualTitle || photo.aiFindingTitle || '';
+                        const description = photo.manualDescription || photo.aiDescription || '';
+                        const category = photo.manualCategory || photo.aiCategory || 'general';
+                        
+                        if (editingPhotoId === photo.id) {
+                          return (
+                            <div key={photo.id} className="bg-muted/30 rounded-lg p-3 space-y-3">
+                              <div className="flex gap-3">
+                                {photoUrls[photo.id] && (
+                                  <img src={photoUrls[photo.id]} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                                )}
+                                <div className="flex-1 space-y-2">
+                                  <Input
+                                    value={editFinding.title}
+                                    onChange={(e) => setEditFinding(prev => ({ ...prev, title: e.target.value }))}
+                                    placeholder={t('findingTitle')}
+                                    className="text-sm"
+                                  />
+                                  <Textarea
+                                    value={editFinding.description}
+                                    onChange={(e) => setEditFinding(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder={t('description')}
+                                    className="min-h-[60px] text-sm"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Select
+                                  value={editFinding.severity}
+                                  onValueChange={(v) => setEditFinding(prev => ({ ...prev, severity: v as Severity }))}
+                                >
+                                  <SelectTrigger className="flex-1 h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="minor">{t('minor')}</SelectItem>
+                                    <SelectItem value="moderate">{t('moderate')}</SelectItem>
+                                    <SelectItem value="severe">{t('severe')}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Select
+                                  value={editFinding.category}
+                                  onValueChange={(v) => setEditFinding(prev => ({ ...prev, category: v as Category }))}
+                                >
+                                  <SelectTrigger className="flex-1 h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="general">{t('general')}</SelectItem>
+                                    <SelectItem value="roofing">{t('roofing')}</SelectItem>
+                                    <SelectItem value="plumbing">{t('plumbing')}</SelectItem>
+                                    <SelectItem value="electrical">{t('electrical')}</SelectItem>
+                                    <SelectItem value="hvac">{t('hvac')}</SelectItem>
+                                    <SelectItem value="foundation">{t('foundation')}</SelectItem>
+                                    <SelectItem value="safety">{t('safety')}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  onClick={() => setEditingPhotoId(null)}
+                                  className="px-3 py-1.5 text-xs rounded-lg bg-muted text-muted-foreground"
+                                >
+                                  {t('cancel')}
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    await onUpdatePhoto?.(photo.id, {
+                                      manualTitle: editFinding.title,
+                                      manualDescription: editFinding.description,
+                                      manualSeverity: editFinding.severity,
+                                      manualCategory: editFinding.category,
+                                    });
+                                    setEditingPhotoId(null);
+                                  }}
+                                  className="px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground"
+                                >
+                                  {t('save')}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+                        
                         return (
-                          <div key={photo.id} className="flex gap-3">
+                          <div key={photo.id} className="flex gap-3 group">
                             {photoUrls[photo.id] && (
                               <img src={photoUrls[photo.id]} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className={cn("w-2 h-2 rounded-full", {
-                                  'bg-destructive': severity === 'severe',
-                                  'bg-amber-500': severity === 'moderate',
-                                  'bg-muted-foreground': severity === 'minor',
-                                })} />
-                                <h4 className="font-medium text-sm truncate">
-                                  {photo.manualTitle || photo.aiFindingTitle}
-                                </h4>
+                              <div className="flex items-center gap-2 justify-between">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={cn("w-2 h-2 rounded-full flex-shrink-0", {
+                                    'bg-destructive': severity === 'severe',
+                                    'bg-amber-500': severity === 'moderate',
+                                    'bg-muted-foreground': severity === 'minor',
+                                  })} />
+                                  <h4 className="font-medium text-sm truncate">
+                                    {title}
+                                  </h4>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setEditingPhotoId(photo.id);
+                                    setEditFinding({
+                                      title,
+                                      description,
+                                      severity,
+                                      category,
+                                    });
+                                  }}
+                                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                                </button>
                               </div>
                               <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                                {photo.manualDescription || photo.aiDescription}
+                                {description}
                               </p>
                               <div className="flex items-center gap-2 mt-2">
                                 <span className={cn("text-xs px-2 py-0.5 rounded capitalize", SEVERITY_COLORS[severity], "bg-muted")}>
