@@ -29,18 +29,19 @@
    }
  }
  
+// Check support once at module level
+const getSpeechRecognitionSupport = () => {
+  if (typeof window === 'undefined') return false;
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+};
+
  export function useVoiceDictation(language: 'en' | 'es' = 'en') {
    const [isListening, setIsListening] = useState(false);
    const [transcript, setTranscript] = useState('');
    const [interimTranscript, setInterimTranscript] = useState('');
    const [error, setError] = useState<string | null>(null);
-   const [isSupported, setIsSupported] = useState(false);
+  const [isSupported] = useState(() => getSpeechRecognitionSupport());
    const recognitionRef = useRef<SpeechRecognition | null>(null);
- 
-   useEffect(() => {
-     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-     setIsSupported(!!SpeechRecognition);
-   }, []);
  
    const startListening = useCallback(() => {
      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
