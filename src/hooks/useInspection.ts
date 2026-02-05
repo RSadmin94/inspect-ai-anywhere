@@ -1,0 +1,146 @@
+ import { useState, useEffect, useCallback } from 'react';
+ import { 
+   InspectionRecord, 
+   PhotoRecord,
+   saveInspection, 
+   getInspection,
+   getCurrentInspection,
+   savePhoto,
+   getPhotosByInspection,
+   deletePhoto as deletePhotoFromDB,
+   updatePhotoAI
+ } from '@/lib/db';
+ import { processImage, generateId } from '@/lib/imageUtils';
+ 
+ export function useInspection() {
+   const [inspection, setInspection] = useState<InspectionRecord | null>(null);
+   const [photos, setPhotos] = useState<PhotoRecord[]>([]);
+   const [isLoading, setIsLoading] = useState(true);
+ 
+   // Load current inspection on mount
+   useEffect(() => {
+     async function load() {
+       try {
+         const current = await getCurrentInspection();
+         if (current) {
+           setInspection(current);
+           const loadedPhotos = await getPhotosByInspection(current.id);
+           setPhotos(loadedPhotos.sort((a, b) => b.timestamp - a.timestamp));
+         }
+       } catch (e) {
+         console.error('Failed to load inspection:', e);
+       }
+       setIsLoading(false);
+     }
+     load();
+   }, []);
+ 
+   const startInspection = useCallback(async (propertyAddress: string, inspectorName?: string) => {
+     const newInspection: InspectionRecord = {
+       id: generateId(),
+       propertyAddress,
+       inspectorName,
+       createdAt: Date.now(),
+       updatedAt: Date.now(),
+       photoIds: [],
+       isComplete: false,
+     };
+     await saveInspection(newInspection);
+     setInspection(newInspection);
+     setPhotos([]);
+     return newInspection;
+   }, []);
+ 
+   const updateInspection = useCallback(async (updates: Partial<InspectionRecord>) => {
+     if (!inspection) return;
+     const updated = { ...inspection, ...updates, updatedAt: Date.now() };
+     await saveInspection(updated);
+     setInspection(updated);
+   }, [inspection]);
+ 
+   const capturePhoto = useCallback(async (imageBlob: Blob, room: string = 'other') => {
+     if (!inspection) return;
+ 
+     const { thumbnail, fullImage } = await processImage(imageBlob);
+     
+     const newPhoto: PhotoRecord = {
+       id: generateId(),
+       inspectionId: inspection.id,
+       room,
+       timestamp: Date.now(),
+       notes: '',
+       thumbnailBlob: thumbnail,
+       fullImageBlob: fullImage,
+       aiStatus: 'pending_offline',
+     };
+ 
+     await savePhoto(newPhoto);
+     
+     const updatedInspection = {
+       ...inspection,
+       photoIds: [...inspection.photoIds, newPhoto.id],
+       updatedAt: Date.now(),
+     };
+     await saveInspection(updatedInspection);
+     setInspection(updatedInspection);
+     
+     setPhotos(prev => [newPhoto, ...prev]);
+     
+     return newPhoto;
+   }, [inspection]);
+ 
+   const updatePhoto = useCallback(async (photoId: string, updates: Partial<PhotoRecord>) => {
+     const photo = photos.find(p => p.id === photoId);
+     if (!photo) return;
+ 
+     const updatedPhoto = { ...photo, ...updates };
+     await savePhoto(updatedPhoto);
+     setPhotos(prev => prev.map(p => p.id === photoId ? updatedPhoto : p));
+   }, [photos]);
+ 
+   const deletePhoto = useCallback(async (photoId: string) => {
+     if (!inspection) return;
+ 
+     await deletePhotoFromDB(photoId);
+     
+     const updatedInspection = {
+       ...inspection,
+       photoIds: inspection.photoIds.filter(id => id !== photoId),
+       updatedAt: Date.now(),
+     };
+     await saveInspection(updatedInspection);
+     setInspection(updatedInspection);
+     
+     setPhotos(prev => prev.filter(p => p.id !== photoId));
+   }, [inspection]);
+ 
+   const updatePhotoWithAI = useCallback(async (photoId: string, aiData: Parameters<typeof updatePhotoAI>[1]) => {
+     await updatePhotoAI(photoId, aiData);
+     setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, ...aiData } : p));
+   }, []);
+ 
+   const finishInspection = useCallback(async () => {
+     if (!inspection) return;
+     await updateInspection({ isComplete: true });
+   }, [inspection, updateInspection]);
+ 
+   const refreshPhotos = useCallback(async () => {
+     if (!inspection) return;
+     const loadedPhotos = await getPhotosByInspection(inspection.id);
+     setPhotos(loadedPhotos.sort((a, b) => b.timestamp - a.timestamp));
+   }, [inspection]);
+ 
+   return {
+     inspection,
+     photos,
+     isLoading,
+     startInspection,
+     updateInspection,
+     capturePhoto,
+     updatePhoto,
+     deletePhoto,
+     updatePhotoWithAI,
+     finishInspection,
+     refreshPhotos,
+   };
+ }
