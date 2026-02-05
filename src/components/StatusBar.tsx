@@ -1,4 +1,5 @@
-import { Wifi, WifiOff, Globe, Home } from 'lucide-react';
+import { Wifi, WifiOff, Globe, LayoutDashboard } from 'lucide-react';
+import { motion } from 'framer-motion';
  import { cn } from '@/lib/utils';
  
  interface StatusBarProps {
@@ -16,14 +17,16 @@ export function StatusBar({ isOnline, photoCount, language, onToggleLanguage, on
       {/* Left section: Dashboard + Online status */}
       <div className="flex items-center gap-3">
         {onGoToDashboard && (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={onGoToDashboard}
-            className="flex items-center gap-1.5 text-sm px-2 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors touch-target"
+            className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 text-primary border border-primary/30 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all duration-300 touch-target backdrop-blur-sm"
             title="Go to Dashboard"
           >
-            <Home className="w-4 h-4" />
-            <span className="hidden sm:inline">Dashboard</span>
-          </button>
+            <LayoutDashboard className="w-4 h-4" />
+            <span className="font-medium">Dashboard</span>
+          </motion.button>
         )}
         <div className={cn(
           "flex items-center gap-1.5 text-sm",
