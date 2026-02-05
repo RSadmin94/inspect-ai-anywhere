@@ -1,9 +1,12 @@
  import { useState, useEffect } from 'react';
- import { PhotoRecord, Severity, Category } from '@/lib/db';
+ import { PhotoRecord, Severity, Category, IssuePreset, Phrase } from '@/lib/db';
  import { blobToDataUrl } from '@/lib/imageUtils';
  import { Language } from '@/lib/i18n';
- import { X, Trash2, Save, ChevronDown, Sparkles, AlertTriangle } from 'lucide-react';
+ import { X, Trash2, Save, Sparkles, AlertTriangle, BookOpen, Layers } from 'lucide-react';
  import { cn } from '@/lib/utils';
+ import { RoomSelector } from './RoomSelector';
+ import { PhraseLibrary } from './PhraseLibrary';
+ import { IssuePresetSelector } from './IssuePresetSelector';
  
  interface PhotoDetailPanelProps {
    photo: PhotoRecord | null;
@@ -15,8 +18,6 @@
    t: (key: string) => string;
    isOnline: boolean;
  }
- 
- const ROOMS = ['exterior', 'interior', 'kitchen', 'bathroom', 'bedroom', 'livingRoom', 'basement', 'attic', 'garage', 'roof', 'other'] as const;
  
  export function PhotoDetailPanel({ 
    photo, 
@@ -33,19 +34,48 @@
    const [room, setRoom] = useState('other');
    const [isDeleting, setIsDeleting] = useState(false);
    const [isAnalyzing, setIsAnalyzing] = useState(false);
+   const [showPhraseLibrary, setShowPhraseLibrary] = useState(false);
+   const [showIssuePresets, setShowIssuePresets] = useState(false);
+   const [manualFinding, setManualFinding] = useState<{
+     title?: string;
+     severity?: Severity;
+     category?: Category;
+     description?: string;
+     recommendation?: string;
+   } | null>(null);
  
    useEffect(() => {
      if (photo) {
        blobToDataUrl(photo.fullImageBlob).then(setImageUrl);
        setNotes(photo.notes);
        setRoom(photo.room);
+       // Load manual finding if exists
+       if (photo.manualTitle) {
+         setManualFinding({
+           title: photo.manualTitle,
+           severity: photo.manualSeverity,
+           category: photo.manualCategory,
+           description: photo.manualDescription,
+           recommendation: photo.manualRecommendation,
+         });
+       } else {
+         setManualFinding(null);
+       }
      }
    }, [photo]);
  
    if (!photo) return null;
  
    const handleSave = async () => {
-     await onUpdate(photo.id, { notes, room });
+     await onUpdate(photo.id, { 
+       notes, 
+       room,
+       manualTitle: manualFinding?.title,
+       manualSeverity: manualFinding?.severity,
+       manualCategory: manualFinding?.category,
+       manualDescription: manualFinding?.description,
+       manualRecommendation: manualFinding?.recommendation,
+     });
    };
  
    const handleDelete = async () => {
@@ -64,6 +94,23 @@
      }
    };
  
+   const handleApplyPreset = (preset: IssuePreset) => {
+     setManualFinding({
+       title: language === 'es' && preset.titleEs ? preset.titleEs : preset.title,
+       severity: preset.severity,
+       category: preset.category,
+       description: language === 'es' && preset.descriptionEs ? preset.descriptionEs : preset.description,
+       recommendation: language === 'es' && preset.recommendationEs ? preset.recommendationEs : preset.recommendation,
+     });
+     setShowIssuePresets(false);
+   };
+
+   const handleInsertPhrase = (phrase: Phrase) => {
+     const text = language === 'es' && phrase.textEs ? phrase.textEs : phrase.text;
+     setNotes(prev => prev ? `${prev}\n${text}` : text);
+     setShowPhraseLibrary(false);
+   };
+
    const getSeverityClass = (severity?: Severity) => {
      switch (severity) {
        case 'minor': return 'severity-minor';
@@ -122,25 +169,23 @@
              <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
                {t('room')}
              </label>
-             <div className="relative">
-               <select
-                 value={room}
-                 onChange={e => setRoom(e.target.value)}
-                 className="w-full h-12 px-4 pr-10 rounded-xl border border-input bg-background appearance-none touch-target"
-               >
-                 {ROOMS.map(r => (
-                   <option key={r} value={r}>{t(r)}</option>
-                 ))}
-               </select>
-               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-             </div>
+               <RoomSelector value={room} onChange={setRoom} t={t} />
            </div>
  
            {/* Notes */}
            <div className="px-4 mb-4">
-             <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
-               {t('notes')}
-             </label>
+               <div className="flex items-center justify-between mb-1.5">
+                 <label className="text-sm font-medium text-muted-foreground">
+                   {t('notes')}
+                 </label>
+                 <button
+                   onClick={() => setShowPhraseLibrary(true)}
+                   className="text-xs text-primary flex items-center gap-1 hover:underline"
+                 >
+                   <BookOpen className="w-3 h-3" />
+                   {t('phraseLibrary')}
+                 </button>
+               </div>
              <textarea
                value={notes}
                onChange={e => setNotes(e.target.value)}
@@ -149,6 +194,64 @@
              />
            </div>
  
+             {/* Manual Finding / Issue Preset */}
+             <div className="px-4 mb-4">
+               <div className="flex items-center justify-between mb-3">
+                 <div className="flex items-center gap-2">
+                   <Layers className="w-4 h-4 text-accent" />
+                   <span className="text-sm font-medium">{t('manualFinding')}</span>
+                 </div>
+                 <button
+                   onClick={() => setShowIssuePresets(true)}
+                   className="text-xs text-primary flex items-center gap-1 hover:underline"
+                 >
+                   {t('issuePresets')}
+                 </button>
+               </div>
+
+               {manualFinding ? (
+                 <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+                   <div className="flex items-start justify-between gap-2">
+                     <div>
+                       <p className="font-semibold">{manualFinding.title}</p>
+                       <p className="text-sm text-muted-foreground">
+                         {t(manualFinding.category || 'general')}
+                       </p>
+                     </div>
+                     <span className={cn(
+                       "text-xs px-2 py-1 rounded-full font-medium",
+                       getSeverityClass(manualFinding.severity)
+                     )}>
+                       {t(manualFinding.severity || 'minor')}
+                     </span>
+                   </div>
+                   {manualFinding.description && (
+                     <p className="text-sm">{manualFinding.description}</p>
+                   )}
+                   {manualFinding.recommendation && (
+                     <div className="flex items-start gap-2 pt-2 border-t border-border">
+                       <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                       <p className="text-sm">{manualFinding.recommendation}</p>
+                     </div>
+                   )}
+                   <button
+                     onClick={() => setManualFinding(null)}
+                     className="text-xs text-destructive hover:underline"
+                   >
+                     {t('clearManual')}
+                   </button>
+                 </div>
+               ) : (
+                 <button
+                   onClick={() => setShowIssuePresets(true)}
+                   className="w-full h-12 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                 >
+                   <Layers className="w-4 h-4" />
+                   {t('applyPreset')}
+                 </button>
+               )}
+             </div>
+
            {/* AI Analysis Section */}
            <div className="px-4 mb-4">
              <div className="flex items-center gap-2 mb-3">
@@ -241,6 +344,26 @@
            </div>
          </div>
        </div>
+
+       {showPhraseLibrary && (
+         <PhraseLibrary
+           isOpen={true}
+           onClose={() => setShowPhraseLibrary(false)}
+           onSelect={handleInsertPhrase}
+           language={language}
+           t={t}
+         />
+       )}
+
+       {showIssuePresets && (
+         <IssuePresetSelector
+           isOpen={true}
+           onClose={() => setShowIssuePresets(false)}
+           onSelect={handleApplyPreset}
+           language={language}
+           t={t}
+         />
+       )}
      </div>
    );
  }

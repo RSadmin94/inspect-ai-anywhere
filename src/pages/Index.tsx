@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useInspection } from '@/hooks/useInspection';
-import { PhotoRecord } from '@/lib/db';
+ import { PhotoRecord, InspectionType } from '@/lib/db';
 import { analyzePhoto, analyzeAllPending } from '@/lib/aiAnalysis';
 
 import { NewInspectionForm } from '@/components/NewInspectionForm';
@@ -11,7 +11,8 @@ import { InspectionHeader } from '@/components/InspectionHeader';
 import { CameraCapture } from '@/components/CameraCapture';
 import { PhotoGallery } from '@/components/PhotoGallery';
 import { PhotoDetailPanel } from '@/components/PhotoDetailPanel';
-import { ReportDialog } from '@/components/ReportDialog';
+ import { ReportBuilder } from '@/components/ReportBuilder';
+ import { QuickCaptureMode } from '@/components/QuickCaptureMode';
 import { SideMenu } from '@/components/SideMenu';
 import { toast } from 'sonner';
 
@@ -35,11 +36,12 @@ export default function Index() {
   const [showReport, setShowReport] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
+   const [showQuickCapture, setShowQuickCapture] = useState(false);
 
   const pendingCount = photos.filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed').length;
 
   const handleCapture = useCallback(async (blob: Blob) => {
-    const newPhoto = await capturePhoto(blob);
+     const newPhoto = await capturePhoto(blob, 'other');
     if (newPhoto) {
       toast.success(t('photoSaved'));
       
@@ -54,6 +56,21 @@ export default function Index() {
       }
     }
   }, [capturePhoto, isOnline, t, refreshPhotos]);
+
+   const handleQuickCapture = useCallback(async (blob: Blob, room: string) => {
+     const newPhoto = await capturePhoto(blob, room);
+     if (newPhoto) {
+       toast.success(t('photoSaved'));
+       if (isOnline && newPhoto) {
+         try {
+           await analyzePhoto(newPhoto.id);
+           await refreshPhotos();
+         } catch (e) {
+           console.error('Auto-analysis failed:', e);
+         }
+       }
+     }
+   }, [capturePhoto, isOnline, t, refreshPhotos]);
 
   const handleSelectPhoto = useCallback((photo: PhotoRecord) => {
     setSelectedPhoto(photo);
@@ -123,6 +140,15 @@ export default function Index() {
     setShowReport(true);
   }, [finishInspection]);
 
+   const handleStartInspection = useCallback(async (
+     address: string,
+     inspectorName?: string,
+     clientName?: string,
+     inspectionType?: InspectionType
+   ) => {
+     return startInspection(address, inspectorName, clientName, inspectionType);
+   }, [startInspection]);
+
   // Loading state
   if (!isLoaded || isLoading) {
     return (
@@ -137,7 +163,7 @@ export default function Index() {
 
   // No active inspection - show form
   if (!inspection) {
-    return <NewInspectionForm onStart={startInspection} t={t} />;
+     return <NewInspectionForm onStart={handleStartInspection} t={t} />;
   }
 
   // Main inspection view
@@ -161,6 +187,17 @@ export default function Index() {
       <CameraCapture onCapture={handleCapture} t={t} />
 
       <div className="bg-card border-t border-border">
+         <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+           <span className="text-sm font-medium text-muted-foreground">
+             {photos.length} {t('photos')}
+           </span>
+           <button
+             onClick={() => setShowQuickCapture(true)}
+             className="text-xs text-primary font-medium hover:underline"
+           >
+             {t('quickCapture')} ⚡
+           </button>
+         </div>
         <PhotoGallery 
           photos={photos}
           selectedPhotoId={selectedPhoto?.id || null}
@@ -180,11 +217,12 @@ export default function Index() {
         isOnline={isOnline}
       />
 
-      <ReportDialog
+       <ReportBuilder
         isOpen={showReport}
         onClose={() => setShowReport(false)}
         inspection={inspection}
         photos={photos}
+         language={language}
         t={t}
       />
 
@@ -199,6 +237,14 @@ export default function Index() {
         t={t}
         isOnline={isOnline}
       />
+
+       {showQuickCapture && (
+         <QuickCaptureMode
+           onCapture={handleQuickCapture}
+           onClose={() => setShowQuickCapture(false)}
+           t={t}
+         />
+       )}
     </div>
   );
 }

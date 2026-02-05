@@ -1,14 +1,19 @@
  import { useState } from 'react';
- import { MapPin, User, ArrowRight, Clipboard } from 'lucide-react';
+ import { MapPin, User, ArrowRight, Clipboard, Building, ChevronDown } from 'lucide-react';
+ import { InspectionType } from '@/lib/db';
  
  interface NewInspectionFormProps {
-  onStart: (address: string, inspectorName?: string) => Promise<unknown>;
+  onStart: (address: string, inspectorName?: string, clientName?: string, inspectionType?: InspectionType) => Promise<unknown>;
    t: (key: string) => string;
  }
+ 
+ const INSPECTION_TYPES: InspectionType[] = ['pre_purchase', 'pre_listing', 'annual', 'insurance', 'new_construction', 'warranty', 'other'];
  
  export function NewInspectionForm({ onStart, t }: NewInspectionFormProps) {
    const [address, setAddress] = useState('');
    const [inspectorName, setInspectorName] = useState('');
+   const [clientName, setClientName] = useState('');
+   const [inspectionType, setInspectionType] = useState<InspectionType>('pre_purchase');
    const [isStarting, setIsStarting] = useState(false);
  
    const handleSubmit = async (e: React.FormEvent) => {
@@ -16,7 +21,12 @@
      if (!address.trim()) return;
      
      setIsStarting(true);
-     await onStart(address.trim(), inspectorName.trim() || undefined);
+     await onStart(
+       address.trim(), 
+       inspectorName.trim() || undefined,
+       clientName.trim() || undefined,
+       inspectionType
+     );
    };
  
    return (
@@ -55,6 +65,23 @@
              </div>
            </div>
  
+           {/* Client Name */}
+           <div>
+             <label className="text-sm font-medium text-muted-foreground mb-2 block">
+               {t('clientName')}
+             </label>
+             <div className="relative">
+               <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+               <input
+                 type="text"
+                 value={clientName}
+                 onChange={e => setClientName(e.target.value)}
+                 placeholder={t('enterClientName')}
+                 className="w-full h-14 pl-12 pr-4 rounded-xl border border-input bg-card text-base touch-target"
+               />
+             </div>
+           </div>
+
            {/* Inspector Name */}
            <div>
              <label className="text-sm font-medium text-muted-foreground mb-2 block">
@@ -69,6 +96,25 @@
                  placeholder={t('enterName')}
                  className="w-full h-14 pl-12 pr-4 rounded-xl border border-input bg-card text-base touch-target"
                />
+             </div>
+           </div>
+
+           {/* Inspection Type */}
+           <div>
+             <label className="text-sm font-medium text-muted-foreground mb-2 block">
+               {t('inspectionType')}
+             </label>
+             <div className="relative">
+               <select
+                 value={inspectionType}
+                 onChange={e => setInspectionType(e.target.value as InspectionType)}
+                 className="w-full h-14 px-4 pr-10 rounded-xl border border-input bg-card text-base appearance-none touch-target"
+               >
+                 {INSPECTION_TYPES.map(type => (
+                   <option key={type} value={type}>{t(type)}</option>
+                 ))}
+               </select>
+               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
              </div>
            </div>
          </div>
