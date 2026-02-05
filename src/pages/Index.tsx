@@ -241,6 +241,7 @@ export default function Index() {
               photoCount={photos.length}
               onCreateInspection={() => setCurrentPage('inspection')}
               onFilesSelected={handleFilesSelected}
+              onViewPhotos={() => setCurrentPage('inspection')}
               t={t}
             />
           )}
