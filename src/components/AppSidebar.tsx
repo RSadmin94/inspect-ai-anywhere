@@ -8,9 +8,9 @@
    LogOut,
    Menu,
    X,
-   Eye,
  } from 'lucide-react';
  import { cn } from '@/lib/utils';
+import logoImage from '@/assets/logo.png';
  
  type Page = 'dashboard' | 'inspection' | 'reports' | 'settings';
  
@@ -79,9 +79,11 @@
              transition={{ delay: 0.1 }}
              className="mb-8 flex items-center gap-3"
            >
-             <div className="w-10 h-10 rounded-lg btn-gradient flex items-center justify-center">
-               <Eye size={24} className="text-primary-foreground" />
-             </div>
+            <img 
+              src={logoImage} 
+              alt="InspectAI Logo" 
+              className="w-10 h-10 rounded-lg object-contain"
+            />
              <div>
                <h1 className="text-lg font-bold text-foreground">InspectAI</h1>
                <p className="text-xs text-muted-foreground">Pro</p>

@@ -1,21 +1,21 @@
  {
-   "name": "InspectAI",
+   "name": "InspectAI - Home Inspection Software",
    "short_name": "InspectAI",
-   "description": "AI-powered property inspection app for field inspectors",
+   "description": "Professional home inspection software with AI-powered analysis",
    "start_url": "/",
    "display": "standalone",
-   "background_color": "#f5f7fa",
-   "theme_color": "#1e3a5f",
+   "background_color": "#0F172A",
+   "theme_color": "#2563eb",
    "orientation": "portrait-primary",
    "icons": [
      {
-       "src": "/icon-192.png",
+       "src": "/logo.png",
        "sizes": "192x192",
        "type": "image/png",
        "purpose": "any maskable"
      },
      {
-       "src": "/icon-512.png",
+       "src": "/logo.png",
        "sizes": "512x512",
        "type": "image/png",
        "purpose": "any maskable"

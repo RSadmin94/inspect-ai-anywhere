@@ -5,11 +5,11 @@
    Zap,
    BarChart3,
    Plus,
-   Eye,
    Camera,
  } from 'lucide-react';
  import { DropZone } from './DropZone';
  import { cn } from '@/lib/utils';
+import logoImage from '@/assets/logo.png';
  
  interface DashboardHubProps {
    photoCount: number;
@@ -85,7 +85,7 @@
          className="mb-12"
        >
          <div className="flex items-center gap-3 mb-2">
-           <Eye size={32} className="text-primary" />
+          <img src={logoImage} alt="InspectAI" className="w-10 h-10 object-contain" />
            <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
          </div>
          <p className="text-muted-foreground">Welcome to InspectAI Pro</p>
