@@ -151,6 +151,11 @@
        recording: 'Recording',
        listening: 'Listening...',
        tapToSpeak: 'Tap to speak',
+       roomNotes: 'Room Notes',
+       noNotesYet: 'Tap mic to start dictating',
+       otherRooms: 'Other rooms',
+       clear: 'Clear',
+       rooms: 'rooms',
        
        // Enhanced Inspection
        clientName: 'Client Name',
@@ -314,6 +319,11 @@
        recording: 'Grabando',
        listening: 'Escuchando...',
        tapToSpeak: 'Toque para hablar',
+       roomNotes: 'Notas de Habitación',
+       noNotesYet: 'Toque el mic para dictar',
+       otherRooms: 'Otras habitaciones',
+       clear: 'Limpiar',
+       rooms: 'habitaciones',
        
        // Enhanced Inspection
        clientName: 'Nombre del Cliente',

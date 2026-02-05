@@ -3,6 +3,7 @@ import { Camera, X, RotateCcw, Zap, Mic, Square } from 'lucide-react';
  import { RoomSelector } from './RoomSelector';
  import { cn } from '@/lib/utils';
 import { useVoiceDictation } from '@/hooks/useVoiceDictation';
+import { LiveNotesPanel } from './LiveNotesPanel';
  
  interface QuickCaptureModeProps {
    onCapture: (blob: Blob, room: string) => Promise<void>;
@@ -10,9 +11,21 @@ import { useVoiceDictation } from '@/hooks/useVoiceDictation';
    t: (key: string) => string;
   language?: 'en' | 'es';
   onDictation?: (text: string) => void;
+  currentRoom?: string;
+  roomNotes?: Record<string, string>;
+  onClearRoomNotes?: (room: string) => void;
  }
  
-export function QuickCaptureMode({ onCapture, onClose, t, language = 'en', onDictation }: QuickCaptureModeProps) {
+export function QuickCaptureMode({ 
+  onCapture, 
+  onClose, 
+  t, 
+  language = 'en', 
+  onDictation,
+  currentRoom,
+  roomNotes = {},
+  onClearRoomNotes,
+}: QuickCaptureModeProps) {
    const videoRef = useRef<HTMLVideoElement>(null);
    const canvasRef = useRef<HTMLCanvasElement>(null);
    const [stream, setStream] = useState<MediaStream | null>(null);
@@ -21,6 +34,9 @@ export function QuickCaptureMode({ onCapture, onClose, t, language = 'en', onDic
    const [error, setError] = useState<string | null>(null);
    const [stickyRoom, setStickyRoom] = useState('other');
    const [captureCount, setCaptureCount] = useState(0);
+  
+  // Use currentRoom prop or local stickyRoom
+  const activeRoom = currentRoom ?? stickyRoom;
 
   const {
     isListening,
@@ -149,17 +165,29 @@ export function QuickCaptureMode({ onCapture, onClose, t, language = 'en', onDic
          </div>
        </div>
  
-       {/* Sticky Room Selector */}
-       <div className="absolute top-20 inset-x-0 z-10 flex justify-center">
-         <div className="bg-black/50 backdrop-blur rounded-full px-2 py-1">
-           <RoomSelector
-             value={stickyRoom}
-             onChange={setStickyRoom}
-             t={t}
-             compact
-           />
-         </div>
-       </div>
+        {/* Live Notes Panel */}
+        <div className="absolute top-16 inset-x-0 z-10">
+          <LiveNotesPanel
+            roomNotes={roomNotes}
+            currentRoom={activeRoom}
+            isListening={isListening}
+            currentTranscript={fullTranscript}
+            onClearRoomNotes={onClearRoomNotes || (() => {})}
+            t={t}
+          />
+          
+          {/* Room Selector below notes */}
+          <div className="flex justify-center mt-2">
+            <div className="bg-black/50 backdrop-blur rounded-full px-2 py-1">
+              <RoomSelector
+                value={stickyRoom}
+                onChange={setStickyRoom}
+                t={t}
+                compact
+              />
+            </div>
+          </div>
+        </div>
  
        {/* Video */}
        <video

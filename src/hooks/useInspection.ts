@@ -66,6 +66,32 @@
      setInspection(updated);
    }, [inspection]);
  
+  const updateRoomNotes = useCallback(async (room: string, notes: string) => {
+    if (!inspection) return;
+    const currentNotes = inspection.roomNotes || {};
+    const updatedNotes = { ...currentNotes, [room]: notes };
+    const updated = { ...inspection, roomNotes: updatedNotes, updatedAt: Date.now() };
+    await saveInspection(updated);
+    setInspection(updated);
+  }, [inspection]);
+
+  const appendRoomNotes = useCallback(async (room: string, text: string) => {
+    if (!inspection) return;
+    const currentNotes = inspection.roomNotes || {};
+    const existingNotes = currentNotes[room] || '';
+    const newNotes = existingNotes ? `${existingNotes} ${text}` : text;
+    await updateRoomNotes(room, newNotes.trim());
+  }, [inspection, updateRoomNotes]);
+
+  const clearRoomNotes = useCallback(async (room: string) => {
+    if (!inspection) return;
+    const currentNotes = inspection.roomNotes || {};
+    const { [room]: _, ...rest } = currentNotes;
+    const updated = { ...inspection, roomNotes: rest, updatedAt: Date.now() };
+    await saveInspection(updated);
+    setInspection(updated);
+  }, [inspection]);
+
    const capturePhoto = useCallback(async (imageBlob: Blob, room: string = 'other') => {
      if (!inspection) return;
  
@@ -150,5 +176,8 @@
      updatePhotoWithAI,
      finishInspection,
      refreshPhotos,
+    updateRoomNotes,
+    appendRoomNotes,
+    clearRoomNotes,
    };
  }

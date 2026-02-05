@@ -21,9 +21,6 @@ import { RoomSelector } from '@/components/RoomSelector';
 import { toast } from 'sonner';
 import { seedDefaultData } from '@/lib/defaultData';
 
-// Store dictation transcript for attaching to photos
-let pendingDictation = '';
-
 type Page = 'dashboard' | 'inspection' | 'reports' | 'settings';
 
 export default function Index() {
@@ -40,6 +37,8 @@ export default function Index() {
     updatePhotoWithAI,
     finishInspection,
     refreshPhotos,
+    appendRoomNotes,
+    clearRoomNotes,
   } = useInspection();
 
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoRecord | null>(null);
@@ -51,10 +50,15 @@ export default function Index() {
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState('other');
 
-  const handleDictation = useCallback((text: string) => {
-    pendingDictation = text;
-    toast.success(`Voice note saved: "${text.slice(0, 30)}${text.length > 30 ? '...' : ''}"`);
-  }, []);
+  const handleDictation = useCallback(async (text: string, room: string) => {
+    await appendRoomNotes(room, text);
+    toast.success(`${t(room as any)}: "${text.slice(0, 25)}${text.length > 25 ? '...' : ''}"`);
+  }, [appendRoomNotes, t]);
+
+  const handleClearRoomNotes = useCallback(async (room: string) => {
+    await clearRoomNotes(room);
+    toast.success(`${t(room as any)} notes cleared`);
+  }, [clearRoomNotes, t]);
 
   // Seed default data on first load
   useEffect(() => {
@@ -68,12 +72,6 @@ export default function Index() {
     if (newPhoto) {
       toast.success(t('photoSaved'));
       
-      // Attach any pending dictation to this photo
-      if (pendingDictation) {
-        await updatePhoto(newPhoto.id, { notes: pendingDictation });
-        pendingDictation = '';
-      }
-      
       // Auto-analyze if online
       if (isOnline && newPhoto) {
         try {
@@ -84,18 +82,12 @@ export default function Index() {
         }
       }
     }
-  }, [capturePhoto, isOnline, t, refreshPhotos, selectedRoom, updatePhoto]);
+  }, [capturePhoto, isOnline, t, refreshPhotos, selectedRoom]);
 
    const handleQuickCapture = useCallback(async (blob: Blob, room: string) => {
      const newPhoto = await capturePhoto(blob, room);
      if (newPhoto) {
        toast.success(t('photoSaved'));
-       
-       // Attach any pending dictation to this photo
-       if (pendingDictation) {
-         await updatePhoto(newPhoto.id, { notes: pendingDictation });
-         pendingDictation = '';
-       }
        
        if (isOnline && newPhoto) {
          try {
@@ -106,7 +98,7 @@ export default function Index() {
          }
        }
      }
-   }, [capturePhoto, isOnline, t, refreshPhotos, updatePhoto]);
+   }, [capturePhoto, isOnline, t, refreshPhotos]);
 
   const handleSelectPhoto = useCallback((photo: PhotoRecord) => {
     setSelectedPhoto(photo);
@@ -296,6 +288,9 @@ export default function Index() {
                 t={t}
                 language={language}
                 onDictation={handleDictation}
+                currentRoom={selectedRoom}
+                roomNotes={inspection?.roomNotes || {}}
+                onClearRoomNotes={handleClearRoomNotes}
               />
 
               <div className="bg-card border-t border-border">
@@ -367,7 +362,10 @@ export default function Index() {
             onClose={() => setShowQuickCapture(false)}
             t={t}
             language={language}
-            onDictation={handleDictation}
+            onDictation={(text) => handleDictation(text, selectedRoom)}
+            currentRoom={selectedRoom}
+            roomNotes={inspection?.roomNotes || {}}
+            onClearRoomNotes={handleClearRoomNotes}
           />
         )}
       </div>
