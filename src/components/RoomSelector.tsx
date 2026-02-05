@@ -72,7 +72,10 @@
          {isOpen && (
            <>
             <div className="fixed inset-0 z-[60]" onClick={() => setIsOpen(false)} />
-            <div className="absolute top-full left-0 mt-1 z-[70] w-48 max-h-64 overflow-y-auto bg-background border border-border rounded-xl shadow-2xl">
+            <div 
+              className="absolute top-full left-0 mt-1 z-[70] w-48 max-h-64 overflow-y-auto bg-background border border-border rounded-xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
                {DEFAULT_ROOMS.map(room => (
                  <button
                    key={room}
