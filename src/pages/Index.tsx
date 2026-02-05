@@ -40,6 +40,7 @@ export default function Index() {
     refreshPhotos,
     appendRoomNotes,
     clearRoomNotes,
+    updateRoomNotes,
   } = useInspection();
 
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoRecord | null>(null);
@@ -352,6 +353,7 @@ export default function Index() {
           photos={photos}
           language={language}
           t={t}
+          onUpdateRoomNotes={updateRoomNotes}
         />
 
         <SideMenu
