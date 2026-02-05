@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useInspection } from '@/hooks/useInspection';
@@ -15,6 +16,7 @@ import { PhotoDetailPanel } from '@/components/PhotoDetailPanel';
  import { QuickCaptureMode } from '@/components/QuickCaptureMode';
 import { SideMenu } from '@/components/SideMenu';
 import { toast } from 'sonner';
+import { seedDefaultData } from '@/lib/defaultData';
 
 export default function Index() {
   const { language, toggleLanguage, t, isLoaded } = useLanguage();
@@ -37,6 +39,11 @@ export default function Index() {
   const [showMenu, setShowMenu] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
    const [showQuickCapture, setShowQuickCapture] = useState(false);
+
+  // Seed default data on first load
+  useEffect(() => {
+    seedDefaultData().catch(console.error);
+  }, []);
 
   const pendingCount = photos.filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed').length;
 
