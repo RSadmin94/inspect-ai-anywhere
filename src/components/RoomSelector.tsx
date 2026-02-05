@@ -5,8 +5,9 @@
  import { cn } from '@/lib/utils';
  
  const DEFAULT_ROOMS = [
-   'exterior', 'interior', 'kitchen', 'bathroom', 'bedroom', 
-   'livingRoom', 'basement', 'attic', 'garage', 'roof', 'other'
+  'exterior', 'interior', 'kitchen', 'diningRoom', 'bathroom', 
+  'mainBedroom', 'bedroom2', 'bedroom3', 'livingRoom', 
+  'basement', 'attic', 'garage', 'roof', 'other'
  ] as const;
  
  interface RoomSelectorProps {
