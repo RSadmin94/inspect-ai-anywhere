@@ -321,13 +321,13 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
                                }
                              }}
                              className={cn(
-                               "w-7 h-7 flex items-center justify-center rounded-full transition-all",
+                               "w-9 h-9 flex items-center justify-center rounded-full transition-all",
                                isListening && dictatingRoom === room
                                  ? "bg-destructive text-destructive-foreground animate-pulse"
                                  : "hover:bg-muted text-muted-foreground"
                              )}
                            >
-                             <Mic className="w-3.5 h-3.5" />
+                              <Mic className="w-5 h-5" />
                            </button>
                          )}
                          <button
@@ -335,9 +335,9 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
                              setEditingRoom(room);
                              setEditNoteText(roomNote || '');
                            }}
-                           className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted"
+                           className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted"
                          >
-                           <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                           <Pencil className="w-5 h-5 text-muted-foreground" />
                          </button>
                        </div>
                     </div>
