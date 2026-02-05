@@ -103,7 +103,7 @@
    }
  
    return (
-     <div className="relative flex-1 bg-black">
+     <div className="relative flex-1 bg-black z-0">
        <video
          ref={videoRef}
          autoPlay

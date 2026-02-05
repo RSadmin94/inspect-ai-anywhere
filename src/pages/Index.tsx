@@ -255,7 +255,7 @@ export default function Index() {
               />
 
               {/* Room Selector - Always Visible */}
-              <div className="bg-card/80 backdrop-blur border-b border-border px-4 py-3">
+              <div className="bg-card/80 backdrop-blur border-b border-border px-4 py-3 relative z-50">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
                     {t('room')}:
