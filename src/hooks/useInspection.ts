@@ -2,6 +2,7 @@
  import { 
    InspectionRecord, 
    PhotoRecord,
+   InspectionType,
    saveInspection, 
    getInspection,
    getCurrentInspection,
@@ -35,11 +36,18 @@
      load();
    }, []);
  
-   const startInspection = useCallback(async (propertyAddress: string, inspectorName?: string) => {
+   const startInspection = useCallback(async (
+     propertyAddress: string, 
+     inspectorName?: string,
+     clientName?: string,
+     inspectionType?: InspectionType
+   ) => {
      const newInspection: InspectionRecord = {
        id: generateId(),
        propertyAddress,
        inspectorName,
+       clientName,
+       inspectionType,
        createdAt: Date.now(),
        updatedAt: Date.now(),
        photoIds: [],

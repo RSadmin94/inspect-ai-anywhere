@@ -99,8 +99,62 @@
      // Placeholders
      enterAddress: 'Enter property address...',
      enterName: 'Enter your name...',
-     addNotes: 'Add notes about this photo...',
-   },
+       addNotes: 'Add notes about this photo...',
+       
+       // New features
+       addCustomRoom: 'Add custom room',
+       enterRoomName: 'Enter room name',
+       add: 'Add',
+       cancel: 'Cancel',
+       
+       // Phrase Library
+       phraseLibrary: 'Phrase Library',
+       searchPhrases: 'Search phrases...',
+       addPhrase: 'Add Phrase',
+       phraseText: 'Phrase text',
+       enterPhrase: 'Enter phrase...',
+       enterPhraseEs: 'Enter phrase in Spanish...',
+       noPhrases: 'No phrases yet',
+       all: 'All',
+       disclaimer: 'Disclaimer',
+       note: 'Note',
+       optional: 'optional',
+       update: 'Update',
+       
+       // Issue Presets
+       issuePresets: 'Issue Presets',
+       searchPresets: 'Search presets...',
+       addPreset: 'Add Preset',
+       noPresets: 'No presets yet',
+       title: 'Title',
+       applyPreset: 'Apply Preset',
+       manualFinding: 'Manual Finding',
+       clearManual: 'Clear Manual Finding',
+       
+       // Report Builder
+       reportBuilder: 'Report Builder',
+       photosGroupedByRoom: 'Photos grouped by room',
+       disclaimers: 'Disclaimers',
+       addFromLibrary: 'Add from library',
+       noDisclaimers: 'No disclaimers added',
+       generating: 'Generating...',
+       
+       // Quick Capture
+       quickCapture: 'Quick Capture',
+       done: 'Done',
+       
+       // Enhanced Inspection
+       clientName: 'Client Name',
+       enterClientName: 'Enter client name...',
+       inspectionType: 'Inspection Type',
+       selectType: 'Select type...',
+       pre_purchase: 'Pre-Purchase',
+       pre_listing: 'Pre-Listing',
+       annual: 'Annual',
+       insurance: 'Insurance',
+       new_construction: 'New Construction',
+       warranty: 'Warranty',
+     },
    es: {
      // App
      appName: 'InspectAI',
@@ -199,8 +253,62 @@
      // Placeholders
      enterAddress: 'Ingrese la dirección de la propiedad...',
      enterName: 'Ingrese su nombre...',
-     addNotes: 'Agregue notas sobre esta foto...',
-   }
+       addNotes: 'Agregue notas sobre esta foto...',
+       
+       // New features
+       addCustomRoom: 'Agregar habitación personalizada',
+       enterRoomName: 'Ingrese nombre de habitación',
+       add: 'Agregar',
+       cancel: 'Cancelar',
+       
+       // Phrase Library
+       phraseLibrary: 'Biblioteca de Frases',
+       searchPhrases: 'Buscar frases...',
+       addPhrase: 'Agregar Frase',
+       phraseText: 'Texto de frase',
+       enterPhrase: 'Ingrese frase...',
+       enterPhraseEs: 'Ingrese frase en español...',
+       noPhrases: 'Sin frases aún',
+       all: 'Todos',
+       disclaimer: 'Descargo',
+       note: 'Nota',
+       optional: 'opcional',
+       update: 'Actualizar',
+       
+       // Issue Presets
+       issuePresets: 'Preajustes de Problemas',
+       searchPresets: 'Buscar preajustes...',
+       addPreset: 'Agregar Preajuste',
+       noPresets: 'Sin preajustes aún',
+       title: 'Título',
+       applyPreset: 'Aplicar Preajuste',
+       manualFinding: 'Hallazgo Manual',
+       clearManual: 'Limpiar Hallazgo Manual',
+       
+       // Report Builder
+       reportBuilder: 'Constructor de Informe',
+       photosGroupedByRoom: 'Fotos agrupadas por habitación',
+       disclaimers: 'Descargos de Responsabilidad',
+       addFromLibrary: 'Agregar de biblioteca',
+       noDisclaimers: 'Sin descargos agregados',
+       generating: 'Generando...',
+       
+       // Quick Capture
+       quickCapture: 'Captura Rápida',
+       done: 'Listo',
+       
+       // Enhanced Inspection
+       clientName: 'Nombre del Cliente',
+       enterClientName: 'Ingrese nombre del cliente...',
+       inspectionType: 'Tipo de Inspección',
+       selectType: 'Seleccionar tipo...',
+       pre_purchase: 'Pre-Compra',
+       pre_listing: 'Pre-Venta',
+       annual: 'Anual',
+       insurance: 'Seguro',
+       new_construction: 'Nueva Construcción',
+       warranty: 'Garantía',
+     }
  } as const;
  
  export type TranslationKey = keyof typeof translations.en;
