@@ -85,7 +85,7 @@ import { InspectionRecord } from '@/lib/db';
             <img 
               src={logoImage} 
               alt="InspectAI Logo" 
-              className="w-16 h-16 rounded-lg object-contain"
+              className="w-20 h-20 rounded-lg object-contain"
             />
              <div>
                <h1 className="text-lg font-bold text-foreground">InspectAI</h1>

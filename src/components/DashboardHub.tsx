@@ -87,7 +87,7 @@ import logoImage from '@/assets/logo.png';
          className="mb-12"
        >
          <div className="flex items-center gap-3 mb-2">
-          <img src={logoImage} alt="InspectAI" className="w-16 h-16 object-contain" />
+          <img src={logoImage} alt="InspectAI" className="w-20 h-20 object-contain" />
            <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
          </div>
          <p className="text-muted-foreground">Welcome to InspectAI Pro</p>
