@@ -220,6 +220,7 @@ export default function Index() {
         onPageChange={handlePageChange}
         onNewInspection={handleNewInspection}
         inspectionActive={!!inspection}
+        inspection={inspection}
         t={t}
       />
 
