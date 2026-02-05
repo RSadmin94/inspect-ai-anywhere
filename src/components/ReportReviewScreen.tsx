@@ -21,7 +21,7 @@
  }
  
  type ReportLanguage = 'en' | 'es' | 'both';
- type TabType = 'overview' | 'findings' | 'photos' | 'notes';
+type TabType = 'overview' | 'findings' | 'photos';
  
  const SEVERITY_ORDER: Severity[] = ['severe', 'moderate', 'minor'];
  const SEVERITY_COLORS: Record<Severity, string> = {
@@ -129,9 +129,8 @@
  
    const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
      { id: 'overview', label: t('overview'), icon: <FileText className="w-4 h-4" /> },
-     { id: 'findings', label: t('findings'), icon: <AlertTriangle className="w-4 h-4" /> },
+      { id: 'findings', label: `${t('findings')} & ${t('notes')}`, icon: <AlertTriangle className="w-4 h-4" /> },
      { id: 'photos', label: t('photos'), icon: <Camera className="w-4 h-4" /> },
-     { id: 'notes', label: t('notes'), icon: <MessageSquare className="w-4 h-4" /> },
    ];
  
    return (
@@ -269,6 +268,25 @@
  
          {activeTab === 'findings' && (
            <div className="p-4 space-y-4">
+              {/* Room Notes Section */}
+              {roomsWithNotes.length > 0 && (
+                <div className="bg-card rounded-xl p-4 border border-border">
+                  <h2 className="font-semibold mb-3 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    {t('roomNotes')}
+                  </h2>
+                  <div className="space-y-3">
+                    {roomsWithNotes.map(([room, notes]) => (
+                      <div key={room} className="bg-muted/50 rounded-lg p-3">
+                        <h3 className="text-sm font-medium mb-1">{t(room)}</h3>
+                        <p className="text-sm text-muted-foreground">{notes}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Findings by Severity */}
              {SEVERITY_ORDER.map(severity => {
                const findings = photos.filter(p => 
                  (p.aiSeverity === severity || p.manualSeverity === severity) && 
@@ -310,12 +328,43 @@
                );
              })}
              
-             {stats.findings === 0 && (
+              {stats.findings === 0 && roomsWithNotes.length === 0 && (
                <div className="text-center py-12 text-muted-foreground">
                  <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
                  <p>{t('noFindingsYet')}</p>
                </div>
              )}
+
+              {/* Disclaimers Section */}
+              <div className="bg-card rounded-xl p-4 border border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-semibold">{t('disclaimers')}</h2>
+                  <button
+                    onClick={() => setShowPhraseLibrary(true)}
+                    className="text-xs text-primary flex items-center gap-1"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    {t('addFromLibrary')}
+                  </button>
+                </div>
+                {disclaimers.length > 0 ? (
+                  <div className="space-y-2">
+                    {disclaimers.map((text, idx) => (
+                      <div key={idx} className="bg-muted/50 rounded-lg p-3 flex items-start gap-2">
+                        <p className="flex-1 text-sm">{text}</p>
+                        <button
+                          onClick={() => setDisclaimers(prev => prev.filter((_, i) => i !== idx))}
+                          className="p-1 text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">{t('noDisclaimers')}</p>
+                )}
+              </div>
            </div>
          )}
  
@@ -352,58 +401,6 @@
                  </div>
                </div>
              ))}
-           </div>
-         )}
- 
-         {activeTab === 'notes' && (
-           <div className="p-4 space-y-4">
-             {/* Room Notes */}
-             <div className="bg-card rounded-xl p-4 border border-border">
-               <h2 className="font-semibold mb-3">{t('roomNotes')}</h2>
-               {roomsWithNotes.length > 0 ? (
-                 <div className="space-y-3">
-                   {roomsWithNotes.map(([room, notes]) => (
-                     <div key={room} className="bg-muted/50 rounded-lg p-3">
-                       <h3 className="text-sm font-medium mb-1">{t(room)}</h3>
-                       <p className="text-sm text-muted-foreground">{notes}</p>
-                     </div>
-                   ))}
-                 </div>
-               ) : (
-                 <p className="text-sm text-muted-foreground italic">{t('noRoomNotes')}</p>
-               )}
-             </div>
- 
-             {/* Disclaimers */}
-             <div className="bg-card rounded-xl p-4 border border-border">
-               <div className="flex items-center justify-between mb-3">
-                 <h2 className="font-semibold">{t('disclaimers')}</h2>
-                 <button
-                   onClick={() => setShowPhraseLibrary(true)}
-                   className="text-xs text-primary flex items-center gap-1"
-                 >
-                   <BookOpen className="w-3 h-3" />
-                   {t('addFromLibrary')}
-                 </button>
-               </div>
-               {disclaimers.length > 0 ? (
-                 <div className="space-y-2">
-                   {disclaimers.map((text, idx) => (
-                     <div key={idx} className="bg-muted/50 rounded-lg p-3 flex items-start gap-2">
-                       <p className="flex-1 text-sm">{text}</p>
-                       <button
-                         onClick={() => setDisclaimers(prev => prev.filter((_, i) => i !== idx))}
-                         className="p-1 text-muted-foreground hover:text-destructive"
-                       >
-                         <X className="w-4 h-4" />
-                       </button>
-                     </div>
-                   ))}
-                 </div>
-               ) : (
-                 <p className="text-sm text-muted-foreground italic">{t('noDisclaimers')}</p>
-               )}
-             </div>
            </div>
          )}
        </div>
