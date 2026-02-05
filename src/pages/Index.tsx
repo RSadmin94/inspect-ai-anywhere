@@ -17,6 +17,7 @@ import { PhotoDetailPanel } from '@/components/PhotoDetailPanel';
 import { SideMenu } from '@/components/SideMenu';
 import { AppSidebar } from '@/components/AppSidebar';
 import { DashboardHub } from '@/components/DashboardHub';
+import { RoomSelector } from '@/components/RoomSelector';
 import { toast } from 'sonner';
 import { seedDefaultData } from '@/lib/defaultData';
 
@@ -45,6 +46,7 @@ export default function Index() {
    const [showQuickCapture, setShowQuickCapture] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState('other');
 
   // Seed default data on first load
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function Index() {
   const pendingCount = photos.filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed').length;
 
   const handleCapture = useCallback(async (blob: Blob) => {
-     const newPhoto = await capturePhoto(blob, 'other');
+     const newPhoto = await capturePhoto(blob, selectedRoom);
     if (newPhoto) {
       toast.success(t('photoSaved'));
       
@@ -68,7 +70,7 @@ export default function Index() {
         }
       }
     }
-  }, [capturePhoto, isOnline, t, refreshPhotos]);
+  }, [capturePhoto, isOnline, t, refreshPhotos, selectedRoom]);
 
    const handleQuickCapture = useCallback(async (blob: Blob, room: string) => {
      const newPhoto = await capturePhoto(blob, room);
@@ -250,6 +252,21 @@ export default function Index() {
                 onMenu={() => setShowMenu(true)}
                 t={t}
               />
+
+              {/* Room Selector - Always Visible */}
+              <div className="bg-card/80 backdrop-blur border-b border-border px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
+                    {t('room')}:
+                  </span>
+                  <RoomSelector 
+                    value={selectedRoom} 
+                    onChange={setSelectedRoom} 
+                    t={t} 
+                    compact 
+                  />
+                </div>
+              </div>
 
               <CameraCapture onCapture={handleCapture} t={t} />
 
