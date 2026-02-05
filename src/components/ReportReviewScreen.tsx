@@ -268,66 +268,71 @@ type TabType = 'overview' | 'findings' | 'photos';
  
          {activeTab === 'findings' && (
            <div className="p-4 space-y-4">
-              {/* Room Notes Section */}
-              {roomsWithNotes.length > 0 && (
-                <div className="bg-card rounded-xl p-4 border border-border">
-                  <h2 className="font-semibold mb-3 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                    {t('roomNotes')}
-                  </h2>
-                  <div className="space-y-3">
-                    {roomsWithNotes.map(([room, notes]) => (
-                      <div key={room} className="bg-muted/50 rounded-lg p-3">
-                        <h3 className="text-sm font-medium mb-1">{t(room)}</h3>
-                        <p className="text-sm text-muted-foreground">{notes}</p>
-                      </div>
-                    ))}
+              {/* Findings & Notes grouped by Room */}
+              {Object.entries(photosByRoom).map(([room, roomPhotos]) => {
+                const roomFindings = roomPhotos.filter(p => p.aiFindingTitle || p.manualTitle);
+                const roomNote = roomNotes[room];
+                
+                if (roomFindings.length === 0 && !roomNote?.trim()) return null;
+                
+                return (
+                  <div key={room} className="bg-card rounded-xl border border-border overflow-hidden">
+                    <div className="flex items-center justify-between p-3 bg-muted/50">
+                      <span className="font-medium">{t(room)}</span>
+                      {roomFindings.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {roomFindings.length} {t('findings').toLowerCase()}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="p-3 space-y-3">
+                      {/* Room Note */}
+                      {roomNote?.trim() && (
+                        <div className="bg-muted/30 rounded-lg p-3 border-l-2 border-primary">
+                          <p className="text-sm text-muted-foreground">{roomNote}</p>
+                        </div>
+                      )}
+                      
+                      {/* Room Findings */}
+                      {roomFindings.map(photo => {
+                        const severity = photo.aiSeverity || photo.manualSeverity || 'minor';
+                        return (
+                          <div key={photo.id} className="flex gap-3">
+                            {photoUrls[photo.id] && (
+                              <img src={photoUrls[photo.id]} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={cn("w-2 h-2 rounded-full", {
+                                  'bg-destructive': severity === 'severe',
+                                  'bg-amber-500': severity === 'moderate',
+                                  'bg-muted-foreground': severity === 'minor',
+                                })} />
+                                <h4 className="font-medium text-sm truncate">
+                                  {photo.manualTitle || photo.aiFindingTitle}
+                                </h4>
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                {photo.manualDescription || photo.aiDescription}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className={cn("text-xs px-2 py-0.5 rounded capitalize", SEVERITY_COLORS[severity], "bg-muted")}>
+                                  {t(severity)}
+                                </span>
+                                <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                                  {t(photo.aiCategory || photo.manualCategory || 'general')}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Findings by Severity */}
-             {SEVERITY_ORDER.map(severity => {
-               const findings = photos.filter(p => 
-                 (p.aiSeverity === severity || p.manualSeverity === severity) && 
-                 (p.aiFindingTitle || p.manualTitle)
-               );
-               if (findings.length === 0) return null;
-               
-               return (
-                 <div key={severity}>
-                   <h3 className={cn("font-semibold mb-2 capitalize", SEVERITY_COLORS[severity])}>
-                     {t(severity)} ({findings.length})
-                   </h3>
-                   <div className="space-y-2">
-                     {findings.map(photo => (
-                       <div key={photo.id} className="bg-card rounded-lg p-3 border border-border flex gap-3">
-                         {photoUrls[photo.id] && (
-                           <img src={photoUrls[photo.id]} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
-                         )}
-                         <div className="flex-1 min-w-0">
-                           <h4 className="font-medium text-sm truncate">
-                             {photo.manualTitle || photo.aiFindingTitle}
-                           </h4>
-                           <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                             {photo.manualDescription || photo.aiDescription}
-                           </p>
-                           <div className="flex items-center gap-2 mt-2">
-                             <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                               {t(photo.room)}
-                             </span>
-                             <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                               {t(photo.aiCategory || photo.manualCategory || 'general')}
-                             </span>
-                           </div>
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 </div>
-               );
-             })}
-             
+                );
+              })}
+              
               {stats.findings === 0 && roomsWithNotes.length === 0 && (
                <div className="text-center py-12 text-muted-foreground">
                  <CheckCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
