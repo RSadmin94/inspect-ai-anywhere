@@ -138,7 +138,7 @@ import { ImageLightbox } from './ImageLightbox';
    };
  
    return (
-     <div className="fixed inset-0 z-50 bg-black/50 animate-fade-in" onClick={onClose}>
+     <div className="fixed inset-0 z-[100] bg-black/50 animate-fade-in" onClick={onClose}>
        <div 
          className="slide-panel h-[85vh] animate-slide-up"
          onClick={e => e.stopPropagation()}
