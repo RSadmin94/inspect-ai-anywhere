@@ -1,4 +1,4 @@
- import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
  import { motion, AnimatePresence } from 'framer-motion';
  import {
    LayoutDashboard,
@@ -12,6 +12,7 @@
  import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
 import { InspectionRecord } from '@/lib/db';
+import { useIsMobile } from '@/hooks/use-mobile';
  
  type Page = 'dashboard' | 'inspection' | 'reports' | 'settings';
  
@@ -32,7 +33,21 @@ import { InspectionRecord } from '@/lib/db';
   inspection,
    t,
  }: AppSidebarProps) {
-   const [isOpen, setIsOpen] = useState(true);
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Auto-retract on mobile, expand on desktop
+  useEffect(() => {
+    setIsOpen(!isMobile);
+  }, [isMobile]);
+
+  // Close sidebar when navigating on mobile
+  const handlePageChangeWithClose = (page: Page) => {
+    onPageChange(page);
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  };
  
    const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
      { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -106,7 +121,7 @@ import { InspectionRecord } from '@/lib/db';
                    initial={{ opacity: 0, x: -20 }}
                    animate={{ opacity: 1, x: 0 }}
                    transition={{ delay: 0.1 + index * 0.05 }}
-                   onClick={() => !isDisabled && onPageChange(item.id)}
+                    onClick={() => !isDisabled && handlePageChangeWithClose(item.id)}
                    disabled={isDisabled}
                    className={cn(
                      'w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all duration-200',
