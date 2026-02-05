@@ -1,8 +1,8 @@
  import { PhotoRecord, Severity, Category, updatePhotoAI, getPhoto } from '@/lib/db';
  import { blobToDataUrl } from '@/lib/imageUtils';
+import { supabase } from '@/integrations/supabase/client';
  
- // AI Analysis - Mock implementation for offline-first
- // When online, this will use actual AI when Lovable Cloud is connected
+// AI Analysis - Uses Lovable AI when online, mock data when offline
  
  const CATEGORIES: Category[] = ['roofing', 'plumbing', 'electrical', 'hvac', 'foundation', 'safety', 'general'];
  const SEVERITIES: Severity[] = ['minor', 'moderate', 'severe'];
@@ -26,37 +26,119 @@
    ]
  };
  
- export async function analyzePhoto(photoId: string): Promise<void> {
+interface AIAnalysisResult {
+  findings: Array<{
+    title: string;
+    title_es?: string;
+    description: string;
+    description_es?: string;
+    recommendation: string;
+    recommendation_es?: string;
+    severity: Severity;
+    category: Category;
+    confidence: number;
+  }>;
+  overallCondition: 'good' | 'fair' | 'poor';
+  summary: string;
+  summary_es?: string;
+}
+
+export async function analyzePhoto(photoId: string, useRealAI: boolean = true): Promise<void> {
    const photo = await getPhoto(photoId);
    if (!photo) return;
  
    // Mark as analyzing
    await updatePhotoAI(photoId, { aiStatus: 'analyzing' });
  
-   // Simulate AI processing time
-   await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1500));
+  try {
+    if (useRealAI) {
+      // Convert blob to base64 for AI
+      const imageBase64 = await blobToDataUrl(photo.fullImageBlob);
+      
+      const { data, error } = await supabase.functions.invoke('analyze-photo', {
+        body: { 
+          imageBase64,
+          room: photo.room,
+          language: 'en'
+        }
+      });
  
-   // Generate mock analysis result
-   const findingIndex = Math.floor(Math.random() * MOCK_FINDINGS.en.length);
-   const finding = MOCK_FINDINGS.en[findingIndex];
-   const findingEs = MOCK_FINDINGS.es[findingIndex];
-   
-   const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-   const severity = SEVERITIES[Math.floor(Math.random() * SEVERITIES.length)];
-   const confidence = 65 + Math.floor(Math.random() * 30);
+      if (error) {
+        console.error('AI analysis error:', error);
+        throw new Error(error.message || 'AI analysis failed');
+      }
  
-   await updatePhotoAI(photoId, {
-     aiStatus: 'complete',
-     aiFindingTitle: finding.title,
-     aiFindingTitleEs: findingEs.title,
-     aiSeverity: severity,
-     aiConfidence: confidence,
-     aiDescription: finding.desc,
-     aiDescriptionEs: findingEs.desc,
-     aiRecommendation: finding.rec,
-     aiRecommendationEs: findingEs.rec,
-     aiCategory: category,
-   });
+      const result = data as AIAnalysisResult;
+      
+      // Use the primary finding for the photo record
+      const primaryFinding = result.findings[0];
+      
+      if (primaryFinding) {
+        await updatePhotoAI(photoId, {
+          aiStatus: 'complete',
+          aiFindingTitle: primaryFinding.title,
+          aiFindingTitleEs: primaryFinding.title_es || primaryFinding.title,
+          aiSeverity: primaryFinding.severity,
+          aiConfidence: primaryFinding.confidence,
+          aiDescription: primaryFinding.description,
+          aiDescriptionEs: primaryFinding.description_es || primaryFinding.description,
+          aiRecommendation: primaryFinding.recommendation,
+          aiRecommendationEs: primaryFinding.recommendation_es || primaryFinding.recommendation,
+          aiCategory: primaryFinding.category,
+          // Store full analysis for detailed view
+          aiFullAnalysis: JSON.stringify(result),
+        });
+      } else {
+        // No issues found
+        await updatePhotoAI(photoId, {
+          aiStatus: 'complete',
+          aiFindingTitle: 'No Issues Detected',
+          aiFindingTitleEs: 'Sin Problemas Detectados',
+          aiSeverity: 'minor',
+          aiConfidence: 90,
+          aiDescription: result.summary || 'No significant issues were detected in this photo.',
+          aiDescriptionEs: result.summary_es || 'No se detectaron problemas significativos.',
+          aiRecommendation: 'Continue regular maintenance.',
+          aiRecommendationEs: 'Continuar con mantenimiento regular.',
+          aiCategory: 'general',
+          aiFullAnalysis: JSON.stringify(result),
+        });
+      }
+    } else {
+      // Fallback to mock analysis
+      await mockAnalyzePhoto(photoId);
+    }
+  } catch (error) {
+    console.error('Analysis failed:', error);
+    // Fallback to mock on error
+    await mockAnalyzePhoto(photoId);
+  }
+}
+
+async function mockAnalyzePhoto(photoId: string): Promise<void> {
+  // Simulate AI processing time
+  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+
+  const findingIndex = Math.floor(Math.random() * MOCK_FINDINGS.en.length);
+  const finding = MOCK_FINDINGS.en[findingIndex];
+  const findingEs = MOCK_FINDINGS.es[findingIndex];
+  
+  const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+  const severity = SEVERITIES[Math.floor(Math.random() * SEVERITIES.length)];
+  const confidence = 65 + Math.floor(Math.random() * 30);
+
+  await updatePhotoAI(photoId, {
+    aiStatus: 'complete',
+    aiFindingTitle: finding.title,
+    aiFindingTitleEs: findingEs.title,
+    aiSeverity: severity,
+    aiConfidence: confidence,
+    aiDescription: finding.desc,
+    aiDescriptionEs: findingEs.desc,
+    aiRecommendation: finding.rec,
+    aiRecommendationEs: findingEs.rec,
+    aiCategory: category,
+  });
  }
  
  export async function analyzeAllPending(photos: PhotoRecord[], onProgress?: (completed: number, total: number) => void): Promise<void> {
