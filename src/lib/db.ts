@@ -304,3 +304,13 @@
    const db = await getDB();
    await db.delete('issuePresets', id);
  }
+
+// Room order operations
+export async function getRoomOrder(): Promise<string[]> {
+  const order = await getSetting('roomOrder');
+  return order ? JSON.parse(order) : [];
+}
+
+export async function saveRoomOrder(order: string[]): Promise<void> {
+  await setSetting('roomOrder', JSON.stringify(order));
+}
