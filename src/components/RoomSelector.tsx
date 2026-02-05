@@ -71,14 +71,14 @@
          
          {isOpen && (
            <>
-             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-             <div className="absolute top-full left-0 mt-1 z-50 w-48 max-h-64 overflow-y-auto bg-card border border-border rounded-xl shadow-lg">
+            <div className="fixed inset-0 z-[60]" onClick={() => setIsOpen(false)} />
+            <div className="absolute top-full left-0 mt-1 z-[70] w-48 max-h-64 overflow-y-auto bg-background border border-border rounded-xl shadow-2xl">
                {DEFAULT_ROOMS.map(room => (
                  <button
                    key={room}
                    onClick={() => { onChange(room); setIsOpen(false); }}
                    className={cn(
-                     "w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors",
+                    "w-full px-3 py-2 text-left text-sm bg-background hover:bg-muted transition-colors",
                      value === room && "bg-primary/10 text-primary"
                    )}
                  >
@@ -93,7 +93,7 @@
                        <button
                          onClick={() => { onChange(room.id); setIsOpen(false); }}
                          className={cn(
-                           "flex-1 px-3 py-2 text-left text-sm hover:bg-muted transition-colors",
+                        "flex-1 px-3 py-2 text-left text-sm bg-background hover:bg-muted transition-colors",
                            value === room.id && "bg-primary/10 text-primary"
                          )}
                        >
@@ -118,7 +118,7 @@
                      onChange={e => setNewRoomName(e.target.value)}
                      onKeyDown={e => e.key === 'Enter' && handleAddCustomRoom()}
                      placeholder={t('addCustomRoom')}
-                     className="w-full h-8 px-2 text-sm rounded border border-input bg-background"
+                    className="w-full h-8 px-2 text-sm rounded border border-input bg-card"
                      autoFocus
                    />
                    <div className="flex gap-1 mt-1">
@@ -139,7 +139,7 @@
                ) : (
                  <button
                    onClick={() => setIsAddingCustom(true)}
-                   className="w-full px-3 py-2 text-left text-sm text-primary hover:bg-muted flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-sm text-primary bg-background hover:bg-muted flex items-center gap-2"
                  >
                    <Plus className="w-4 h-4" />
                    {t('addCustomRoom')}
