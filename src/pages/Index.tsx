@@ -13,6 +13,7 @@ import { CameraCapture } from '@/components/CameraCapture';
 import { PhotoGallery } from '@/components/PhotoGallery';
 import { PhotoDetailPanel } from '@/components/PhotoDetailPanel';
  import { ReportBuilder } from '@/components/ReportBuilder';
+import { ReportReviewScreen } from '@/components/ReportReviewScreen';
  import { QuickCaptureMode } from '@/components/QuickCaptureMode';
 import { SideMenu } from '@/components/SideMenu';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -336,6 +337,15 @@ export default function Index() {
         />
 
         <ReportBuilder
+          isOpen={false}
+          onClose={() => {}}
+          inspection={inspection}
+          photos={photos}
+          language={language}
+          t={t}
+        />
+
+        <ReportReviewScreen
           isOpen={showReport}
           onClose={() => setShowReport(false)}
           inspection={inspection}

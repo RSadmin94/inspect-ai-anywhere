@@ -168,6 +168,16 @@
        insurance: 'Insurance',
        new_construction: 'New Construction',
        warranty: 'Warranty',
+       
+       // Report Review
+       reportReview: 'Report Review',
+       overview: 'Overview',
+       findings: 'Findings',
+       inspectionDetails: 'Inspection Details',
+       summary: 'Summary',
+       totalPhotos: 'Total Photos',
+       noFindingsYet: 'No findings recorded yet',
+       noRoomNotes: 'No room notes recorded',
      },
    es: {
      // App
@@ -336,6 +346,16 @@
        insurance: 'Seguro',
        new_construction: 'Nueva Construcción',
        warranty: 'Garantía',
+       
+       // Report Review
+       reportReview: 'Revisar Reporte',
+       overview: 'Resumen',
+       findings: 'Hallazgos',
+       inspectionDetails: 'Detalles de Inspección',
+       summary: 'Estadísticas',
+       totalPhotos: 'Fotos Totales',
+       noFindingsYet: 'Sin hallazgos registrados',
+       noRoomNotes: 'Sin notas de habitación',
      }
  } as const;
  
