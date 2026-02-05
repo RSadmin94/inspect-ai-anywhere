@@ -65,6 +65,8 @@
    // Report builder fields
    includeInReport?: boolean;
    reportOrder?: number;
+  // Full AI analysis JSON
+  aiFullAnalysis?: string;
  }
  
  export interface InspectionRecord {
@@ -197,7 +199,7 @@
    aiData: Partial<Pick<PhotoRecord, 
      'aiStatus' | 'aiFindingTitle' | 'aiFindingTitleEs' | 'aiSeverity' | 
      'aiConfidence' | 'aiDescription' | 'aiDescriptionEs' | 
-     'aiRecommendation' | 'aiRecommendationEs' | 'aiCategory'
+    'aiRecommendation' | 'aiRecommendationEs' | 'aiCategory' | 'aiFullAnalysis'
    >>
  ): Promise<void> {
    const db = await getDB();
