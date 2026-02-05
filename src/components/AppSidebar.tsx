@@ -41,6 +41,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
     setIsOpen(!isMobile);
   }, [isMobile]);
 
+  // Auto-close sidebar on mobile when page changes (from any source)
+  useEffect(() => {
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  }, [currentPage, isMobile]);
+
   // Close sidebar when navigating on mobile
   const handlePageChangeWithClose = (page: Page) => {
     onPageChange(page);
