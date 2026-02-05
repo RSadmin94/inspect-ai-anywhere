@@ -9,6 +9,7 @@
      
      // Inspection
      newInspection: 'New Inspection',
+      inspection: 'Inspection',
      currentInspection: 'Current Inspection',
      propertyAddress: 'Property Address',
      inspectorName: 'Inspector Name (optional)',
@@ -163,6 +164,7 @@
      
      // Inspection
      newInspection: 'Nueva Inspección',
+      inspection: 'Inspección',
      currentInspection: 'Inspección Actual',
      propertyAddress: 'Dirección de la Propiedad',
      inspectorName: 'Nombre del Inspector (opcional)',

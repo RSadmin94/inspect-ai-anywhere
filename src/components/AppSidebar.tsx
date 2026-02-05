@@ -11,6 +11,7 @@
  } from 'lucide-react';
  import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
+import { InspectionRecord } from '@/lib/db';
  
  type Page = 'dashboard' | 'inspection' | 'reports' | 'settings';
  
@@ -19,6 +20,7 @@ import logoImage from '@/assets/logo.png';
    onPageChange: (page: Page) => void;
    onNewInspection: () => void;
    inspectionActive: boolean;
+  inspection?: InspectionRecord | null;
    t: (key: string) => string;
  }
  
@@ -27,6 +29,7 @@ import logoImage from '@/assets/logo.png';
    onPageChange,
    onNewInspection,
    inspectionActive,
+  inspection,
    t,
  }: AppSidebarProps) {
    const [isOpen, setIsOpen] = useState(true);
@@ -145,11 +148,15 @@ import logoImage from '@/assets/logo.png';
              <div className="flex items-center gap-2 mb-2">
                <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                <span className="text-xs font-semibold text-accent">
-                 {inspectionActive ? t('inspection') + ' Active' : 'Ready'}
+                  {inspectionActive ? t('inspection') + ' ' + t('online') : 'Ready'}
                </span>
              </div>
              <p className="text-xs text-accent/80">
-               {inspectionActive ? 'Continue your inspection' : 'Start a new inspection'}
+                {inspectionActive && inspection?.propertyAddress 
+                  ? inspection.propertyAddress 
+                  : inspectionActive 
+                    ? t('currentInspection')
+                    : t('newInspection')}
              </p>
            </motion.div>
  
