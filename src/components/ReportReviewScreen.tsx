@@ -2,7 +2,7 @@
  import { 
    X, FileText, Download, ChevronDown, ChevronUp, MapPin, User, Calendar, 
    Building, AlertTriangle, CheckCircle, Clock, Camera, MessageSquare,
-   Loader2, Eye, EyeOff, BookOpen
+  Loader2, Eye, EyeOff, BookOpen, Mic, Pencil
  } from 'lucide-react';
  import { PhotoRecord, InspectionRecord, Phrase, getAllPhrases, Category, Severity } from '@/lib/db';
  import { blobToDataUrl } from '@/lib/imageUtils';
@@ -10,6 +10,8 @@
  import { generateReportPDF } from '@/lib/reportPdfGenerator';
  import { cn } from '@/lib/utils';
  import { PhraseLibrary } from './PhraseLibrary';
+import { useVoiceDictation } from '@/hooks/useVoiceDictation';
+import { Textarea } from './ui/textarea';
  
  interface ReportReviewScreenProps {
    isOpen: boolean;
@@ -18,6 +20,7 @@
    photos: PhotoRecord[];
    language: Language;
    t: (key: string) => string;
+  onUpdateRoomNotes?: (room: string, notes: string) => Promise<void>;
  }
  
  type ReportLanguage = 'en' | 'es' | 'both';
@@ -30,7 +33,7 @@ type TabType = 'overview' | 'findings' | 'photos';
    minor: 'text-muted-foreground',
  };
  
- export function ReportReviewScreen({ isOpen, onClose, inspection, photos, language, t }: ReportReviewScreenProps) {
+export function ReportReviewScreen({ isOpen, onClose, inspection, photos, language, t, onUpdateRoomNotes }: ReportReviewScreenProps) {
    const [activeTab, setActiveTab] = useState<TabType>('overview');
    const [reportLanguage, setReportLanguage] = useState<ReportLanguage>('en');
    const [isGenerating, setIsGenerating] = useState(false);
@@ -38,6 +41,28 @@ type TabType = 'overview' | 'findings' | 'photos';
    const [showPhraseLibrary, setShowPhraseLibrary] = useState(false);
    const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
    const [includedPhotos, setIncludedPhotos] = useState<Set<string>>(new Set(photos.map(p => p.id)));
+  const [editingRoom, setEditingRoom] = useState<string | null>(null);
+  const [editNoteText, setEditNoteText] = useState('');
+  const [dictatingRoom, setDictatingRoom] = useState<string | null>(null);
+  
+  const {
+    isListening,
+    transcript,
+    isSupported: voiceSupported,
+    toggleListening,
+    resetTranscript,
+  } = useVoiceDictation(language);
+
+  // Handle voice dictation completion
+  useEffect(() => {
+    if (!isListening && transcript && dictatingRoom) {
+      const currentNote = inspection.roomNotes?.[dictatingRoom] || '';
+      const newNote = currentNote ? `${currentNote} ${transcript}` : transcript;
+      onUpdateRoomNotes?.(dictatingRoom, newNote);
+      resetTranscript();
+      setDictatingRoom(null);
+    }
+  }, [isListening, transcript, dictatingRoom, inspection.roomNotes, onUpdateRoomNotes, resetTranscript]);
  
    // Load photo thumbnails
    useEffect(() => {
@@ -279,19 +304,86 @@ type TabType = 'overview' | 'findings' | 'photos';
                   <div key={room} className="bg-card rounded-xl border border-border overflow-hidden">
                     <div className="flex items-center justify-between p-3 bg-muted/50">
                       <span className="font-medium">{t(room)}</span>
-                      {roomFindings.length > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {roomFindings.length} {t('findings').toLowerCase()}
-                        </span>
-                      )}
+                       <div className="flex items-center gap-2">
+                         {roomFindings.length > 0 && (
+                           <span className="text-xs text-muted-foreground">
+                             {roomFindings.length} {t('findings').toLowerCase()}
+                           </span>
+                         )}
+                         {voiceSupported && (
+                           <button
+                             onClick={() => {
+                               if (isListening && dictatingRoom === room) {
+                                 toggleListening();
+                               } else if (!isListening) {
+                                 setDictatingRoom(room);
+                                 toggleListening();
+                               }
+                             }}
+                             className={cn(
+                               "w-7 h-7 flex items-center justify-center rounded-full transition-all",
+                               isListening && dictatingRoom === room
+                                 ? "bg-destructive text-destructive-foreground animate-pulse"
+                                 : "hover:bg-muted text-muted-foreground"
+                             )}
+                           >
+                             <Mic className="w-3.5 h-3.5" />
+                           </button>
+                         )}
+                         <button
+                           onClick={() => {
+                             setEditingRoom(room);
+                             setEditNoteText(roomNote || '');
+                           }}
+                           className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-muted"
+                         >
+                           <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                         </button>
+                       </div>
                     </div>
                     
                     <div className="p-3 space-y-3">
                       {/* Room Note */}
-                      {roomNote?.trim() && (
-                        <div className="bg-muted/30 rounded-lg p-3 border-l-2 border-primary">
-                          <p className="text-sm text-muted-foreground">{roomNote}</p>
-                        </div>
+                       {editingRoom === room ? (
+                         <div className="space-y-2">
+                           <Textarea
+                             value={editNoteText}
+                             onChange={(e) => setEditNoteText(e.target.value)}
+                             placeholder={t('addNotes')}
+                             className="min-h-[80px] text-sm"
+                           />
+                           <div className="flex gap-2 justify-end">
+                             <button
+                               onClick={() => setEditingRoom(null)}
+                               className="px-3 py-1.5 text-xs rounded-lg bg-muted text-muted-foreground"
+                             >
+                               {t('cancel')}
+                             </button>
+                             <button
+                               onClick={async () => {
+                                 await onUpdateRoomNotes?.(room, editNoteText);
+                                 setEditingRoom(null);
+                               }}
+                               className="px-3 py-1.5 text-xs rounded-lg bg-primary text-primary-foreground"
+                             >
+                               {t('save')}
+                             </button>
+                           </div>
+                         </div>
+                       ) : roomNote?.trim() ? (
+                         <div className="bg-muted/30 rounded-lg p-3 border-l-2 border-primary">
+                           <p className="text-sm text-muted-foreground">{roomNote}</p>
+                         </div>
+                       ) : (
+                         <button
+                           onClick={() => {
+                             setEditingRoom(room);
+                             setEditNoteText('');
+                           }}
+                           className="w-full text-left text-sm text-muted-foreground italic bg-muted/20 rounded-lg p-3 hover:bg-muted/40 transition-colors"
+                         >
+                           + {t('addNotes')}
+                         </button>
                       )}
                       
                       {/* Room Findings */}
