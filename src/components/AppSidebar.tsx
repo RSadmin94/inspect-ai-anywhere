@@ -34,12 +34,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
    t,
  }: AppSidebarProps) {
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState<boolean | null>(null);
 
-  // Auto-retract on mobile, expand on desktop
+  // Initialize sidebar state based on device type
   useEffect(() => {
-    setIsOpen(!isMobile);
-  }, [isMobile]);
+    // Only set initial state once we know the device type
+    if (isOpen === null) {
+      setIsOpen(!isMobile);
+    }
+  }, [isMobile, isOpen]);
 
   // Auto-close sidebar on mobile when page changes (from any source)
   useEffect(() => {
@@ -78,12 +81,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
        </button>
  
        {/* Sidebar */}
-       <motion.div
-         initial={{ x: -280 }}
-         animate={{ x: isOpen ? 0 : -280 }}
-         transition={{ duration: 0.3 }}
-         className="fixed left-0 top-0 h-screen w-72 z-40 flex flex-col md:relative md:translate-x-0"
-       >
+      <div
+        className={cn(
+          "fixed left-0 top-0 h-screen w-72 z-40 flex flex-col transition-transform duration-300 ease-in-out",
+          "md:relative md:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
          {/* Glassmorphism Background */}
          <div className="absolute inset-0 glass border-r border-border/20" />
  
@@ -194,7 +198,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
              {t('newInspection')}
            </motion.button>
          </div>
-       </motion.div>
+       </div>
  
        {/* Mobile Overlay */}
        <AnimatePresence>
