@@ -1,15 +1,18 @@
  import { useRef, useCallback, useState, useEffect } from 'react';
- import { Camera, X, RotateCcw, Zap, ChevronDown } from 'lucide-react';
+import { Camera, X, RotateCcw, Zap, Mic, Square } from 'lucide-react';
  import { RoomSelector } from './RoomSelector';
  import { cn } from '@/lib/utils';
+import { useVoiceDictation } from '@/hooks/useVoiceDictation';
  
  interface QuickCaptureModeProps {
    onCapture: (blob: Blob, room: string) => Promise<void>;
    onClose: () => void;
    t: (key: string) => string;
+  language?: 'en' | 'es';
+  onDictation?: (text: string) => void;
  }
  
- export function QuickCaptureMode({ onCapture, onClose, t }: QuickCaptureModeProps) {
+export function QuickCaptureMode({ onCapture, onClose, t, language = 'en', onDictation }: QuickCaptureModeProps) {
    const videoRef = useRef<HTMLVideoElement>(null);
    const canvasRef = useRef<HTMLCanvasElement>(null);
    const [stream, setStream] = useState<MediaStream | null>(null);
@@ -18,6 +21,22 @@
    const [error, setError] = useState<string | null>(null);
    const [stickyRoom, setStickyRoom] = useState('other');
    const [captureCount, setCaptureCount] = useState(0);
+
+  const {
+    isListening,
+    fullTranscript,
+    isSupported,
+    toggleListening,
+    resetTranscript,
+  } = useVoiceDictation(language);
+
+  // Send transcript when done listening
+  useEffect(() => {
+    if (!isListening && fullTranscript && onDictation) {
+      onDictation(fullTranscript.trim());
+      resetTranscript();
+    }
+  }, [isListening, fullTranscript, onDictation, resetTranscript]);
  
    const startCamera = useCallback(async () => {
      try {
@@ -155,38 +174,64 @@
        {/* Camera controls */}
        <div className="absolute bottom-0 inset-x-0 safe-bottom pb-6 bg-gradient-to-t from-black/60 to-transparent pt-20">
          <div className="flex items-center justify-center gap-8">
-           {/* Flip camera button */}
+          {/* Voice dictation button */}
+          {isSupported && (
+            <button
+              onClick={toggleListening}
+              className={cn(
+                "w-14 h-14 rounded-full backdrop-blur flex items-center justify-center touch-target transition-all",
+                isListening 
+                  ? "bg-destructive text-destructive-foreground animate-pulse" 
+                  : "bg-white/20 text-white"
+              )}
+            >
+              {isListening ? <Square className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+            </button>
+          )}
+
+          {/* Main capture button - larger for quick mode */}
            <button
-             onClick={toggleCamera}
-             className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white touch-target"
+            onClick={handleCapture}
+            disabled={isCapturing}
+            className={cn(
+              "w-24 h-24 rounded-full bg-white flex items-center justify-center transition-transform active:scale-95",
+              isCapturing && "opacity-50"
+            )}
+            aria-label={t('capture')}
            >
-             <RotateCcw className="w-6 h-6" />
+            <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
+              <Camera className="w-10 h-10 text-primary-foreground" />
+            </div>
            </button>
  
-           {/* Main capture button - larger for quick mode */}
+          {/* Flip camera button */}
            <button
-             onClick={handleCapture}
-             disabled={isCapturing}
-             className={cn(
-               "w-24 h-24 rounded-full bg-white flex items-center justify-center transition-transform active:scale-95",
-               isCapturing && "opacity-50"
-             )}
-             aria-label={t('capture')}
+            onClick={toggleCamera}
+            className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white touch-target"
            >
-             <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
-               <Camera className="w-10 h-10 text-primary-foreground" />
-             </div>
-           </button>
- 
-           {/* Done button */}
-           <button
-             onClick={onClose}
-             className="w-14 h-14 rounded-full bg-accent/80 backdrop-blur flex items-center justify-center text-accent-foreground touch-target"
-           >
-             <span className="text-xs font-bold">{t('done')}</span>
+            <RotateCcw className="w-6 h-6" />
            </button>
          </div>
        </div>
+      
+      {/* Dictation indicator */}
+      {isListening && (
+        <div className="absolute top-32 inset-x-0 flex justify-center">
+          <div className="bg-destructive text-destructive-foreground px-4 py-2 rounded-full flex items-center gap-2 animate-pulse">
+            <Mic className="w-4 h-4" />
+            <span className="text-sm font-medium">{t('recording')}...</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Show transcript preview */}
+      {fullTranscript && (
+        <div className="absolute top-44 inset-x-4">
+          <div className="bg-black/70 backdrop-blur text-white px-4 py-3 rounded-xl">
+            <p className="text-sm">{fullTranscript}</p>
+          </div>
+        </div>
+      )}
  
        {/* Flash effect */}
        {isCapturing && (

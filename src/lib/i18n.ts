@@ -147,6 +147,11 @@
        quickCapture: 'Quick Capture',
        done: 'Done',
        
+       // Voice Dictation
+       recording: 'Recording',
+       listening: 'Listening...',
+       tapToSpeak: 'Tap to speak',
+       
        // Enhanced Inspection
        clientName: 'Client Name',
        enterClientName: 'Enter client name...',
@@ -304,6 +309,11 @@
        // Quick Capture
        quickCapture: 'Captura Rápida',
        done: 'Listo',
+       
+       // Voice Dictation
+       recording: 'Grabando',
+       listening: 'Escuchando...',
+       tapToSpeak: 'Toque para hablar',
        
        // Enhanced Inspection
        clientName: 'Nombre del Cliente',
