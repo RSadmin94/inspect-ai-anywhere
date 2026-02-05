@@ -1,4 +1,4 @@
- import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
  import { X, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
  import { motion, AnimatePresence } from 'framer-motion';
  import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@
  export function ImageLightbox({ imageUrl, isOpen, onClose }: ImageLightboxProps) {
    const [scale, setScale] = useState(1);
    const [rotation, setRotation] = useState(0);
+  const lastTapRef = useRef(0);
  
    useEffect(() => {
      if (isOpen) {
@@ -35,6 +36,15 @@
    const handleZoomIn = () => setScale(s => Math.min(s + 0.5, 4));
    const handleZoomOut = () => setScale(s => Math.max(s - 0.5, 0.5));
    const handleRotate = () => setRotation(r => r + 90);
+  
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      // Double tap - toggle zoom
+      setScale(s => s === 1 ? 2 : 1);
+    }
+    lastTapRef.current = now;
+  };
  
    return (
      <AnimatePresence>
@@ -43,7 +53,7 @@
            initial={{ opacity: 0 }}
            animate={{ opacity: 1 }}
            exit={{ opacity: 0 }}
-           className="fixed inset-0 z-[100] bg-black/95 flex flex-col"
+          className="fixed inset-0 z-[200] bg-black/95 flex flex-col"
            onClick={onClose}
          >
            {/* Header Controls */}
@@ -82,19 +92,20 @@
            {/* Image Container */}
            <div 
              className="flex-1 flex items-center justify-center overflow-hidden p-4"
-             onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDoubleTap();
+            }}
            >
              <motion.img
                src={imageUrl}
                alt=""
-               className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
+              className="max-w-full max-h-full object-contain select-none touch-none"
                style={{
                  transform: `scale(${scale}) rotate(${rotation}deg)`,
                  transition: 'transform 0.2s ease-out',
                }}
-               drag
-               dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
-               dragElastic={0.1}
+              draggable={false}
              />
            </div>
  
