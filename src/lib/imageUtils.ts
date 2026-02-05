@@ -1,8 +1,8 @@
  import imageCompression from 'browser-image-compression';
  
  const MAX_DIMENSION = 2048;
- const THUMBNAIL_SIZE = 128;
- const COMPRESSION_QUALITY = 0.8;
+const THUMBNAIL_SIZE = 320;
+const COMPRESSION_QUALITY = 0.85;
  
  export async function processImage(file: File | Blob): Promise<{ thumbnail: Blob; fullImage: Blob }> {
    // Create full-size compressed image
@@ -19,7 +19,7 @@
    const thumbnailOptions = {
      maxWidthOrHeight: THUMBNAIL_SIZE,
      useWebWorker: true,
-     initialQuality: 0.7,
+    initialQuality: 0.8,
      fileType: 'image/jpeg' as const,
    };
    

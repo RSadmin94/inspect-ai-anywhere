@@ -2,11 +2,12 @@
  import { PhotoRecord, Severity, Category, IssuePreset, Phrase } from '@/lib/db';
  import { blobToDataUrl } from '@/lib/imageUtils';
  import { Language } from '@/lib/i18n';
- import { X, Trash2, Save, Sparkles, AlertTriangle, BookOpen, Layers } from 'lucide-react';
+import { X, Trash2, Save, Sparkles, AlertTriangle, BookOpen, Layers, Maximize2 } from 'lucide-react';
  import { cn } from '@/lib/utils';
  import { RoomSelector } from './RoomSelector';
  import { PhraseLibrary } from './PhraseLibrary';
  import { IssuePresetSelector } from './IssuePresetSelector';
+import { ImageLightbox } from './ImageLightbox';
  
  interface PhotoDetailPanelProps {
    photo: PhotoRecord | null;
@@ -36,6 +37,7 @@
    const [isAnalyzing, setIsAnalyzing] = useState(false);
    const [showPhraseLibrary, setShowPhraseLibrary] = useState(false);
    const [showIssuePresets, setShowIssuePresets] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
    const [manualFinding, setManualFinding] = useState<{
      title?: string;
      severity?: Severity;
@@ -157,11 +159,23 @@
  
            {/* Photo Preview */}
            <div className="px-4 mb-4">
-             <img 
-               src={imageUrl} 
-               alt="" 
-               className="w-full h-48 object-cover rounded-xl"
-             />
+              <div className="relative group">
+                <img 
+                  src={imageUrl} 
+                  alt="" 
+                  className="w-full h-64 object-cover rounded-xl cursor-pointer transition-transform hover:scale-[1.01]"
+                  onClick={() => setShowLightbox(true)}
+                />
+                <button
+                  onClick={() => setShowLightbox(true)}
+                  className="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Maximize2 className="w-5 h-5" />
+                </button>
+                <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur rounded-lg px-2 py-1">
+                  <p className="text-white text-xs">Tap to enlarge</p>
+                </div>
+              </div>
            </div>
  
            {/* Room Select */}
@@ -364,6 +378,12 @@
            t={t}
          />
        )}
+
+        <ImageLightbox
+          imageUrl={imageUrl}
+          isOpen={showLightbox}
+          onClose={() => setShowLightbox(false)}
+        />
      </div>
    );
  }
