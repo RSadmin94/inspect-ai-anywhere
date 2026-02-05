@@ -246,6 +246,7 @@ export default function Index() {
           photoCount={photos.length}
           language={language}
           onToggleLanguage={toggleLanguage}
+          onGoToDashboard={() => setCurrentPage('dashboard')}
           t={t}
         />
 
