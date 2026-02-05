@@ -14,6 +14,7 @@ import { useVoiceDictation } from '@/hooks/useVoiceDictation';
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { ImageLightbox } from './ImageLightbox';
  
  interface ReportReviewScreenProps {
    isOpen: boolean;
@@ -53,6 +54,19 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
     severity: Severity;
     category: Category;
   }>({ title: '', description: '', severity: 'minor', category: 'general' });
+  const [lightboxPhoto, setLightboxPhoto] = useState<PhotoRecord | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  // Load full resolution image for lightbox
+  useEffect(() => {
+    if (lightboxPhoto) {
+      blobToDataUrl(lightboxPhoto.fullImageBlob).then(url => {
+        setLightboxUrl(url);
+      });
+    } else {
+      setLightboxUrl(null);
+    }
+  }, [lightboxPhoto]);
   const [dictatingRoom, setDictatingRoom] = useState<string | null>(null);
   
   const {
@@ -408,7 +422,11 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
                             <div key={photo.id} className="bg-muted/30 rounded-lg p-3 space-y-3">
                               <div className="flex gap-3">
                                 {photoUrls[photo.id] && (
-                                  <img src={photoUrls[photo.id]} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                                  <img 
+                                    src={photoUrls[photo.id]} 
+                                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0 cursor-pointer"
+                                    onClick={() => setLightboxPhoto(photo)}
+                                  />
                                 )}
                                 <div className="flex-1 space-y-2">
                                   <Input
@@ -486,7 +504,11 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
                         return (
                           <div key={photo.id} className="flex gap-3 group">
                             {photoUrls[photo.id] && (
-                              <img src={photoUrls[photo.id]} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+                              <img 
+                                src={photoUrls[photo.id]} 
+                                className="w-16 h-16 rounded-lg object-cover flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                                onClick={() => setLightboxPhoto(photo)}
+                              />
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 justify-between">
@@ -587,23 +609,39 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
                  </div>
                  <div className="p-3 grid grid-cols-4 gap-2">
                    {roomPhotos.map(photo => (
-                     <button
+                      <div
                        key={photo.id}
-                       onClick={() => togglePhoto(photo.id)}
                        className={cn(
-                         "relative aspect-square rounded-lg overflow-hidden border-2 transition-all",
+                          "relative aspect-square rounded-lg overflow-hidden border-2 transition-all cursor-pointer",
                          includedPhotos.has(photo.id) ? "border-primary" : "border-transparent opacity-40"
                        )}
                      >
                        {photoUrls[photo.id] && (
-                         <img src={photoUrls[photo.id]} className="w-full h-full object-cover" />
+                          <img 
+                            src={photoUrls[photo.id]} 
+                            className="w-full h-full object-cover"
+                            onClick={() => setLightboxPhoto(photo)}
+                          />
                        )}
                        {!includedPhotos.has(photo.id) && (
                          <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
                            <EyeOff className="w-4 h-4" />
                          </div>
                        )}
-                     </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePhoto(photo.id);
+                          }}
+                          className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-background/80 flex items-center justify-center"
+                        >
+                          {includedPhotos.has(photo.id) ? (
+                            <Eye className="w-3 h-3 text-primary" />
+                          ) : (
+                            <EyeOff className="w-3 h-3 text-muted-foreground" />
+                          )}
+                        </button>
+                      </div>
                    ))}
                  </div>
                </div>
@@ -643,6 +681,13 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
            filterCategory="disclaimer"
          />
        )}
+
+        {/* Image Lightbox */}
+        <ImageLightbox
+          imageUrl={lightboxUrl || ''}
+          isOpen={!!lightboxPhoto && !!lightboxUrl}
+          onClose={() => setLightboxPhoto(null)}
+        />
      </div>
    );
  }
