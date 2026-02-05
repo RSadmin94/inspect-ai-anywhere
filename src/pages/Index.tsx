@@ -296,7 +296,7 @@ export default function Index() {
               <div className="bg-card border-t border-border">
                 <div className="flex items-center justify-between px-4 py-2 border-b border-border">
                   <span className="text-sm font-medium text-muted-foreground">
-                    {photos.length} {t('photos')}
+                    {photos.filter(p => p.room === selectedRoom).length} {t('photos')}
                   </span>
                   <button
                     onClick={() => setShowQuickCapture(true)}
@@ -306,7 +306,7 @@ export default function Index() {
                   </button>
                 </div>
                 <PhotoGallery 
-                  photos={photos}
+                  photos={photos.filter(p => p.room === selectedRoom)}
                   selectedPhotoId={selectedPhoto?.id || null}
                   onSelectPhoto={handleSelectPhoto}
                   t={t}
