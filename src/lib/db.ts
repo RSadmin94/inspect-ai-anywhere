@@ -79,6 +79,7 @@
    clientName?: string;
    inspectionType?: InspectionType;
    customRooms?: string[]; // IDs of custom rooms for this inspection
+  roomNotes?: Record<string, string>; // Notes by room key
  }
  
  export interface SettingsRecord {

@@ -2,15 +2,27 @@
 import { Camera, X, RotateCcw, Mic, Square } from 'lucide-react';
  import { cn } from '@/lib/utils';
 import { useVoiceDictation } from '@/hooks/useVoiceDictation';
+import { LiveNotesPanel } from './LiveNotesPanel';
  
  interface CameraCaptureProps {
    onCapture: (blob: Blob) => Promise<void>;
    t: (key: string) => string;
   language?: 'en' | 'es';
-  onDictation?: (text: string) => void;
+  onDictation?: (text: string, room: string) => void;
+  currentRoom: string;
+  roomNotes: Record<string, string>;
+  onClearRoomNotes: (room: string) => void;
  }
  
-export function CameraCapture({ onCapture, t, language = 'en', onDictation }: CameraCaptureProps) {
+export function CameraCapture({ 
+  onCapture, 
+  t, 
+  language = 'en', 
+  onDictation,
+  currentRoom,
+  roomNotes,
+  onClearRoomNotes,
+}: CameraCaptureProps) {
    const videoRef = useRef<HTMLVideoElement>(null);
    const canvasRef = useRef<HTMLCanvasElement>(null);
    const [stream, setStream] = useState<MediaStream | null>(null);
@@ -29,10 +41,10 @@ export function CameraCapture({ onCapture, t, language = 'en', onDictation }: Ca
   // Send transcript when done listening
   useEffect(() => {
     if (!isListening && fullTranscript && onDictation) {
-      onDictation(fullTranscript.trim());
+      onDictation(fullTranscript.trim(), currentRoom);
       resetTranscript();
     }
-  }, [isListening, fullTranscript, onDictation, resetTranscript]);
+  }, [isListening, fullTranscript, onDictation, resetTranscript, currentRoom]);
  
    const startCamera = useCallback(async () => {
      try {
@@ -122,7 +134,17 @@ export function CameraCapture({ onCapture, t, language = 'en', onDictation }: Ca
    }
  
    return (
-     <div className="relative flex-1 bg-black z-0">
+    <div className="relative flex-1 bg-black z-0 min-h-[300px]">
+      {/* Live Notes Panel */}
+      <LiveNotesPanel
+        roomNotes={roomNotes}
+        currentRoom={currentRoom}
+        isListening={isListening}
+        currentTranscript={fullTranscript}
+        onClearRoomNotes={onClearRoomNotes}
+        t={t}
+      />
+      
        <video
          ref={videoRef}
          autoPlay
@@ -172,25 +194,6 @@ export function CameraCapture({ onCapture, t, language = 'en', onDictation }: Ca
            </button>
          </div>
        </div>
-      
-      {/* Dictation indicator */}
-      {isListening && (
-        <div className="absolute top-4 inset-x-0 flex justify-center">
-          <div className="bg-destructive text-destructive-foreground px-4 py-2 rounded-full flex items-center gap-2 animate-pulse">
-            <Mic className="w-4 h-4" />
-            <span className="text-sm font-medium">{t('recording')}...</span>
-          </div>
-        </div>
-      )}
-      
-      {/* Show transcript preview */}
-      {fullTranscript && (
-        <div className="absolute top-16 inset-x-4">
-          <div className="bg-black/70 backdrop-blur text-white px-4 py-3 rounded-xl">
-            <p className="text-sm">{fullTranscript}</p>
-          </div>
-        </div>
-      )}
  
        {/* Flash effect */}
        {isCapturing && (
