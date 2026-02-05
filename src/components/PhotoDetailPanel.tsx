@@ -2,12 +2,14 @@
  import { PhotoRecord, Severity, Category, IssuePreset, Phrase } from '@/lib/db';
  import { blobToDataUrl } from '@/lib/imageUtils';
  import { Language } from '@/lib/i18n';
-import { X, Trash2, Save, Sparkles, AlertTriangle, BookOpen, Layers, Maximize2 } from 'lucide-react';
+import { X, Trash2, Save, Sparkles, AlertTriangle, BookOpen, Layers, Maximize2, Mic } from 'lucide-react';
  import { cn } from '@/lib/utils';
  import { RoomSelector } from './RoomSelector';
  import { PhraseLibrary } from './PhraseLibrary';
  import { IssuePresetSelector } from './IssuePresetSelector';
 import { ImageLightbox } from './ImageLightbox';
+import { VoiceDictationButton } from './VoiceDictationButton';
+import { useVoiceDictation } from '@/hooks/useVoiceDictation';
  
  interface PhotoDetailPanelProps {
    photo: PhotoRecord | null;
@@ -45,6 +47,22 @@ import { ImageLightbox } from './ImageLightbox';
      description?: string;
      recommendation?: string;
    } | null>(null);
+
+  const {
+    isListening,
+    fullTranscript,
+    isSupported,
+    toggleListening,
+    resetTranscript,
+  } = useVoiceDictation(language);
+
+  // Append voice transcript to notes
+  useEffect(() => {
+    if (fullTranscript && !isListening) {
+      setNotes(prev => prev ? `${prev} ${fullTranscript.trim()}` : fullTranscript.trim());
+      resetTranscript();
+    }
+  }, [isListening, fullTranscript, resetTranscript]);
  
    useEffect(() => {
      if (photo) {
@@ -192,20 +210,42 @@ import { ImageLightbox } from './ImageLightbox';
                  <label className="text-sm font-medium text-muted-foreground">
                    {t('notes')}
                  </label>
-                 <button
-                   onClick={() => setShowPhraseLibrary(true)}
-                   className="text-xs text-primary flex items-center gap-1 hover:underline"
-                 >
-                   <BookOpen className="w-3 h-3" />
-                   {t('phraseLibrary')}
-                 </button>
+                <div className="flex items-center gap-2">
+                  <VoiceDictationButton
+                    isListening={isListening}
+                    isSupported={isSupported}
+                    onToggle={toggleListening}
+                    size="sm"
+                  />
+                  <button
+                    onClick={() => setShowPhraseLibrary(true)}
+                    className="text-xs text-primary flex items-center gap-1 hover:underline"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    {t('phraseLibrary')}
+                  </button>
+                </div>
                </div>
-             <textarea
-               value={notes}
-               onChange={e => setNotes(e.target.value)}
-               placeholder={t('addNotes')}
-               className="w-full h-24 px-4 py-3 rounded-xl border border-input bg-background resize-none"
-             />
+            <div className="relative">
+              <textarea
+                value={isListening ? `${notes} ${fullTranscript}` : notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder={isListening ? t('listening') : t('addNotes')}
+                className={cn(
+                  "w-full h-24 px-4 py-3 rounded-xl border bg-background resize-none transition-colors",
+                  isListening ? "border-destructive bg-destructive/5" : "border-input"
+                )}
+                readOnly={isListening}
+              />
+              {isListening && (
+                <div className="absolute top-2 right-2">
+                  <span className="inline-flex items-center gap-1 text-xs text-destructive animate-pulse">
+                    <Mic className="w-3 h-3" />
+                    {t('recording')}
+                  </span>
+                </div>
+              )}
+            </div>
            </div>
  
              {/* Manual Finding / Issue Preset */}

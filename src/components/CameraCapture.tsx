@@ -1,19 +1,38 @@
  import { useRef, useCallback, useState, useEffect } from 'react';
- import { Camera, X, RotateCcw } from 'lucide-react';
+import { Camera, X, RotateCcw, Mic, Square } from 'lucide-react';
  import { cn } from '@/lib/utils';
+import { useVoiceDictation } from '@/hooks/useVoiceDictation';
  
  interface CameraCaptureProps {
    onCapture: (blob: Blob) => Promise<void>;
    t: (key: string) => string;
+  language?: 'en' | 'es';
+  onDictation?: (text: string) => void;
  }
  
- export function CameraCapture({ onCapture, t }: CameraCaptureProps) {
+export function CameraCapture({ onCapture, t, language = 'en', onDictation }: CameraCaptureProps) {
    const videoRef = useRef<HTMLVideoElement>(null);
    const canvasRef = useRef<HTMLCanvasElement>(null);
    const [stream, setStream] = useState<MediaStream | null>(null);
    const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
    const [isCapturing, setIsCapturing] = useState(false);
    const [error, setError] = useState<string | null>(null);
+
+  const {
+    isListening,
+    fullTranscript,
+    isSupported,
+    toggleListening,
+    resetTranscript,
+  } = useVoiceDictation(language);
+
+  // Send transcript when done listening
+  useEffect(() => {
+    if (!isListening && fullTranscript && onDictation) {
+      onDictation(fullTranscript.trim());
+      resetTranscript();
+    }
+  }, [isListening, fullTranscript, onDictation, resetTranscript]);
  
    const startCamera = useCallback(async () => {
      try {
@@ -116,31 +135,62 @@
        {/* Camera controls */}
        <div className="absolute bottom-0 inset-x-0 safe-bottom pb-6">
          <div className="flex items-center justify-center gap-8">
-           {/* Flip camera button */}
+          {/* Voice dictation button */}
+          {isSupported && (
+            <button
+              onClick={toggleListening}
+              className={cn(
+                "w-12 h-12 rounded-full backdrop-blur flex items-center justify-center touch-target transition-all",
+                isListening 
+                  ? "bg-destructive text-destructive-foreground animate-pulse" 
+                  : "bg-black/50 text-white"
+              )}
+            >
+              {isListening ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </button>
+          )}
+          
+          {/* Main capture button */}
+          <button
+            onClick={handleCapture}
+            disabled={isCapturing}
+            className={cn(
+              "capture-btn no-select",
+              isCapturing && "opacity-50"
+            )}
+            aria-label={t('capture')}
+          >
+            <Camera className="w-8 h-8 text-primary-foreground" />
+          </button>
+          
+          {/* Flip camera button */}
            <button
              onClick={toggleCamera}
              className="w-12 h-12 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white touch-target"
            >
              <RotateCcw className="w-5 h-5" />
            </button>
-           
-           {/* Main capture button */}
-           <button
-             onClick={handleCapture}
-             disabled={isCapturing}
-             className={cn(
-               "capture-btn no-select",
-               isCapturing && "opacity-50"
-             )}
-             aria-label={t('capture')}
-           >
-             <Camera className="w-8 h-8 text-primary-foreground" />
-           </button>
-           
-           {/* Placeholder for symmetry */}
-           <div className="w-12 h-12" />
          </div>
        </div>
+      
+      {/* Dictation indicator */}
+      {isListening && (
+        <div className="absolute top-4 inset-x-0 flex justify-center">
+          <div className="bg-destructive text-destructive-foreground px-4 py-2 rounded-full flex items-center gap-2 animate-pulse">
+            <Mic className="w-4 h-4" />
+            <span className="text-sm font-medium">{t('recording')}...</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Show transcript preview */}
+      {fullTranscript && (
+        <div className="absolute top-16 inset-x-4">
+          <div className="bg-black/70 backdrop-blur text-white px-4 py-3 rounded-xl">
+            <p className="text-sm">{fullTranscript}</p>
+          </div>
+        </div>
+      )}
  
        {/* Flash effect */}
        {isCapturing && (
