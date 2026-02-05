@@ -15,6 +15,7 @@ import logoImage from '@/assets/logo.png';
    photoCount: number;
    onCreateInspection: () => void;
    onFilesSelected: (files: File[]) => void;
+  onViewPhotos?: () => void;
    t: (key: string) => string;
  }
  
@@ -22,6 +23,7 @@ import logoImage from '@/assets/logo.png';
    photoCount,
    onCreateInspection,
    onFilesSelected,
+  onViewPhotos,
    t,
  }: DashboardHubProps) {
    const stats = [
@@ -100,11 +102,16 @@ import logoImage from '@/assets/logo.png';
        >
          {stats.map((stat, index) => {
            const Icon = stat.icon;
+          const isClickable = stat.label === 'Photos Captured' && photoCount > 0 && onViewPhotos;
            return (
              <motion.div
                key={index}
                variants={itemVariants}
-               className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg card-gradient border border-border/10"
+              onClick={isClickable ? onViewPhotos : undefined}
+              className={cn(
+                "group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg card-gradient border border-border/10",
+                isClickable && "cursor-pointer"
+              )}
              >
                {/* Hover glow */}
                <div className={cn(
