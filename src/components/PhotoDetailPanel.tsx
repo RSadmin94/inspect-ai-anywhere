@@ -1,0 +1,246 @@
+ import { useState, useEffect } from 'react';
+ import { PhotoRecord, Severity, Category } from '@/lib/db';
+ import { blobToDataUrl } from '@/lib/imageUtils';
+ import { Language } from '@/lib/i18n';
+ import { X, Trash2, Save, ChevronDown, Sparkles, AlertTriangle } from 'lucide-react';
+ import { cn } from '@/lib/utils';
+ 
+ interface PhotoDetailPanelProps {
+   photo: PhotoRecord | null;
+   onClose: () => void;
+   onUpdate: (photoId: string, updates: Partial<PhotoRecord>) => Promise<void>;
+   onDelete: (photoId: string) => Promise<void>;
+   onAnalyze?: (photoId: string) => Promise<void>;
+   language: Language;
+   t: (key: string) => string;
+   isOnline: boolean;
+ }
+ 
+ const ROOMS = ['exterior', 'interior', 'kitchen', 'bathroom', 'bedroom', 'livingRoom', 'basement', 'attic', 'garage', 'roof', 'other'] as const;
+ 
+ export function PhotoDetailPanel({ 
+   photo, 
+   onClose, 
+   onUpdate, 
+   onDelete,
+   onAnalyze,
+   language,
+   t, 
+   isOnline 
+ }: PhotoDetailPanelProps) {
+   const [imageUrl, setImageUrl] = useState<string>('');
+   const [notes, setNotes] = useState('');
+   const [room, setRoom] = useState('other');
+   const [isDeleting, setIsDeleting] = useState(false);
+   const [isAnalyzing, setIsAnalyzing] = useState(false);
+ 
+   useEffect(() => {
+     if (photo) {
+       blobToDataUrl(photo.fullImageBlob).then(setImageUrl);
+       setNotes(photo.notes);
+       setRoom(photo.room);
+     }
+   }, [photo]);
+ 
+   if (!photo) return null;
+ 
+   const handleSave = async () => {
+     await onUpdate(photo.id, { notes, room });
+   };
+ 
+   const handleDelete = async () => {
+     setIsDeleting(true);
+     await onDelete(photo.id);
+     onClose();
+   };
+ 
+   const handleAnalyze = async () => {
+     if (!onAnalyze) return;
+     setIsAnalyzing(true);
+     try {
+       await onAnalyze(photo.id);
+     } finally {
+       setIsAnalyzing(false);
+     }
+   };
+ 
+   const getSeverityClass = (severity?: Severity) => {
+     switch (severity) {
+       case 'minor': return 'severity-minor';
+       case 'moderate': return 'severity-moderate';
+       case 'severe': return 'severity-severe';
+       default: return 'bg-muted text-muted-foreground';
+     }
+   };
+ 
+   const getFindingTitle = () => {
+     if (language === 'es' && photo.aiFindingTitleEs) return photo.aiFindingTitleEs;
+     return photo.aiFindingTitle;
+   };
+ 
+   const getDescription = () => {
+     if (language === 'es' && photo.aiDescriptionEs) return photo.aiDescriptionEs;
+     return photo.aiDescription;
+   };
+ 
+   const getRecommendation = () => {
+     if (language === 'es' && photo.aiRecommendationEs) return photo.aiRecommendationEs;
+     return photo.aiRecommendation;
+   };
+ 
+   return (
+     <div className="fixed inset-0 z-50 bg-black/50 animate-fade-in" onClick={onClose}>
+       <div 
+         className="slide-panel h-[85vh] animate-slide-up"
+         onClick={e => e.stopPropagation()}
+       >
+         <div className="slide-panel-handle" />
+         
+         <div className="h-full overflow-y-auto pb-safe-bottom">
+           {/* Header */}
+           <div className="flex items-center justify-between px-4 pb-2">
+             <h2 className="text-lg font-semibold">{t('photoDetails')}</h2>
+             <button 
+               onClick={onClose}
+               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted touch-target"
+             >
+               <X className="w-5 h-5" />
+             </button>
+           </div>
+ 
+           {/* Photo Preview */}
+           <div className="px-4 mb-4">
+             <img 
+               src={imageUrl} 
+               alt="" 
+               className="w-full h-48 object-cover rounded-xl"
+             />
+           </div>
+ 
+           {/* Room Select */}
+           <div className="px-4 mb-4">
+             <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+               {t('room')}
+             </label>
+             <div className="relative">
+               <select
+                 value={room}
+                 onChange={e => setRoom(e.target.value)}
+                 className="w-full h-12 px-4 pr-10 rounded-xl border border-input bg-background appearance-none touch-target"
+               >
+                 {ROOMS.map(r => (
+                   <option key={r} value={r}>{t(r)}</option>
+                 ))}
+               </select>
+               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+             </div>
+           </div>
+ 
+           {/* Notes */}
+           <div className="px-4 mb-4">
+             <label className="text-sm font-medium text-muted-foreground mb-1.5 block">
+               {t('notes')}
+             </label>
+             <textarea
+               value={notes}
+               onChange={e => setNotes(e.target.value)}
+               placeholder={t('addNotes')}
+               className="w-full h-24 px-4 py-3 rounded-xl border border-input bg-background resize-none"
+             />
+           </div>
+ 
+           {/* AI Analysis Section */}
+           <div className="px-4 mb-4">
+             <div className="flex items-center gap-2 mb-3">
+               <Sparkles className="w-4 h-4 text-accent" />
+               <span className="text-sm font-medium">{t('aiStatus')}</span>
+               <span className={cn(
+                 "text-xs px-2 py-0.5 rounded-full",
+                 photo.aiStatus === 'complete' && "bg-accent/10 text-accent",
+                 photo.aiStatus === 'pending_offline' && "bg-muted text-muted-foreground",
+                 photo.aiStatus === 'analyzing' && "bg-primary/10 text-primary",
+                 photo.aiStatus === 'failed' && "bg-destructive/10 text-destructive"
+               )}>
+                 {t(photo.aiStatus === 'pending_offline' ? 'aiPending' : 
+                    photo.aiStatus === 'analyzing' ? 'aiAnalyzing' :
+                    photo.aiStatus === 'complete' ? 'aiComplete' : 'aiFailed')}
+               </span>
+             </div>
+ 
+             {photo.aiStatus === 'complete' && photo.aiFindingTitle && (
+               <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+                 <div className="flex items-start justify-between gap-2">
+                   <div>
+                     <p className="font-semibold">{getFindingTitle()}</p>
+                     <p className="text-sm text-muted-foreground">
+                       {t(photo.aiCategory || 'general')}
+                     </p>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <span className={cn(
+                       "text-xs px-2 py-1 rounded-full font-medium",
+                       getSeverityClass(photo.aiSeverity)
+                     )}>
+                       {t(photo.aiSeverity || 'minor')}
+                     </span>
+                     {photo.aiConfidence && (
+                       <span className="text-xs text-muted-foreground">
+                         {photo.aiConfidence}%
+                       </span>
+                     )}
+                   </div>
+                 </div>
+                 {getDescription() && (
+                   <p className="text-sm">{getDescription()}</p>
+                 )}
+                 {getRecommendation() && (
+                   <div className="flex items-start gap-2 pt-2 border-t border-border">
+                     <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+                     <p className="text-sm">{getRecommendation()}</p>
+                   </div>
+                 )}
+               </div>
+             )}
+ 
+             {(photo.aiStatus === 'pending_offline' || photo.aiStatus === 'failed') && isOnline && onAnalyze && (
+               <button
+                 onClick={handleAnalyze}
+                 disabled={isAnalyzing}
+                 className="w-full h-12 bg-accent text-accent-foreground rounded-xl font-medium touch-target flex items-center justify-center gap-2"
+               >
+                 <Sparkles className="w-4 h-4" />
+                 {isAnalyzing ? t('aiAnalyzing') : t('analyzeNow')}
+               </button>
+             )}
+           </div>
+ 
+           {/* Timestamp */}
+           <div className="px-4 mb-6">
+             <p className="text-xs text-muted-foreground">
+               {t('timestamp')}: {new Date(photo.timestamp).toLocaleString(language === 'es' ? 'es-ES' : 'en-US')}
+             </p>
+           </div>
+ 
+           {/* Actions */}
+           <div className="px-4 pb-6 flex gap-3">
+             <button
+               onClick={handleDelete}
+               disabled={isDeleting}
+               className="flex-1 h-12 border border-destructive text-destructive rounded-xl font-medium touch-target flex items-center justify-center gap-2"
+             >
+               <Trash2 className="w-4 h-4" />
+               {t('delete')}
+             </button>
+             <button
+               onClick={handleSave}
+               className="flex-1 h-12 bg-primary text-primary-foreground rounded-xl font-medium touch-target flex items-center justify-center gap-2"
+             >
+               <Save className="w-4 h-4" />
+               {t('save')}
+             </button>
+           </div>
+         </div>
+       </div>
+     </div>
+   );
+ }
