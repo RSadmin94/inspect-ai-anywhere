@@ -15,8 +15,12 @@ import { PhotoDetailPanel } from '@/components/PhotoDetailPanel';
  import { ReportBuilder } from '@/components/ReportBuilder';
  import { QuickCaptureMode } from '@/components/QuickCaptureMode';
 import { SideMenu } from '@/components/SideMenu';
+import { AppSidebar } from '@/components/AppSidebar';
+import { DashboardHub } from '@/components/DashboardHub';
 import { toast } from 'sonner';
 import { seedDefaultData } from '@/lib/defaultData';
+
+type Page = 'dashboard' | 'inspection' | 'reports' | 'settings';
 
 export default function Index() {
   const { language, toggleLanguage, t, isLoaded } = useLanguage();
@@ -39,6 +43,8 @@ export default function Index() {
   const [showMenu, setShowMenu] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
    const [showQuickCapture, setShowQuickCapture] = useState(false);
+  const [currentPage, setCurrentPage] = useState<Page>('dashboard');
+  const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
 
   // Seed default data on first load
   useEffect(() => {
@@ -137,8 +143,7 @@ export default function Index() {
 
   const handleNewInspection = useCallback(() => {
     setShowMenu(false);
-    // For now, just reload - in a full app you'd have inspection history
-    window.location.reload();
+    setShowNewInspectionForm(true);
   }, []);
 
   const handleFinish = useCallback(async () => {
@@ -156,6 +161,28 @@ export default function Index() {
      return startInspection(address, inspectorName, clientName, inspectionType);
    }, [startInspection]);
 
+  const handleFilesSelected = useCallback(async (files: File[]) => {
+    if (!inspection) {
+      toast.error('Please create an inspection first');
+      return;
+    }
+    
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        const blob = new Blob([file], { type: file.type });
+        await handleCapture(blob);
+      }
+    }
+  }, [inspection, handleCapture]);
+
+  const handlePageChange = useCallback((page: Page) => {
+    if (page === 'reports') {
+      setShowReport(true);
+    } else {
+      setCurrentPage(page);
+    }
+  }, []);
+
   // Loading state
   if (!isLoaded || isLoading) {
     return (
@@ -169,89 +196,134 @@ export default function Index() {
   }
 
   // No active inspection - show form
-  if (!inspection) {
-     return <NewInspectionForm onStart={handleStartInspection} t={t} />;
+  if (!inspection || showNewInspectionForm) {
+    return (
+      <NewInspectionForm 
+        onStart={async (address, inspectorName, clientName, inspectionType) => {
+          await handleStartInspection(address, inspectorName, clientName, inspectionType);
+          setShowNewInspectionForm(false);
+          setCurrentPage('inspection');
+        }} 
+        t={t} 
+      />
+    );
   }
 
   // Main inspection view
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <StatusBar 
-        isOnline={isOnline}
-        photoCount={photos.length}
-        language={language}
-        onToggleLanguage={toggleLanguage}
-        t={t}
-      />
-      
-      <InspectionHeader 
-        inspection={inspection}
-        onGenerateReport={() => setShowReport(true)}
-        onMenu={() => setShowMenu(true)}
+    <div className="h-screen flex bg-background overflow-hidden">
+      {/* Sidebar */}
+      <AppSidebar
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
+        onNewInspection={handleNewInspection}
+        inspectionActive={!!inspection}
         t={t}
       />
 
-      <CameraCapture onCapture={handleCapture} t={t} />
-
-      <div className="bg-card border-t border-border">
-         <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-           <span className="text-sm font-medium text-muted-foreground">
-             {photos.length} {t('photos')}
-           </span>
-           <button
-             onClick={() => setShowQuickCapture(true)}
-             className="text-xs text-primary font-medium hover:underline"
-           >
-             {t('quickCapture')} ⚡
-           </button>
-         </div>
-        <PhotoGallery 
-          photos={photos}
-          selectedPhotoId={selectedPhoto?.id || null}
-          onSelectPhoto={handleSelectPhoto}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <StatusBar 
+          isOnline={isOnline}
+          photoCount={photos.length}
+          language={language}
+          onToggleLanguage={toggleLanguage}
           t={t}
         />
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto">
+          {currentPage === 'dashboard' && (
+            <DashboardHub
+              photoCount={photos.length}
+              onCreateInspection={() => setCurrentPage('inspection')}
+              onFilesSelected={handleFilesSelected}
+              t={t}
+            />
+          )}
+
+          {currentPage === 'inspection' && (
+            <div className="flex flex-col h-full">
+              <InspectionHeader 
+                inspection={inspection}
+                onGenerateReport={() => setShowReport(true)}
+                onMenu={() => setShowMenu(true)}
+                t={t}
+              />
+
+              <CameraCapture onCapture={handleCapture} t={t} />
+
+              <div className="bg-card border-t border-border">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {photos.length} {t('photos')}
+                  </span>
+                  <button
+                    onClick={() => setShowQuickCapture(true)}
+                    className="text-xs text-primary font-medium hover:underline"
+                  >
+                    {t('quickCapture')} ⚡
+                  </button>
+                </div>
+                <PhotoGallery 
+                  photos={photos}
+                  selectedPhotoId={selectedPhoto?.id || null}
+                  onSelectPhoto={handleSelectPhoto}
+                  t={t}
+                />
+              </div>
+            </div>
+          )}
+
+          {currentPage === 'settings' && (
+            <div className="p-8">
+              <h2 className="text-2xl font-bold text-foreground mb-4">Settings</h2>
+              <p className="text-muted-foreground">AI and app settings coming soon.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Panels and Modals */}
+        <PhotoDetailPanel
+          photo={selectedPhoto}
+          onClose={() => setSelectedPhoto(null)}
+          onUpdate={handleUpdatePhoto}
+          onDelete={handleDeletePhoto}
+          onAnalyze={isOnline ? handleAnalyzePhoto : undefined}
+          language={language}
+          t={t}
+          isOnline={isOnline}
+        />
+
+        <ReportBuilder
+          isOpen={showReport}
+          onClose={() => setShowReport(false)}
+          inspection={inspection}
+          photos={photos}
+          language={language}
+          t={t}
+        />
+
+        <SideMenu
+          isOpen={showMenu}
+          onClose={() => setShowMenu(false)}
+          inspection={inspection}
+          pendingCount={pendingCount}
+          onNewInspection={handleNewInspection}
+          onAnalyzePending={handleAnalyzeAllPending}
+          onFinish={handleFinish}
+          t={t}
+          isOnline={isOnline}
+        />
+
+        {showQuickCapture && (
+          <QuickCaptureMode
+            onCapture={handleQuickCapture}
+            onClose={() => setShowQuickCapture(false)}
+            t={t}
+          />
+        )}
       </div>
-
-      <PhotoDetailPanel
-        photo={selectedPhoto}
-        onClose={() => setSelectedPhoto(null)}
-        onUpdate={handleUpdatePhoto}
-        onDelete={handleDeletePhoto}
-        onAnalyze={isOnline ? handleAnalyzePhoto : undefined}
-        language={language}
-        t={t}
-        isOnline={isOnline}
-      />
-
-       <ReportBuilder
-        isOpen={showReport}
-        onClose={() => setShowReport(false)}
-        inspection={inspection}
-        photos={photos}
-         language={language}
-        t={t}
-      />
-
-      <SideMenu
-        isOpen={showMenu}
-        onClose={() => setShowMenu(false)}
-        inspection={inspection}
-        pendingCount={pendingCount}
-        onNewInspection={handleNewInspection}
-        onAnalyzePending={handleAnalyzeAllPending}
-        onFinish={handleFinish}
-        t={t}
-        isOnline={isOnline}
-      />
-
-       {showQuickCapture && (
-         <QuickCaptureMode
-           onCapture={handleQuickCapture}
-           onClose={() => setShowQuickCapture(false)}
-           t={t}
-         />
-       )}
     </div>
   );
 }
