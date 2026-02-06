@@ -11,21 +11,23 @@
  import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
  
- interface DashboardHubProps {
-   photoCount: number;
-   onCreateInspection: () => void;
-   onFilesSelected: (files: File[]) => void;
+interface DashboardHubProps {
+  photoCount: number;
+  onCreateInspection: () => void;
+  onFilesSelected: (files: File[]) => void;
   onViewPhotos?: () => void;
-   t: (key: string) => string;
- }
+  onViewReports?: () => void;
+  t: (key: string) => string;
+}
  
- export function DashboardHub({
-   photoCount,
-   onCreateInspection,
-   onFilesSelected,
+export function DashboardHub({
+  photoCount,
+  onCreateInspection,
+  onFilesSelected,
   onViewPhotos,
-   t,
- }: DashboardHubProps) {
+  onViewReports,
+  t,
+}: DashboardHubProps) {
    const stats = [
      {
        label: 'Photos Captured',
@@ -100,14 +102,17 @@ import logoImage from '@/assets/logo.png';
          animate="visible"
          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
        >
-         {stats.map((stat, index) => {
-           const Icon = stat.icon;
-          const isClickable = stat.label === 'Photos Captured' && photoCount > 0 && onViewPhotos;
-           return (
-             <motion.div
-               key={index}
-               variants={itemVariants}
-              onClick={isClickable ? onViewPhotos : undefined}
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          const isPhotosClickable = stat.label === 'Photos Captured' && photoCount > 0 && onViewPhotos;
+          const isReportsClickable = stat.label === 'Reports Ready' && photoCount > 0 && onViewReports;
+          const isClickable = isPhotosClickable || isReportsClickable;
+          const handleClick = isPhotosClickable ? onViewPhotos : isReportsClickable ? onViewReports : undefined;
+          return (
+            <motion.div
+              key={index}
+              variants={itemVariants}
+              onClick={handleClick}
               className={cn(
                 "group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg card-gradient border border-border/10",
                 isClickable && "cursor-pointer"
