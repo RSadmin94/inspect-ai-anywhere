@@ -86,6 +86,7 @@ export interface SectionConfig {
 
 export const REPORT_SECTIONS: SectionConfig[] = [
   { id: 'cover', titleEn: 'Cover Page', titleEs: 'Página de Portada', includeInToc: false },
+  { id: 'agent-summary', titleEn: 'Agent-Friendly Summary', titleEs: 'Resumen para Agentes', includeInToc: true },
   { id: 'toc', titleEn: 'Table of Contents', titleEs: 'Índice', includeInToc: false },
   { id: 'summary', titleEn: 'Inspection Summary', titleEs: 'Resumen de Inspección', includeInToc: true },
   { id: 'scope', titleEn: 'Scope, Standards & Limitations', titleEs: 'Alcance, Normas y Limitaciones', includeInToc: true },
