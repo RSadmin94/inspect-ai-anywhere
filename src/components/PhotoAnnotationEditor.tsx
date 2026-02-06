@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { AnnotationToolbar } from './AnnotationToolbar';
-import AnnotationCanvas from './AnnotationCanvas';
+import { AnnotationCanvas } from './AnnotationCanvas';
 import { AnnotationControls } from './AnnotationControls';
 import { PhotoRecord } from '@/lib/db';
 import { blobToDataUrl } from '@/lib/imageUtils';
