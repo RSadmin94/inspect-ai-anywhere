@@ -3,8 +3,9 @@ import { useEffect } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useInspection } from '@/hooks/useInspection';
- import { PhotoRecord, InspectionType } from '@/lib/db';
+import { PhotoRecord, InspectionType } from '@/lib/db';
 import { analyzePhoto, analyzeAllPending } from '@/lib/aiAnalysis';
+import { loadDemoInspection } from '@/lib/demoData';
 
 import { NewInspectionForm } from '@/components/NewInspectionForm';
 import { StatusBar } from '@/components/StatusBar';
@@ -12,9 +13,9 @@ import { InspectionHeader } from '@/components/InspectionHeader';
 import { CameraCapture } from '@/components/CameraCapture';
 import { PhotoGallery } from '@/components/PhotoGallery';
 import { PhotoDetailPanel } from '@/components/PhotoDetailPanel';
- import { ReportBuilder } from '@/components/ReportBuilder';
+import { ReportBuilder } from '@/components/ReportBuilder';
 import { ReportReviewScreen } from '@/components/ReportReviewScreen';
- import { QuickCaptureMode } from '@/components/QuickCaptureMode';
+import { QuickCaptureMode } from '@/components/QuickCaptureMode';
 import { SideMenu } from '@/components/SideMenu';
 import { AppSidebar } from '@/components/AppSidebar';
 import { DashboardHub } from '@/components/DashboardHub';
@@ -38,6 +39,7 @@ export default function Index() {
     updatePhotoWithAI,
     finishInspection,
     refreshPhotos,
+    loadInspection,
     appendRoomNotes,
     clearRoomNotes,
     updateRoomNotes,
@@ -200,6 +202,20 @@ export default function Index() {
     }
   }, []);
 
+  const handleLoadDemo = useCallback(async () => {
+    try {
+      const { inspection: demoInspection } = await loadDemoInspection();
+      await loadInspection(demoInspection.id);
+      setShowNewInspectionForm(false);
+      setCurrentPage('inspection');
+      setShowReport(true); // Open report builder to show the demo
+      toast.success('Demo inspection loaded with 4 sample photos!');
+    } catch (e) {
+      console.error('Failed to load demo:', e);
+      toast.error('Failed to load demo inspection');
+    }
+  }, [loadInspection]);
+
   // Loading state
   if (!isLoaded || isLoading) {
     return (
@@ -220,11 +236,13 @@ export default function Index() {
           await handleStartInspection(address, inspectorName, clientName, inspectionType);
           setShowNewInspectionForm(false);
           setCurrentPage('inspection');
-        }} 
+        }}
+        onLoadDemo={handleLoadDemo}
         t={t} 
       />
     );
   }
+
 
   // Main inspection view
   return (
