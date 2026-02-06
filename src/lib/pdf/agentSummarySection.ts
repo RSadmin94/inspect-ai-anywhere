@@ -279,14 +279,6 @@ export function addAgentSummarySection(
       pdf.setTextColor(30, 41, 59);
       const serviceName = lang === 'es' ? upsell.serviceEs : upsell.service;
       pdf.text(serviceName, margin + 10, ctx.yPos);
-      
-      // Priority label
-      const labelText = getUpsellLabel(upsell.priority, lang);
-      pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(...color);
-      const serviceWidth = pdf.getTextWidth(serviceName);
-      pdf.text(`[${labelText}]`, margin + 12 + serviceWidth, ctx.yPos);
       ctx.yPos += 4;
       
       // Reason
