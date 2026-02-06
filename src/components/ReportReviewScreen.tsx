@@ -57,6 +57,11 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
   const [lightboxPhoto, setLightboxPhoto] = useState<PhotoRecord | null>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
+  // Sync includedPhotos when photos change
+  useEffect(() => {
+    setIncludedPhotos(new Set(photos.map(p => p.id)));
+  }, [photos]);
+
   // Load full resolution image for lightbox
   useEffect(() => {
     if (lightboxPhoto) {

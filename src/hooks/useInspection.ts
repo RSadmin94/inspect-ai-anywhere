@@ -153,31 +153,41 @@
      setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, ...aiData } : p));
    }, []);
  
-   const finishInspection = useCallback(async () => {
-     if (!inspection) return;
-     await updateInspection({ isComplete: true });
-   }, [inspection, updateInspection]);
- 
-   const refreshPhotos = useCallback(async () => {
-     if (!inspection) return;
-     const loadedPhotos = await getPhotosByInspection(inspection.id);
-     setPhotos(loadedPhotos.sort((a, b) => b.timestamp - a.timestamp));
-   }, [inspection]);
- 
-   return {
-     inspection,
-     photos,
-     isLoading,
-     startInspection,
-     updateInspection,
-     capturePhoto,
-     updatePhoto,
-     deletePhoto,
-     updatePhotoWithAI,
-     finishInspection,
-     refreshPhotos,
+  const finishInspection = useCallback(async () => {
+    if (!inspection) return;
+    await updateInspection({ isComplete: true });
+  }, [inspection, updateInspection]);
+
+  const refreshPhotos = useCallback(async () => {
+    if (!inspection) return;
+    const loadedPhotos = await getPhotosByInspection(inspection.id);
+    setPhotos(loadedPhotos.sort((a, b) => b.timestamp - a.timestamp));
+  }, [inspection]);
+
+  const loadInspection = useCallback(async (inspectionId: string) => {
+    const loaded = await getInspection(inspectionId);
+    if (loaded) {
+      setInspection(loaded);
+      const loadedPhotos = await getPhotosByInspection(loaded.id);
+      setPhotos(loadedPhotos.sort((a, b) => b.timestamp - a.timestamp));
+    }
+  }, []);
+
+  return {
+    inspection,
+    photos,
+    isLoading,
+    startInspection,
+    updateInspection,
+    capturePhoto,
+    updatePhoto,
+    deletePhoto,
+    updatePhotoWithAI,
+    finishInspection,
+    refreshPhotos,
+    loadInspection,
     updateRoomNotes,
     appendRoomNotes,
     clearRoomNotes,
-   };
- }
+  };
+}
