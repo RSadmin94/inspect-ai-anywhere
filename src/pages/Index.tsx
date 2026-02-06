@@ -340,9 +340,9 @@ export default function Index() {
           )}
 
           {currentPage === 'settings' && (
-            <div className="p-8">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Settings</h2>
-              <p className="text-muted-foreground">AI and app settings coming soon.</p>
+            <div className="p-4 md:p-8 max-w-2xl">
+              <h2 className="text-2xl font-bold text-foreground mb-6">{t('settings')}</h2>
+              <CompanyProfileSettings />
             </div>
           )}
         </div>
