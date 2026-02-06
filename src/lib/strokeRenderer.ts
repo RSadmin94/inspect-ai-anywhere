@@ -252,8 +252,7 @@ export function redrawCanvas(
 
   // Draw base (FAST path using drawImage instead of putImageData)
   if (base) {
-    // @ts-expect-error OffscreenCanvas may exist depending on TS lib
-    ctx.drawImage(base as any, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(base as CanvasImageSource, 0, 0, canvas.width, canvas.height);
   }
 
   // Draw strokes

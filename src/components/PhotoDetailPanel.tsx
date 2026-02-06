@@ -135,14 +135,16 @@ interface PhotoDetailPanelProps {
        // Queue for offline sync
        console.warn('Offline - queueing annotation for sync:', error);
        const queue = await getSyncQueue();
-       await queue.enqueue({
-         photoId: photo.id,
-         action: 'save_annotation',
-         payload: {
-           annotationData,
-           annotatedImageBlob: annotatedImage,
-         },
-       });
+        await queue.enqueue({
+          photoId: photo.id,
+          action: 'save_annotation',
+          revision: Date.now(),
+          timestamp: Date.now(),
+          payload: {
+            annotationData,
+            annotatedImageBlob: annotatedImage,
+          },
+        });
        // Show user feedback
        console.log('Annotation saved offline. Will sync when online.');
      }

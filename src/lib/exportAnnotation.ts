@@ -59,7 +59,7 @@ export async function exportAnnotatedImage(
     const scaledOffsetY = offsetY * scale;
 
     // Render strokes at full resolution with proper scaling
-    renderStrokes(ctx, strokes, {
+    renderStrokes(ctx as unknown as CanvasRenderingContext2D, strokes, {
       scale,
       offsetX: scaledOffsetX,
       offsetY: scaledOffsetY,
