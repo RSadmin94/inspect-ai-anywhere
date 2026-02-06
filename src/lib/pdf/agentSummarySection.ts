@@ -242,8 +242,8 @@ export function addAgentSummarySection(
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(147, 51, 234);
     const upsellTitle = lang === 'es' 
-      ? '💼 SERVICIOS ADICIONALES RECOMENDADOS' 
-      : '💼 RECOMMENDED ADDITIONAL SERVICES';
+      ? 'SERVICIOS ADICIONALES RECOMENDADOS' 
+      : 'RECOMMENDED ADDITIONAL SERVICES';
     pdf.text(upsellTitle, margin, ctx.yPos);
     ctx.yPos += 5;
     
@@ -269,24 +269,24 @@ export function addAgentSummarySection(
       
       const color = priorityColors[upsell.priority];
       
-      // Priority indicator dot
+      // Priority indicator dot (colored circle instead of emoji)
       pdf.setFillColor(...color);
       pdf.circle(margin + 4, ctx.yPos - 1, 2, 'F');
       
-      // Service name
+      // Service name (no emoji - jsPDF doesn't support them)
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(30, 41, 59);
       const serviceName = lang === 'es' ? upsell.serviceEs : upsell.service;
-      pdf.text(`${upsell.icon} ${serviceName}`, margin + 10, ctx.yPos);
+      pdf.text(serviceName, margin + 10, ctx.yPos);
       
       // Priority label
       const labelText = getUpsellLabel(upsell.priority, lang);
       pdf.setFontSize(7);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(...color);
-      const labelX = margin + 12 + pdf.getTextWidth(`${upsell.icon} ${serviceName}`) + 3;
-      pdf.text(`[${labelText}]`, labelX, ctx.yPos);
+      const serviceWidth = pdf.getTextWidth(serviceName);
+      pdf.text(`[${labelText}]`, margin + 12 + serviceWidth, ctx.yPos);
       ctx.yPos += 4;
       
       // Reason
