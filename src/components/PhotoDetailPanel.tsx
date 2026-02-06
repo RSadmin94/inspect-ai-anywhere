@@ -1,17 +1,18 @@
  import { useState, useEffect } from 'react';
- import { PhotoRecord, Severity, Category, IssuePreset, Phrase } from '@/lib/db';
- import { blobToDataUrl } from '@/lib/imageUtils';
- import { Language } from '@/lib/i18n';
-import { X, Trash2, Save, Sparkles, AlertTriangle, BookOpen, Layers, Maximize2, Mic } from 'lucide-react';
+import { PhotoRecord, Severity, Category, IssuePreset, Phrase } from '@/lib/db';
+import { blobToDataUrl } from '@/lib/imageUtils';
+import { Language } from '@/lib/i18n';
+import { X, Trash2, Save, Sparkles, AlertTriangle, BookOpen, Layers, Maximize2, Mic, PenTool } from 'lucide-react';
+import { PhotoAnnotationEditor } from './PhotoAnnotationEditor';
  import { cn } from '@/lib/utils';
- import { RoomSelector } from './RoomSelector';
- import { PhraseLibrary } from './PhraseLibrary';
- import { IssuePresetSelector } from './IssuePresetSelector';
+import { RoomSelector } from './RoomSelector';
+import { PhraseLibrary } from './PhraseLibrary';
+import { IssuePresetSelector } from './IssuePresetSelector';
 import { ImageLightbox } from './ImageLightbox';
 import { VoiceDictationButton } from './VoiceDictationButton';
 import { useVoiceDictation } from '@/hooks/useVoiceDictation';
- 
- interface PhotoDetailPanelProps {
+
+interface PhotoDetailPanelProps {
    photo: PhotoRecord | null;
    onClose: () => void;
    onUpdate: (photoId: string, updates: Partial<PhotoRecord>) => Promise<void>;
@@ -40,6 +41,7 @@ import { useVoiceDictation } from '@/hooks/useVoiceDictation';
    const [showPhraseLibrary, setShowPhraseLibrary] = useState(false);
    const [showIssuePresets, setShowIssuePresets] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [showAnnotation, setShowAnnotation] = useState(false);
    const [manualFinding, setManualFinding] = useState<{
      title?: string;
      severity?: Severity;
@@ -96,6 +98,15 @@ import { useVoiceDictation } from '@/hooks/useVoiceDictation';
        manualDescription: manualFinding?.description,
        manualRecommendation: manualFinding?.recommendation,
      });
+   };
+
+   const handleAnnotationSave = async (annotationData: string, annotatedImage: Blob) => {
+     await onUpdate(photo.id, {
+       annotationData,
+       annotatedImageBlob: annotatedImage,
+       hasAnnotations: true,
+     });
+     setShowAnnotation(false);
    };
  
    const handleDelete = async () => {
@@ -185,8 +196,15 @@ import { useVoiceDictation } from '@/hooks/useVoiceDictation';
                   onClick={() => setShowLightbox(true)}
                 />
                 <button
-                  onClick={() => setShowLightbox(true)}
+                  onClick={() => setShowAnnotation(true)}
                   className="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Annotate photo"
+                >
+                  <PenTool className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setShowLightbox(true)}
+                  className="absolute top-2 right-12 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <Maximize2 className="w-5 h-5" />
                 </button>
@@ -196,6 +214,15 @@ import { useVoiceDictation } from '@/hooks/useVoiceDictation';
               </div>
            </div>
  
+           {/* Annotation Editor Modal */}
+           {showAnnotation && (
+             <PhotoAnnotationEditor
+               photo={photo}
+               onSave={handleAnnotationSave}
+               onCancel={() => setShowAnnotation(false)}
+             />
+           )}
+
            {/* Room Select */}
            <div className="px-4 mb-4">
              <label className="text-sm font-medium text-muted-foreground mb-1.5 block">

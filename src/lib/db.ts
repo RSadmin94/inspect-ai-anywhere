@@ -67,6 +67,10 @@
    reportOrder?: number;
   // Full AI analysis JSON
   aiFullAnalysis?: string;
+  // Photo annotation fields
+  annotationData?: string;  // JSON string of annotation metadata
+  annotatedImageBlob?: Blob;  // Annotated image with drawings
+  hasAnnotations?: boolean;  // Quick flag for UI
  }
  
  export interface InspectionRecord {
