@@ -245,56 +245,95 @@ Photo Blob → Base64 Encoding → Edge Function → Gemini API → Structured A
 
 ### 6. Professional Report Generation
 
-**Purpose:** Generate publication-ready PDF inspection reports.
+**Purpose:** Generate publication-ready PDF inspection reports that are lender-safe and legally robust.
 
 **Key Components:**
 - `ReportReviewScreen.tsx` - Report preview and editing
-- `lib/professionalReportPdf.ts` - PDF generation engine
+- `ReportBuilder.tsx` - Report configuration UI
+- `lib/pdf/` - Modular PDF generation system:
+  - `reportTypes.ts` - Types and interfaces
+  - `pdfUtils.ts` - Shared utility functions
+  - `coverPage.ts` - Cover page with signature
+  - `tableOfContents.ts` - Clickable ToC
+  - `summarySection.ts` - Key findings summary
+  - `scopeSection.ts` - Standards & limitations
+  - `findingsSection.ts` - System-by-system findings
+  - `conclusionSection.ts` - Disclaimers & credentials
 - `lib/reportConfig.ts` - Report structure configuration
 
-**Report Structure:**
+**Report Structure (9 Sections):**
 ```
-1. Cover Page
-   - Company logo and branding
+1. Cover Page (Authority + Professionalism)
    - Property address
-   - Inspection date
-   - Inspector information
-
-2. Client & Property Information
+   - Inspection date & time
    - Client name
-   - Property details
-   - Inspection type
-   - Date and time
+   - Inspector name, license #, company info
+   - Digital signature area
+   - Company branding and tagline
 
-3. Scope & Limitations
-   - Professional disclaimers
-   - Visual inspection limitations
-   - Exclusions and conditions
+2. Table of Contents
+   - Clickable section navigation
+   - Page numbers
+   - Dotted leader lines
 
-4. Summary of Findings
-   - High severity items
-   - Medium severity items
-   - Professional recommendations
+3. Inspection Summary (MOST IMPORTANT)
+   - 🔴 Safety Concerns (immediate attention)
+   - 🟠 Major Defects (repair needed)
+   - 🟡 Items to Monitor / Maintenance
+   - Inspector's professional notes
 
-5. Detailed Findings by System
-   - Numbered observations
-   - Photos with annotations
-   - Condition status
-   - Recommendations
+4. Scope, Standards & Limitations
+   - Inspection type description
+   - Standards of practice
+   - Custom scope (from company profile)
+   - Inspector limitations list
+   - Key exclusions box
 
-6. Certification & Disclaimers
-   - Inspector certification
-   - Liability language
-   - Standards compliance
+5. System-by-System Findings
+   - System overview with condition status
+   - Per-system disclaimer
+   - Observations with:
+     - Photo with annotation
+     - Status badge (Safety/Repair/Maintenance/Monitor)
+     - Observation → Implication → Recommendation
+     - Category and comments
+
+6. Deferred / Not Inspected Items
+   - Areas that couldn't be inspected
+   - Reasons (obstructed, weather, etc.)
+   - Re-inspection recommendations
+
+7. Maintenance Recommendations
+   - Non-urgent items
+   - Non-defect maintenance tips
+   - Clearly labeled as optional
+
+8. End-of-Report Disclaimers
+   - Pre-closing walkthrough guide
+   - Custom disclaimers (company profile)
+   - Liability statement
+   - Standard legal notices
+   - Additional disclaimers
+
+9. Inspector Credentials & Contact
+   - Company logo and name
+   - Inspector name and license
+   - Certifications and affiliations
+   - Full contact information
+   - Thank you message
 ```
 
-**Condition Statuses:**
-- Satisfactory (S)
-- Maintenance Required (M)
-- Repair Recommended (R)
-- Safety Concern (SC)
-- Further Evaluation (FE)
-- Not Inspected (NI)
+**Finding Status Labels:**
+- 🔴 **Safety** - Immediate safety concern
+- 🟠 **Repair** - Major defect requiring repair
+- 🟡 **Maintenance** - Routine maintenance item
+- 🔵 **Monitor** - Item to watch over time
+
+**Condition Statuses (mapped from severity):**
+- Satisfactory - No issues found
+- Needs Maintenance - Minor attention needed
+- Professional Consultation - Expert evaluation recommended
+- Not Satisfactory - Significant issue
 
 ---
 
