@@ -14,6 +14,7 @@ interface CategorizedFindings {
   safety: CategorizedFinding[];
   repair: CategorizedFinding[];
   maintenance: CategorizedFinding[];
+  satisfactory: CategorizedFinding[];
 }
 
 function categorizeFindings(photos: PhotoRecord[], lang: Language): CategorizedFindings {
@@ -21,23 +22,36 @@ function categorizeFindings(photos: PhotoRecord[], lang: Language): CategorizedF
     safety: [],
     repair: [],
     maintenance: [],
+    satisfactory: [],
   };
 
   for (const photo of photos) {
-    if (!photo.aiFindingTitle || photo.aiFindingTitle === 'No Significant Issues Observed') continue;
-    
-    const status = severityToStatus(photo.aiSeverity || 'minor');
-    const title = lang === 'es' ? (photo.aiFindingTitleEs || photo.aiFindingTitle) : photo.aiFindingTitle;
+    const title = lang === 'es' ? (photo.aiFindingTitleEs || photo.aiFindingTitle || '') : (photo.aiFindingTitle || '');
     const recommendation = lang === 'es' ? (photo.aiRecommendationEs || photo.aiRecommendation || '') : (photo.aiRecommendation || '');
     const room = photo.room || 'General';
-
     const finding: CategorizedFinding = { title, recommendation, room };
+
+    // Check if this is a "no issues" / satisfactory finding
+    const isNoIssue = !photo.aiFindingTitle || 
+      photo.aiFindingTitle === 'No Significant Issues Observed' ||
+      photo.aiFindingTitle === 'No Issues Detected' ||
+      photo.aiSeverity === 'minor' && photo.aiFindingTitle?.includes('Minor');
+
+    if (isNoIssue || photo.aiSeverity === undefined) {
+      findings.satisfactory.push({ title: title || room, recommendation: lang === 'es' ? 'Sin problemas significativos observados' : 'No significant issues observed', room });
+      continue;
+    }
+    
+    const status = severityToStatus(photo.aiSeverity || 'minor');
 
     if (status === 'safety') {
       findings.safety.push(finding);
     } else if (status === 'repair') {
       findings.repair.push(finding);
+    } else if (status === 'maintenance') {
+      findings.maintenance.push(finding);
     } else {
+      // monitor status goes to maintenance
       findings.maintenance.push(finding);
     }
   }
@@ -194,11 +208,8 @@ export function addAgentSummarySection(
     ctx.yPos += 4;
   };
 
-  // Draw three categories
+  // Draw four categories
   const safetyConcerns = lang === 'es' ? 'PREOCUPACIONES DE SEGURIDAD' : 'SAFETY CONCERNS';
-  const safetySubtitle = lang === 'es' 
-    ? 'Elementos que pueden representar un riesgo de seguridad personal:'
-    : 'Items that may pose a personal safety risk or should be addressed promptly:';
   
   pdf.setFontSize(8);
   pdf.setFont('helvetica', 'normal');
@@ -210,6 +221,9 @@ export function addAgentSummarySection(
 
   const monitorItems = lang === 'es' ? 'ELEMENTOS A MONITOREAR / MANTENIMIENTO' : 'ITEMS TO MONITOR / MAINTENANCE';
   drawCategory(monitorItems, [202, 138, 4], '🟡', findings.maintenance, 3);
+
+  const satisfactoryItems = lang === 'es' ? 'SATISFACTORIO' : 'SATISFACTORY';
+  drawCategory(satisfactoryItems, [34, 197, 94], '🟢', findings.satisfactory, 3);
 
   // Important Notes Box
   ctx.yPos += 4;

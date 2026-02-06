@@ -71,6 +71,7 @@ export async function addSummarySection(
     repair: [],
     maintenance: [],
     monitor: [],
+    satisfactory: [],
   };
   
   for (const photo of photos) {
