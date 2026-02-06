@@ -295,6 +295,90 @@ export function CompanyProfileSettings() {
           </div>
         </div>
 
+        {/* Custom Legalese Section */}
+        <div className="pt-6 border-t border-border">
+          <h3 className="text-lg font-semibold mb-4">
+            {language === 'es' ? 'Textos Legales Personalizados' : 'Custom Legal Text'}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {language === 'es' 
+              ? 'Agregue sus propios términos legales, exenciones de responsabilidad y limitaciones que aparecerán en los informes de inspección.'
+              : 'Add your own legal terms, disclaimers, and limitations that will appear in inspection reports.'}
+          </p>
+
+          {/* Scope and Limitations */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label>{language === 'es' ? 'Alcance y Limitaciones' : 'Scope & Limitations'}</Label>
+              <Textarea
+                value={profile.scopeAndLimitations || ''}
+                onChange={(e) => updateField('scopeAndLimitations', e.target.value)}
+                placeholder={language === 'es' 
+                  ? 'Describa el alcance y las limitaciones de sus inspecciones...'
+                  : 'Describe the scope and limitations of your inspections...'}
+                rows={5}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'es' ? 'Alcance y Limitaciones (Español)' : 'Scope & Limitations (Spanish)'}</Label>
+              <Textarea
+                value={profile.scopeAndLimitationsEs || ''}
+                onChange={(e) => updateField('scopeAndLimitationsEs', e.target.value)}
+                placeholder="Describa el alcance y las limitaciones de sus inspecciones..."
+                rows={5}
+              />
+            </div>
+          </div>
+
+          {/* Custom Disclaimer */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="space-y-2">
+              <Label>{language === 'es' ? 'Exención de Responsabilidad' : 'Disclaimer'}</Label>
+              <Textarea
+                value={profile.customDisclaimer || ''}
+                onChange={(e) => updateField('customDisclaimer', e.target.value)}
+                placeholder={language === 'es' 
+                  ? 'Agregue sus exenciones de responsabilidad personalizadas...'
+                  : 'Add your custom disclaimers...'}
+                rows={5}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'es' ? 'Exención de Responsabilidad (Español)' : 'Disclaimer (Spanish)'}</Label>
+              <Textarea
+                value={profile.customDisclaimerEs || ''}
+                onChange={(e) => updateField('customDisclaimerEs', e.target.value)}
+                placeholder="Agregue sus exenciones de responsabilidad personalizadas..."
+                rows={5}
+              />
+            </div>
+          </div>
+
+          {/* Liability Statement */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{language === 'es' ? 'Declaración de Responsabilidad' : 'Liability Statement'}</Label>
+              <Textarea
+                value={profile.liabilityStatement || ''}
+                onChange={(e) => updateField('liabilityStatement', e.target.value)}
+                placeholder={language === 'es' 
+                  ? 'Agregue su declaración de responsabilidad...'
+                  : 'Add your liability statement...'}
+                rows={5}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'es' ? 'Declaración de Responsabilidad (Español)' : 'Liability Statement (Spanish)'}</Label>
+              <Textarea
+                value={profile.liabilityStatementEs || ''}
+                onChange={(e) => updateField('liabilityStatementEs', e.target.value)}
+                placeholder="Agregue su declaración de responsabilidad..."
+                rows={5}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Save Button */}
         <Button onClick={handleSave} disabled={isSaving} className="w-full">
           <Save className="h-4 w-4 mr-2" />

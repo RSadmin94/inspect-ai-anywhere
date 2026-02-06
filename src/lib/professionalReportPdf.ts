@@ -376,6 +376,21 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
 
     drawParagraph(reportIntroduction[lang]);
 
+    // Custom Scope and Limitations (if provided)
+    const customScope = lang === 'es' 
+      ? (companyProfile.scopeAndLimitationsEs || companyProfile.scopeAndLimitations)
+      : companyProfile.scopeAndLimitations;
+    
+    if (customScope) {
+      yPos += 5;
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      const scopeHeader = lang === 'es' ? 'ALCANCE Y LIMITACIONES' : 'SCOPE AND LIMITATIONS';
+      pdf.text(scopeHeader, margin, yPos);
+      yPos += 6;
+      drawParagraph(customScope);
+    }
+
     yPos += 5;
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'bold');
@@ -553,13 +568,43 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
 
     drawParagraph(preClosingWalkthrough[lang]);
 
-    // Custom disclaimers
+    // Custom Disclaimer from Company Profile
+    const customDisclaimer = lang === 'es'
+      ? (companyProfile.customDisclaimerEs || companyProfile.customDisclaimer)
+      : companyProfile.customDisclaimer;
+    
+    if (customDisclaimer) {
+      yPos += 10;
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      const disclaimerTitle = lang === 'es' ? 'EXENCIÓN DE RESPONSABILIDAD' : 'DISCLAIMER';
+      pdf.text(disclaimerTitle, margin, yPos);
+      yPos += 8;
+      drawParagraph(customDisclaimer);
+    }
+
+    // Custom Liability Statement from Company Profile
+    const liabilityStatement = lang === 'es'
+      ? (companyProfile.liabilityStatementEs || companyProfile.liabilityStatement)
+      : companyProfile.liabilityStatement;
+    
+    if (liabilityStatement) {
+      yPos += 10;
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      const liabilityTitle = lang === 'es' ? 'DECLARACIÓN DE RESPONSABILIDAD' : 'LIABILITY STATEMENT';
+      pdf.text(liabilityTitle, margin, yPos);
+      yPos += 8;
+      drawParagraph(liabilityStatement);
+    }
+
+    // Additional disclaimers from report options
     if (disclaimers.length > 0) {
       yPos += 10;
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      const disclaimerTitle = lang === 'es' ? 'Descargos de Responsabilidad Adicionales' : 'Additional Disclaimers';
-      pdf.text(disclaimerTitle, margin, yPos);
+      const additionalTitle = lang === 'es' ? 'Descargos Adicionales' : 'Additional Disclaimers';
+      pdf.text(additionalTitle, margin, yPos);
       yPos += 8;
 
       pdf.setFontSize(9);

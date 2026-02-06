@@ -18,6 +18,13 @@ export interface CompanyProfile {
   licenseNumber?: string;
   tagline?: string;
   taglineEs?: string;
+  // Custom legalese fields
+  customDisclaimer?: string;
+  customDisclaimerEs?: string;
+  scopeAndLimitations?: string;
+  scopeAndLimitationsEs?: string;
+  liabilityStatement?: string;
+  liabilityStatementEs?: string;
 }
 
 const COMPANY_PROFILE_KEY = 'company-profile';
