@@ -3,6 +3,7 @@ import { PhotoRecord, InspectionRecord } from '@/lib/db';
 import { Language } from '@/lib/i18n';
 import { CompanyProfile } from '@/lib/companyProfile';
 import { checkNewPage, addPageFooter, formatDate, drawDivider } from './pdfUtils';
+import { generateUpsellRecommendations, UpsellRecommendation, getUpsellLabel } from './upsellRecommendations';
 
 interface CategorizedFinding {
   title: string;
@@ -224,6 +225,82 @@ export function addAgentSummarySection(
 
   const satisfactoryItems = lang === 'es' ? 'SATISFACTORIO' : 'SATISFACTORY';
   drawCategory(satisfactoryItems, [34, 197, 94], '🟢', findings.satisfactory, 3);
+
+  // UPSELL OPPORTUNITIES SECTION
+  const upsells = generateUpsellRecommendations(inspection, photos, lang);
+  
+  if (upsells.length > 0) {
+    ctx.yPos += 4;
+    checkNewPage(ctx, 50);
+    
+    // Section header
+    pdf.setFillColor(147, 51, 234); // Purple accent
+    pdf.rect(margin, ctx.yPos, contentWidth, 6, 'F');
+    ctx.yPos += 10;
+    
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(147, 51, 234);
+    const upsellTitle = lang === 'es' 
+      ? '💼 SERVICIOS ADICIONALES RECOMENDADOS' 
+      : '💼 RECOMMENDED ADDITIONAL SERVICES';
+    pdf.text(upsellTitle, margin, ctx.yPos);
+    ctx.yPos += 5;
+    
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setTextColor(100);
+    const upsellSubtitle = lang === 'es'
+      ? 'Basado en los hallazgos y características de la propiedad:'
+      : 'Based on findings and property characteristics:';
+    pdf.text(upsellSubtitle, margin, ctx.yPos);
+    pdf.setTextColor(0);
+    ctx.yPos += 6;
+    
+    // Priority colors
+    const priorityColors: Record<string, [number, number, number]> = {
+      high: [220, 38, 38],     // Red
+      medium: [234, 88, 12],   // Orange
+      low: [59, 130, 246],     // Blue
+    };
+    
+    for (const upsell of upsells) {
+      checkNewPage(ctx, 14);
+      
+      const color = priorityColors[upsell.priority];
+      
+      // Priority indicator dot
+      pdf.setFillColor(...color);
+      pdf.circle(margin + 4, ctx.yPos - 1, 2, 'F');
+      
+      // Service name
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(30, 41, 59);
+      const serviceName = lang === 'es' ? upsell.serviceEs : upsell.service;
+      pdf.text(`${upsell.icon} ${serviceName}`, margin + 10, ctx.yPos);
+      
+      // Priority label
+      const labelText = getUpsellLabel(upsell.priority, lang);
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...color);
+      const labelX = margin + 12 + pdf.getTextWidth(`${upsell.icon} ${serviceName}`) + 3;
+      pdf.text(`[${labelText}]`, labelX, ctx.yPos);
+      ctx.yPos += 4;
+      
+      // Reason
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(80);
+      const reason = lang === 'es' ? upsell.reasonEs : upsell.reason;
+      pdf.text(reason, margin + 10, ctx.yPos);
+      pdf.setTextColor(0);
+      ctx.yPos += 6;
+    }
+    
+    ctx.yPos += 2;
+  }
 
   // Important Notes Box
   ctx.yPos += 4;
