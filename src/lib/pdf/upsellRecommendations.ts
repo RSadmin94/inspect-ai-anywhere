@@ -23,8 +23,8 @@ const UPSELL_SERVICES: UpsellRecommendation[] = [
   {
     service: 'Sewer Camera Inspection',
     serviceEs: 'Inspección con Cámara de Alcantarillado',
-    reason: 'Plumbing age or drainage concerns identified',
-    reasonEs: 'Se identificaron problemas de antigüedad de plomería o drenaje',
+    reason: 'Plumbing age, drainage concerns, or trees near sewer line identified',
+    reasonEs: 'Se identificaron antigüedad de plomería, problemas de drenaje, o árboles cerca de la línea de alcantarillado',
     icon: '📹',
     priority: 'high',
   },
@@ -121,7 +121,13 @@ const UPSELL_SERVICES: UpsellRecommendation[] = [
 // Keywords that trigger specific upsell recommendations
 const TRIGGER_KEYWORDS: Record<string, string[]> = {
   'Mold Inspection': ['water', 'moisture', 'stain', 'leak', 'damp', 'mold', 'mildew', 'humidity', 'condensation'],
-  'Sewer Camera Inspection': ['plumb', 'drain', 'sewer', 'pipe', 'slow drain', 'backup', 'cast iron', 'galvanized'],
+  'Sewer Camera Inspection': [
+    'plumb', 'drain', 'sewer', 'pipe', 'slow drain', 'backup', 'cast iron', 'galvanized',
+    // Tree/root intrusion triggers
+    'tree', 'trees', 'root', 'roots', 'intrusion', 'root intrusion', 'vegetation', 
+    'mature tree', 'large tree', 'oak', 'maple', 'willow', 'main line', 'lateral',
+    'clay pipe', 'terracotta', 'orangeburg', 'bellied', 'belly', 'offset joint'
+  ],
   'Electrical Panel Inspection': ['electric', 'panel', 'wiring', 'outlet', 'aluminum', 'fuse', 'breaker', 'knob and tube'],
   'Chimney/Fireplace Inspection': ['chimney', 'fireplace', 'flue', 'hearth', 'wood burn'],
   'Termite/WDO Inspection': ['wood', 'rot', 'decay', 'bore', 'termite', 'pest', 'insect', 'fungus'],
