@@ -20,8 +20,10 @@ import { SideMenu } from '@/components/SideMenu';
 import { AppSidebar } from '@/components/AppSidebar';
 import { DashboardHub } from '@/components/DashboardHub';
 import { RoomSelector } from '@/components/RoomSelector';
+import { CompanyProfileSettings } from '@/components/CompanyProfileSettings';
 import { toast } from 'sonner';
 import { seedDefaultData } from '@/lib/defaultData';
+import { X } from 'lucide-react';
 
 type Page = 'dashboard' | 'inspection' | 'reports' | 'settings';
 
@@ -48,6 +50,7 @@ export default function Index() {
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoRecord | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
    const [showQuickCapture, setShowQuickCapture] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
@@ -384,9 +387,31 @@ export default function Index() {
           onNewInspection={handleNewInspection}
           onAnalyzePending={handleAnalyzeAllPending}
           onFinish={handleFinish}
+          onOpenSettings={() => {
+            setShowMenu(false);
+            setShowSettings(true);
+          }}
           t={t}
           isOnline={isOnline}
         />
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 z-50 bg-background flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+              <h1 className="font-semibold">{t('settings')}</h1>
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <CompanyProfileSettings />
+            </div>
+          </div>
+        )}
 
         {showQuickCapture && (
           <QuickCaptureMode
