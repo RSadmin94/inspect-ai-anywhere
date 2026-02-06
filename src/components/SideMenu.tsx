@@ -1,29 +1,31 @@
- import { X, Plus, FileText, Trash2, AlertCircle } from 'lucide-react';
- import { InspectionRecord } from '@/lib/db';
+import { X, Plus, FileText, Trash2, AlertCircle, Settings } from 'lucide-react';
+import { InspectionRecord } from '@/lib/db';
+
+interface SideMenuProps {
+  isOpen: boolean;
+  onClose: () => void;
+  inspection: InspectionRecord | null;
+  pendingCount: number;
+  onNewInspection: () => void;
+  onAnalyzePending: () => void;
+  onFinish: () => void;
+  onOpenSettings: () => void;
+  t: (key: string) => string;
+  isOnline: boolean;
+}
  
- interface SideMenuProps {
-   isOpen: boolean;
-   onClose: () => void;
-   inspection: InspectionRecord | null;
-   pendingCount: number;
-   onNewInspection: () => void;
-   onAnalyzePending: () => void;
-   onFinish: () => void;
-   t: (key: string) => string;
-   isOnline: boolean;
- }
- 
- export function SideMenu({ 
-   isOpen, 
-   onClose, 
-   inspection,
-   pendingCount,
-   onNewInspection,
-   onAnalyzePending,
-   onFinish,
-   t,
-   isOnline
- }: SideMenuProps) {
+export function SideMenu({ 
+  isOpen, 
+  onClose, 
+  inspection,
+  pendingCount,
+  onNewInspection,
+  onAnalyzePending,
+  onFinish,
+  onOpenSettings,
+  t,
+  isOnline
+}: SideMenuProps) {
    if (!isOpen) return null;
  
    return (
@@ -70,17 +72,26 @@
                <span className="font-medium">{t('newInspection')}</span>
              </button>
  
-             {/* Finish Inspection */}
-             {inspection && !inspection.isComplete && (
-               <button
-                 onClick={onFinish}
-                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors touch-target"
-               >
-                 <FileText className="w-5 h-5" />
-                 <span className="font-medium">{t('finishInspection')}</span>
-               </button>
-             )}
-           </div>
+              {/* Finish Inspection */}
+              {inspection && !inspection.isComplete && (
+                <button
+                  onClick={onFinish}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors touch-target"
+                >
+                  <FileText className="w-5 h-5" />
+                  <span className="font-medium">{t('finishInspection')}</span>
+                </button>
+              )}
+
+              {/* Settings */}
+              <button
+                onClick={onOpenSettings}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted transition-colors touch-target"
+              >
+                <Settings className="w-5 h-5" />
+                <span className="font-medium">{t('settings')}</span>
+              </button>
+            </div>
  
            {/* Footer */}
            <div className="p-4 border-t border-border">

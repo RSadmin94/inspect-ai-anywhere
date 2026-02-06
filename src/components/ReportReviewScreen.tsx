@@ -7,7 +7,7 @@
 import { PhotoRecord, InspectionRecord, Phrase, getAllPhrases, Category, Severity } from '@/lib/db';
  import { blobToDataUrl } from '@/lib/imageUtils';
  import { Language } from '@/lib/i18n';
- import { generateReportPDF } from '@/lib/reportPdfGenerator';
+ import { generateProfessionalReportPDF } from '@/lib/professionalReportPdf';
  import { cn } from '@/lib/utils';
  import { PhraseLibrary } from './PhraseLibrary';
 import { useVoiceDictation } from '@/hooks/useVoiceDictation';
@@ -134,20 +134,23 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
    const roomNotes = inspection.roomNotes || {};
    const roomsWithNotes = Object.entries(roomNotes).filter(([_, notes]) => notes?.trim());
  
-   const handleGenerate = async () => {
-     setIsGenerating(true);
-     try {
-       const selectedPhotos = photos
-         .filter(p => includedPhotos.has(p.id))
-         .map((p, idx) => ({ ...p, reportOrder: idx, includeInReport: true }));
- 
-       const pdfBlob = await generateReportPDF(
-         inspection,
-         selectedPhotos,
-         reportLanguage,
-         disclaimers,
-         Object.keys(photosByRoom)
-       );
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    try {
+      const selectedPhotos = photos
+        .filter(p => includedPhotos.has(p.id))
+        .map((p, idx) => ({ ...p, reportOrder: idx, includeInReport: true }));
+
+      const pdfBlob = await generateProfessionalReportPDF({
+        inspection,
+        photos: selectedPhotos,
+        reportLanguage,
+        disclaimers,
+        roomOrder: Object.keys(photosByRoom),
+        includeTableOfContents: true,
+        includeIntroduction: true,
+        includeConclusion: true,
+      });
  
        const url = URL.createObjectURL(pdfBlob);
        const a = document.createElement('a');

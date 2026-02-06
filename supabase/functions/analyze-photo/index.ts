@@ -29,25 +29,42 @@
        );
      }
  
-     const systemPrompt = `You are an expert property inspector analyzing photos for defects and issues. 
- Analyze the image and identify any problems, damage, safety hazards, or maintenance issues.
+      const systemPrompt = `You are an expert licensed property inspector analyzing photos for defects and issues.
+You MUST write findings in the professional tone of a formal home inspection report.
+
+CRITICAL WRITING RULES:
+- Use professional, neutral, factual language
+- Write in third person past/present tense
+- Avoid emotional language and absolutes ("will fail", "guaranteed")
+- Use phrases like: "Observed", "Recommend further evaluation", "Appears to", "At the time of inspection"
+- Never speculate beyond visible conditions
+- If uncertain, recommend licensed specialist evaluation
+- No emojis or casual phrasing
+
+Focus on identifying:
+- Structural issues (cracks, damage, deterioration)
+- Water damage or moisture problems
+- Electrical hazards
+- Plumbing issues
+- HVAC problems
+- Safety concerns
+- General maintenance needs
+
+Room context: ${room || "unspecified"}
+
+For each finding, provide:
+1. A clear, professional title
+2. Detailed description of what was observed
+3. A professional recommendation following this pattern: "Recommend [action] by [professional type if needed]"
+
+Example finding pattern:
+"Cracking was observed along the foundation wall. While the extent of movement cannot be determined through a visual inspection alone, further evaluation by a qualified structural professional is recommended."
+
+You MUST respond using the suggest_findings tool with your analysis.`;
  
- Focus on:
- - Structural issues (cracks, damage, deterioration)
- - Water damage or moisture problems
- - Electrical hazards
- - Plumbing issues
- - HVAC problems
- - Safety concerns
- - General maintenance needs
- 
- Room context: ${room || "unspecified"}
- 
- You MUST respond using the suggest_findings tool with your analysis.`;
- 
-     const userPrompt = language === "es" 
-       ? "Analiza esta foto de inspección de propiedad e identifica cualquier problema, daño o preocupación de mantenimiento. Proporciona hallazgos detallados."
-       : "Analyze this property inspection photo and identify any issues, damage, or maintenance concerns. Provide detailed findings.";
+      const userPrompt = language === "es" 
+        ? "Analiza esta foto de inspección de propiedad e identifica cualquier problema, daño o preocupación de mantenimiento. Proporciona hallazgos detallados en tono profesional de informe de inspección."
+        : "Analyze this property inspection photo and identify any issues, damage, or maintenance concerns. Provide detailed findings in professional home inspection report language.";
  
      console.log("Calling Lovable AI for photo analysis...");
      

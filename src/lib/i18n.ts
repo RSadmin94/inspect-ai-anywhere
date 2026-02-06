@@ -169,16 +169,20 @@
        new_construction: 'New Construction',
        warranty: 'Warranty',
        
-       // Report Review
-       reportReview: 'Report Review',
-       overview: 'Overview',
-       findings: 'Findings',
-       inspectionDetails: 'Inspection Details',
-       summary: 'Summary',
-       totalPhotos: 'Total Photos',
-       noFindingsYet: 'No findings recorded yet',
-       noRoomNotes: 'No room notes recorded',
-     },
+        // Report Review
+        reportReview: 'Report Review',
+        overview: 'Overview',
+        findings: 'Findings',
+        inspectionDetails: 'Inspection Details',
+        summary: 'Summary',
+        totalPhotos: 'Total Photos',
+        noFindingsYet: 'No findings recorded yet',
+        noRoomNotes: 'No room notes recorded',
+        
+        // Settings
+        settings: 'Settings',
+        companyProfile: 'Company Profile',
+      },
    es: {
      // App
      appName: 'InspectAI',
@@ -347,17 +351,21 @@
        new_construction: 'Nueva Construcción',
        warranty: 'Garantía',
        
-       // Report Review
-       reportReview: 'Revisar Reporte',
-       overview: 'Resumen',
-       findings: 'Hallazgos',
-       inspectionDetails: 'Detalles de Inspección',
-       summary: 'Estadísticas',
-       totalPhotos: 'Fotos Totales',
-       noFindingsYet: 'Sin hallazgos registrados',
-       noRoomNotes: 'Sin notas de habitación',
-     }
- } as const;
+        // Report Review
+        reportReview: 'Revisar Reporte',
+        overview: 'Resumen',
+        findings: 'Hallazgos',
+        inspectionDetails: 'Detalles de Inspección',
+        summary: 'Estadísticas',
+        totalPhotos: 'Fotos Totales',
+        noFindingsYet: 'Sin hallazgos registrados',
+        noRoomNotes: 'Sin notas de habitación',
+        
+        // Settings
+        settings: 'Configuración',
+        companyProfile: 'Perfil de la Empresa',
+      }
+} as const;
  
  export type TranslationKey = keyof typeof translations.en;
  
