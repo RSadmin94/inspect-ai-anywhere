@@ -279,6 +279,7 @@ export default function Index() {
               onCreateInspection={() => setCurrentPage('inspection')}
               onFilesSelected={handleFilesSelected}
               onViewPhotos={() => setCurrentPage('inspection')}
+              onViewReports={() => setShowReport(true)}
               t={t}
             />
           )}
