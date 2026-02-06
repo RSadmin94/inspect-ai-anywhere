@@ -6,20 +6,22 @@ import { Language } from '@/lib/i18n';
 export type ReportLanguage = 'en' | 'es' | 'both';
 
 // Finding status labels for categorization
-export type FindingStatus = 'safety' | 'repair' | 'maintenance' | 'monitor';
+export type FindingStatus = 'safety' | 'repair' | 'maintenance' | 'monitor' | 'satisfactory';
 
 export const findingStatusLabels: Record<FindingStatus, { en: string; es: string }> = {
   safety: { en: 'Safety Concern', es: 'Preocupación de Seguridad' },
   repair: { en: 'Repair Needed', es: 'Reparación Necesaria' },
   maintenance: { en: 'Maintenance', es: 'Mantenimiento' },
   monitor: { en: 'Monitor', es: 'Monitorear' },
+  satisfactory: { en: 'Satisfactory', es: 'Satisfactorio' },
 };
 
 export const findingStatusColors: Record<FindingStatus, [number, number, number]> = {
-  safety: [220, 20, 60],    // Red
-  repair: [255, 140, 0],    // Orange
-  maintenance: [255, 193, 7], // Yellow
-  monitor: [100, 149, 237],  // Blue
+  safety: [220, 38, 38],      // Red
+  repair: [234, 88, 12],      // Orange
+  maintenance: [202, 138, 4], // Yellow
+  monitor: [100, 149, 237],   // Blue
+  satisfactory: [34, 197, 94], // Green
 };
 
 // Map severity to finding status
