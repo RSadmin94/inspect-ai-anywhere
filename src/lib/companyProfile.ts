@@ -25,6 +25,10 @@ export interface CompanyProfile {
   scopeAndLimitationsEs?: string;
   liabilityStatement?: string;
   liabilityStatementEs?: string;
+  // Deferred items templates
+  deferredItemsTemplates?: Array<{ area: string; reason: string }>;
+  // Maintenance recommendations templates
+  maintenanceTemplates?: string[];
 }
 
 const COMPANY_PROFILE_KEY = 'company-profile';
