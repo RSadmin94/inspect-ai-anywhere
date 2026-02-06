@@ -1,10 +1,14 @@
 /**
- * Stroke rendering engine
- * Renders strokes from JSON to canvas
- * Used for both editing and exporting
+ * Production-hardened stroke rendering engine
+ * - Uses ImageBitmap for base (not ImageData)
+ * - ctx.save()/restore() per stroke (prevents state bleed)
+ * - Improved text rendering (font stack + pixel snapping)
+ * - Deterministic rendering from JSON
  */
 
 import { Stroke, Point } from './strokeTypes';
+
+export type BaseImageSource = ImageBitmap | HTMLImageElement | HTMLCanvasElement | OffscreenCanvas;
 
 export function renderStrokes(
   ctx: CanvasRenderingContext2D,
@@ -33,56 +37,65 @@ export function renderStroke(
     offsetY?: number;
   }
 ) {
-  const scale = options?.scale || 1;
-  const offsetX = options?.offsetX || 0;
-  const offsetY = options?.offsetY || 0;
+  const scale = options?.scale ?? 1;
+  const offsetX = options?.offsetX ?? 0;
+  const offsetY = options?.offsetY ?? 0;
 
-  ctx.strokeStyle = stroke.color;
-  ctx.fillStyle = stroke.color;
-  ctx.lineWidth = stroke.thickness * scale;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  ctx.save();
+  try {
+    // Reset common state that can bleed in from elsewhere
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.setLineDash([]);
 
-  switch (stroke.type) {
-    case 'freehand':
-      renderFreehand(ctx, stroke.points, { scale, offsetX, offsetY });
-      break;
+    ctx.strokeStyle = stroke.color;
+    ctx.fillStyle = stroke.color;
+    ctx.lineWidth = stroke.thickness * scale;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
-    case 'arrow':
-      if (stroke.startPoint && stroke.endPoint) {
-        renderArrow(ctx, stroke.startPoint, stroke.endPoint, stroke.color, stroke.thickness * scale, {
-          scale,
-          offsetX,
-          offsetY,
-        });
-      }
-      break;
+    switch (stroke.type) {
+      case 'freehand':
+        renderFreehand(ctx, stroke.points, { scale, offsetX, offsetY });
+        break;
 
-    case 'circle':
-      if (stroke.startPoint && stroke.endPoint) {
-        const radius = Math.sqrt(
-          Math.pow(stroke.endPoint.x - stroke.startPoint.x, 2) +
-            Math.pow(stroke.endPoint.y - stroke.startPoint.y, 2)
-        );
-        renderCircle(ctx, stroke.startPoint, radius, { scale, offsetX, offsetY });
-      }
-      break;
+      case 'arrow':
+        if (stroke.startPoint && stroke.endPoint) {
+          renderArrow(ctx, stroke.startPoint, stroke.endPoint, stroke.color, stroke.thickness * scale, {
+            scale,
+            offsetX,
+            offsetY,
+          });
+        }
+        break;
 
-    case 'line':
-      if (stroke.startPoint && stroke.endPoint) {
-        renderLine(ctx, stroke.startPoint, stroke.endPoint, { scale, offsetX, offsetY });
-      }
-      break;
+      case 'circle':
+        if (stroke.startPoint && stroke.endPoint) {
+          const dx = stroke.endPoint.x - stroke.startPoint.x;
+          const dy = stroke.endPoint.y - stroke.startPoint.y;
+          const radius = Math.sqrt(dx * dx + dy * dy);
+          renderCircle(ctx, stroke.startPoint, radius, { scale, offsetX, offsetY });
+        }
+        break;
 
-    case 'text':
-      if (stroke.startPoint && stroke.text) {
-        renderText(ctx, stroke.text, stroke.startPoint, stroke.fontSize || 16, {
-          scale,
-          offsetX,
-          offsetY,
-        });
-      }
-      break;
+      case 'line':
+        if (stroke.startPoint && stroke.endPoint) {
+          renderLine(ctx, stroke.startPoint, stroke.endPoint, { scale, offsetX, offsetY });
+        }
+        break;
+
+      case 'text':
+        if (stroke.startPoint && stroke.text) {
+          renderText(ctx, stroke.text, stroke.startPoint, stroke.fontSize || 16, {
+            scale,
+            offsetX,
+            offsetY,
+          });
+        }
+        break;
+    }
+  } finally {
+    ctx.restore();
   }
 }
 
@@ -176,22 +189,28 @@ function renderText(
   fontSize: number,
   options: { scale: number; offsetX: number; offsetY: number }
 ) {
-  const x = position.x * options.scale + options.offsetX;
-  const y = position.y * options.scale + options.offsetY;
+  // Pixel snapping: reduces blur on scaled export
+  const x = Math.round(position.x * options.scale + options.offsetX);
+  const y = Math.round(position.y * options.scale + options.offsetY);
+
   const scaledFontSize = fontSize * options.scale;
 
-  ctx.fillStyle = ctx.strokeStyle;
-  ctx.font = `${scaledFontSize}px Arial`;
+  // Use a consistent font stack across platforms (Android/Windows/iOS)
+  ctx.font = `${scaledFontSize}px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`;
   ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
 
-  // Draw background
+  // Background box
   const metrics = ctx.measureText(text);
   const padding = 4 * options.scale;
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-  ctx.fillRect(x - padding, y - padding, metrics.width + padding * 2, scaledFontSize + padding * 2);
 
-  // Draw text
-  ctx.fillStyle = ctx.strokeStyle;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect(x - padding, y - padding, Math.ceil(metrics.width + padding * 2), Math.ceil(scaledFontSize + padding * 2));
+  ctx.restore();
+
+  // Text
+  ctx.fillStyle = String(ctx.strokeStyle);
   ctx.fillText(text, x, y);
 }
 
@@ -203,18 +222,33 @@ export function clearCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasEle
 }
 
 /**
- * Redraw canvas with base image and strokes
+ * Redraw canvas with base image and strokes (PRODUCTION VERSION)
+ * Uses ImageBitmap instead of ImageData for better mobile performance
  */
 export function redrawCanvas(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
-  baseImage: ImageData,
+  base: BaseImageSource | null,
   strokes: Stroke[],
   options?: { scale?: number; offsetX?: number; offsetY?: number }
 ) {
-  // Restore base image
-  ctx.putImageData(baseImage, 0, 0);
+  // Clear
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Render all strokes
+  // Draw base (FAST path using drawImage instead of putImageData)
+  if (base) {
+    // @ts-expect-error OffscreenCanvas may exist depending on TS lib
+    ctx.drawImage(base as any, 0, 0, canvas.width, canvas.height);
+  }
+
+  // Draw strokes
   renderStrokes(ctx, strokes, options);
+}
+
+/**
+ * Helper: Convert blob to ImageBitmap
+ * Avoids decoding into JS-owned ImageData (better for mobile)
+ */
+export async function blobToImageBitmap(blob: Blob): Promise<ImageBitmap> {
+  return await createImageBitmap(blob);
 }
