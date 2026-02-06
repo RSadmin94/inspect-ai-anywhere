@@ -1,5 +1,6 @@
 // PDF Report Module Exports
 export * from './reportTypes';
+export * from './upsellRecommendations';
 export * from './pdfUtils';
 export * from './coverPage';
 export * from './tableOfContents';
