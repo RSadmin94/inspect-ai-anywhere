@@ -16,6 +16,7 @@ import { addSummarySection } from '@/lib/pdf/summarySection';
 import { addScopeSection, addDeferredItemsSection } from '@/lib/pdf/scopeSection';
 import { addFindingsSection } from '@/lib/pdf/findingsSection';
 import { addMaintenanceSection, addDisclaimersSection, addCredentialsSection } from '@/lib/pdf/conclusionSection';
+import { addAgentSummarySection } from '@/lib/pdf/agentSummarySection';
 
 export type { ReportLanguage, ReportOptions, DeferredItem };
 
@@ -70,39 +71,42 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
     // 1. Cover Page
     await addCoverPage(ctx, inspection, lang);
     
-    // 2. Table of Contents (placeholder - we'll fill it in later)
+    // 2. Agent-Friendly 1-Page Summary (standalone, can be forwarded separately)
+    addAgentSummarySection(ctx, inspection, photos, lang);
+    
+    // 3. Table of Contents (placeholder - we'll fill it in later)
     let tocPageNumber = 0;
     if (includeTableOfContents) {
       tocPageNumber = addTableOfContentsPlaceholder(ctx, lang);
     }
     
-    // 3. Inspection Summary (MOST IMPORTANT)
+    // 4. Inspection Summary (MOST IMPORTANT)
     await addSummarySection(ctx, inspection, photos, roomOrder, lang);
     
-    // 4. Scope, Standards & Limitations
+    // 5. Scope, Standards & Limitations
     if (includeIntroduction) {
       addScopeSection(ctx, companyProfile, lang);
     }
     
-    // 5. System-by-System Findings
+    // 6. System-by-System Findings
     await addFindingsSection(ctx, photos, roomOrder, lang);
     
-    // 6. Deferred / Not Inspected Items
+    // 7. Deferred / Not Inspected Items
     if (deferredItems.length > 0) {
       addDeferredItemsSection(ctx, deferredItems, lang);
     }
     
-    // 7. Maintenance Recommendations
+    // 8. Maintenance Recommendations
     if (maintenanceRecommendations.length > 0) {
       addMaintenanceSection(ctx, maintenanceRecommendations, lang);
     }
     
-    // 8. Disclaimers
+    // 9. Disclaimers
     if (includeConclusion) {
       addDisclaimersSection(ctx, companyProfile, disclaimers, lang);
     }
     
-    // 9. Inspector Credentials & Contact
+    // 10. Inspector Credentials & Contact
     addCredentialsSection(ctx, companyProfile, lang);
     
     // Fill in Table of Contents with actual page numbers
