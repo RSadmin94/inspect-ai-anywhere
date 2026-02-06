@@ -43,16 +43,31 @@ export function renderStroke(
 
   ctx.save();
   try {
-    // Reset common state that can bleed in from elsewhere
+    // Hard reset the common culprits to prevent upstream state from affecting rendering
+    // NOTE: Do NOT reset transform here if DPR transform is set globally
+    // Transform should be set once in the redraw path, not per stroke
+    
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
 
+    // Shadows off (biggest "why is this blurry?" culprit)
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Your stroke styles
     ctx.strokeStyle = stroke.color;
     ctx.fillStyle = stroke.color;
     ctx.lineWidth = stroke.thickness * scale;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+
+    // Text defaults (safe)
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
 
     switch (stroke.type) {
       case 'freehand':

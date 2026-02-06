@@ -13,6 +13,8 @@ export interface SyncQueueItem {
     annotationData: string;
     annotatedImageBlob: Blob;
   };
+  revision: number;  // ← Revision gating to prevent stale overwrites
+  timestamp: number; // ← When this edit was made
   retries: number;
   createdAt: number;
   lastRetryAt?: number;
@@ -52,7 +54,7 @@ export class OfflineSyncQueue {
   async enqueue(item: Omit<SyncQueueItem, 'id' | 'retries' | 'createdAt'>): Promise<string> {
     if (!this.db) await this.init();
 
-    const id = `${item.photoId}_${Date.now()}`;
+    const id = `${item.photoId}_${item.timestamp}`;
     const queueItem: SyncQueueItem = {
       ...item,
       id,
@@ -130,8 +132,12 @@ export class OfflineSyncQueue {
 
   /**
    * Process queue (retry failed items)
+   * Includes revision gating to prevent stale overwrites
    */
-  async processQueue(onSave: (photoId: string, data: string, blob: Blob) => Promise<void>): Promise<void> {
+  async processQueue(
+    onSave: (photoId: string, data: string, blob: Blob, revision: number) => Promise<void>,
+    getPhotoRevision?: (photoId: string) => Promise<number>
+  ): Promise<void> {
     if (this.isProcessing) return;
     if (!navigator.onLine) return;
 
@@ -151,16 +157,29 @@ export class OfflineSyncQueue {
         }
 
         try {
-          // Attempt to sync
+          // Revision gating: only apply if this is newer than or equal to what's stored
+          // This prevents older edits from overwriting newer ones if queue drains out of order
+          if (getPhotoRevision) {
+            const currentRev = await getPhotoRevision(item.photoId);
+            if (item.revision < currentRev) {
+              // Stale item (older than what we already have). Drop it.
+              await this.dequeue(item.id);
+              console.log(`Skipped stale edit for photo ${item.photoId} (rev ${item.revision} < stored ${currentRev})`);
+              continue;
+            }
+          }
+
+          // Attempt to sync (only if revision is current or newer)
           await onSave(
             item.photoId,
             item.payload.annotationData,
-            item.payload.annotatedImageBlob
+            item.payload.annotatedImageBlob,
+            item.revision
           );
 
           // Success - remove from queue
           await this.dequeue(item.id);
-          console.log(`Synced annotation for photo ${item.photoId}`);
+          console.log(`Synced annotation for photo ${item.photoId} (rev ${item.revision})`);
         } catch (error) {
           // Retry later
           await this.updateRetry(item.id, item.retries + 1);
@@ -228,20 +247,25 @@ export async function getSyncQueue(): Promise<OfflineSyncQueue> {
 
 /**
  * Setup automatic sync when online
+ * @param onSave Callback to save annotation (called with revision number)
+ * @param getPhotoRevision Optional callback to get current stored revision (for revision gating)
  */
-export function setupAutoSync(onSave: (photoId: string, data: string, blob: Blob) => Promise<void>) {
+export function setupAutoSync(
+  onSave: (photoId: string, data: string, blob: Blob, revision: number) => Promise<void>,
+  getPhotoRevision?: (photoId: string) => Promise<number>
+) {
   // Listen for online event
   window.addEventListener('online', async () => {
     console.log('Back online - processing sync queue');
     const queue = await getSyncQueue();
-    await queue.processQueue(onSave);
+    await queue.processQueue(onSave, getPhotoRevision);
   });
 
   // Also process periodically (every 30 seconds when online)
   setInterval(async () => {
     if (navigator.onLine) {
       const queue = await getSyncQueue();
-      await queue.processQueue(onSave);
+      await queue.processQueue(onSave, getPhotoRevision);
     }
   }, 30000);
 }
