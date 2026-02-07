@@ -10,7 +10,7 @@ export type FindingStatus = 'safety' | 'repair' | 'maintenance' | 'monitor' | 's
 
 export const findingStatusLabels: Record<FindingStatus, { en: string; es: string }> = {
   safety: { en: 'Safety Concern', es: 'Preocupación de Seguridad' },
-  repair: { en: 'Repair Needed', es: 'Reparación Necesaria' },
+  repair: { en: 'Repair Recommended', es: 'Reparación Recomendada' },
   maintenance: { en: 'Maintenance', es: 'Mantenimiento' },
   monitor: { en: 'Monitor', es: 'Monitorear' },
   satisfactory: { en: 'Satisfactory', es: 'Satisfactorio' },
