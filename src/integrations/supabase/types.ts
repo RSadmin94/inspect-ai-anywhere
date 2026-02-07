@@ -14,7 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      license_devices: {
+        Row: {
+          activated_at: string | null
+          device_id: string
+          id: number
+          last_seen_at: string | null
+          license_hash: string
+        }
+        Insert: {
+          activated_at?: string | null
+          device_id: string
+          id?: never
+          last_seen_at?: string | null
+          license_hash: string
+        }
+        Update: {
+          activated_at?: string | null
+          device_id?: string
+          id?: never
+          last_seen_at?: string | null
+          license_hash?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

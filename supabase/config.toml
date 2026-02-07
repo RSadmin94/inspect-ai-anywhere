@@ -9,3 +9,6 @@ max_rows = 1000
 
 [functions.analyze-photo]
 verify_jwt = false
+
+[functions.verify-license]
+verify_jwt = false
