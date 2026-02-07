@@ -18,19 +18,20 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
+      includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png", "icon-512-maskable.png", "apple-touch-icon.png"],
       manifest: {
         name: "365 InspectAI",
-        short_name: "365 InspectAI",
-        description: "AI-powered property inspection app for field inspectors",
-        theme_color: "#1e3a5f",
-        background_color: "#f5f7fa",
+        short_name: "InspectAI",
+        description: "Offline-first home inspection software",
+        theme_color: "#0F172A",
+        background_color: "#0F172A",
         display: "standalone",
         orientation: "portrait-primary",
         start_url: "/",
         icons: [
           { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
       workbox: {
