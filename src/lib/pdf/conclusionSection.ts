@@ -2,7 +2,6 @@ import { PDFContext } from './reportTypes';
 import { Language } from '@/lib/i18n';
 import { CompanyProfile } from '@/lib/companyProfile';
 import { drawSectionHeader, checkNewPage, addPageFooter, drawParagraph, drawBulletList, drawDivider } from './pdfUtils';
-import { preClosingWalkthrough } from '@/lib/reportConfig';
 
 export function addMaintenanceSection(
   ctx: PDFContext,
@@ -64,19 +63,6 @@ export function addDisclaimersSection(
     ? 'DESCARGOS DE RESPONSABILIDAD'
     : 'DISCLAIMERS';
   drawSectionHeader(ctx, disclaimersTitle);
-  
-  // Pre-Closing Walkthrough
-  pdf.setFontSize(11);
-  pdf.setFont('helvetica', 'bold');
-  const walkthroughTitle = lang === 'es' ? 'RECORRIDO PREVIO AL CIERRE' : 'PRE-CLOSING WALK THROUGH';
-  pdf.text(walkthroughTitle, margin, ctx.yPos);
-  ctx.yPos += 8;
-  
-  drawParagraph(ctx, preClosingWalkthrough[lang]);
-  
-  ctx.yPos += 10;
-  drawDivider(ctx);
-  ctx.yPos += 5;
   
   // Custom Disclaimer from Company Profile
   const customDisclaimer = lang === 'es'
