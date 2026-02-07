@@ -216,7 +216,7 @@ export function PhotoAnnotationEditor({
   }, [strokes, imageUrl, totalMemory, onSave, displaySize]);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/80 flex flex-col animate-fade-in">
+    <div className="fixed inset-0 z-[250] bg-black/80 flex flex-col animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-background border-b">
         <div className="flex items-center gap-4">

@@ -125,44 +125,45 @@ interface PhotoDetailPanelProps {
      }
    };
 
-   const handleAnnotationSave = async (annotationData: string, annotatedImage: Blob) => {
-      // Close editor immediately to provide instant feedback
-      setShowAnnotation(false);
-      
-      try {
-        // Update the displayed image immediately with the annotated version
-        const newImageUrl = await blobToDataUrl(annotatedImage);
-        setImageUrl(newImageUrl);
-        
-        // Try to save online
-        await onUpdate(photo.id, {
-          annotationData,
-          annotatedImageBlob: annotatedImage,
-          hasAnnotations: true,
-        });
-        toast.success('Annotation saved');
-      } catch (error) {
-        // Queue for offline sync
-        console.warn('Offline - queueing annotation for sync:', error);
-        try {
-          const queue = await getSyncQueue();
-          await queue.enqueue({
-            photoId: photo.id,
-            action: 'save_annotation',
-            revision: Date.now(),
-            timestamp: Date.now(),
-            payload: {
-              annotationData,
-              annotatedImageBlob: annotatedImage,
-            },
-          });
-          toast.success('Annotation saved offline');
-        } catch (queueError) {
-          console.error('Failed to queue annotation for offline sync:', queueError);
-          toast.error('Failed to save annotation');
-        }
-      }
-    };
+    const handleAnnotationSave = async (annotationData: string, annotatedImage: Blob) => {
+       // Close editor and lightbox immediately to provide instant feedback
+       setShowAnnotation(false);
+       setShowLightbox(false);
+       
+       try {
+         // Update the displayed image immediately with the annotated version
+         const newImageUrl = await blobToDataUrl(annotatedImage);
+         setImageUrl(newImageUrl);
+         
+         // Try to save online
+         await onUpdate(photo.id, {
+           annotationData,
+           annotatedImageBlob: annotatedImage,
+           hasAnnotations: true,
+         });
+         toast.success('Annotation saved');
+       } catch (error) {
+         // Queue for offline sync
+         console.warn('Offline - queueing annotation for sync:', error);
+         try {
+           const queue = await getSyncQueue();
+           await queue.enqueue({
+             photoId: photo.id,
+             action: 'save_annotation',
+             revision: Date.now(),
+             timestamp: Date.now(),
+             payload: {
+               annotationData,
+               annotatedImageBlob: annotatedImage,
+             },
+           });
+           toast.success('Annotation saved offline');
+         } catch (queueError) {
+           console.error('Failed to queue annotation for offline sync:', queueError);
+           toast.error('Failed to save annotation');
+         }
+       }
+     };
  
    const handleDelete = async () => {
      setIsDeleting(true);
@@ -269,14 +270,17 @@ interface PhotoDetailPanelProps {
               </div>
            </div>
  
-           {/* Annotation Editor Modal */}
-           {showAnnotation && (
-             <PhotoAnnotationEditor
-               photo={photo}
-               onSave={handleAnnotationSave}
-               onCancel={() => setShowAnnotation(false)}
-             />
-           )}
+            {/* Annotation Editor Modal */}
+            {showAnnotation && (
+              <PhotoAnnotationEditor
+                photo={photo}
+                onSave={handleAnnotationSave}
+                onCancel={() => {
+                  setShowAnnotation(false);
+                  setShowLightbox(false);
+                }}
+              />
+            )}
 
            {/* Room Select */}
            <div className="px-4 mb-4">
@@ -501,15 +505,15 @@ interface PhotoDetailPanelProps {
          />
        )}
 
-        <ImageLightbox
-          imageUrl={imageUrl}
-          isOpen={showLightbox}
-          onClose={() => setShowLightbox(false)}
-          onAnnotate={() => {
-            setShowLightbox(false);
-            setShowAnnotation(true);
-          }}
-        />
+         <ImageLightbox
+           imageUrl={imageUrl}
+           isOpen={showLightbox}
+           onClose={() => setShowLightbox(false)}
+           onAnnotate={() => {
+             // Keep lightbox open - annotation editor will appear on top (higher z-index)
+             setShowAnnotation(true);
+           }}
+         />
      </div>
    );
  }
