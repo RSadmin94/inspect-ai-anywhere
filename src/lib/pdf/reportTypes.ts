@@ -43,6 +43,27 @@ export interface DeferredItem {
   reason: string;
 }
 
+// Ancillary section types (Radon, WDI, Mold)
+export type AncillarySectionType = 'radon' | 'wdi' | 'mold';
+export type AncillaryResult = 'safety' | 'repair' | 'maintenance' | 'monitor' | 'satisfactory' | 'not_tested';
+
+export interface AncillarySection {
+  type: AncillarySectionType;
+  enabled: boolean;
+  title: string;
+  titleEs?: string;
+  scope: string;
+  scopeEs?: string;
+  limitations: string;
+  limitationsEs?: string;
+  findings: string;
+  findingsEs?: string;
+  result: AncillaryResult;
+  recommendation: string;
+  recommendationEs?: string;
+  photoIds?: string[]; // Optional photos associated with this section
+}
+
 export interface ReportOptions {
   inspection: InspectionRecord;
   photos: PhotoRecord[];
@@ -54,6 +75,7 @@ export interface ReportOptions {
   includeConclusion?: boolean;
   deferredItems?: DeferredItem[];
   maintenanceRecommendations?: string[];
+  ancillarySections?: AncillarySection[];
 }
 
 export interface PDFContext {
@@ -95,6 +117,9 @@ export const REPORT_SECTIONS: SectionConfig[] = [
   { id: 'findings', titleEn: 'System-by-System Findings', titleEs: 'Hallazgos por Sistema', includeInToc: true },
   { id: 'deferred', titleEn: 'Deferred / Not Inspected Items', titleEs: 'Elementos Diferidos / No Inspeccionados', includeInToc: true },
   { id: 'maintenance', titleEn: 'Maintenance Recommendations', titleEs: 'Recomendaciones de Mantenimiento', includeInToc: true },
+  { id: 'radon', titleEn: 'Radon Testing', titleEs: 'Prueba de Radón', includeInToc: true },
+  { id: 'wdi', titleEn: 'Wood-Destroying Insect Inspection', titleEs: 'Inspección de Insectos Destructores de Madera', includeInToc: true },
+  { id: 'mold', titleEn: 'Mold Assessment', titleEs: 'Evaluación de Moho', includeInToc: true },
   { id: 'disclaimers', titleEn: 'Disclaimers', titleEs: 'Descargos de Responsabilidad', includeInToc: true },
   { id: 'credentials', titleEn: 'Inspector Credentials', titleEs: 'Credenciales del Inspector', includeInToc: true },
 ];
