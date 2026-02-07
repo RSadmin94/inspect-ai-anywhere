@@ -79,8 +79,8 @@ export async function getCompanyLogo(): Promise<string | null> {
 export function getDefaultCompanyProfile(): CompanyProfile {
   return {
     id: COMPANY_PROFILE_KEY,
-    companyName: 'InspectAI',
-    companyNameEs: 'InspectAI',
+    companyName: '365 InspectAI',
+    companyNameEs: '365 InspectAI',
     certifications: [],
   };
 }

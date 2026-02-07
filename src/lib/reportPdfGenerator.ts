@@ -42,10 +42,10 @@
  
    const addHeader = (lang: Language) => {
      // Title
-     pdf.setFontSize(24);
-     pdf.setFont('helvetica', 'bold');
-     pdf.text('InspectAI', margin, yPos);
-     yPos += 8;
+    pdf.setFontSize(24);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('365 InspectAI', margin, yPos);
+    yPos += 8;
  
      pdf.setFontSize(14);
      pdf.setFont('helvetica', 'normal');

@@ -47,7 +47,7 @@ export function NewInspectionForm({ onStart, onLoadDemo, t }: NewInspectionFormP
             <Clipboard className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">InspectAI</h1>
+            <h1 className="text-2xl font-bold">365 InspectAI</h1>
             <p className="text-sm text-muted-foreground">{t('newInspection')}</p>
           </div>
         </div>
