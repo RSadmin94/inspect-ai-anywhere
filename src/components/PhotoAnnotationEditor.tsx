@@ -38,6 +38,7 @@ export function PhotoAnnotationEditor({
   const [thickness, setThickness] = useState<number>(3);
   const [isSaving, setIsSaving] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [displaySize, setDisplaySize] = useState({ width: 0, height: 0 });
 
   // Stroke-based state (replaces ImageData)
   const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -141,6 +142,10 @@ export function PhotoAnnotationEditor({
 
   const handleSave = useCallback(async () => {
     if (!canvasRef.current) return;
+    if (strokes.length === 0) {
+      console.log('No strokes to save');
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -149,6 +154,7 @@ export function PhotoAnnotationEditor({
       
       const ctx = fullCanvas.getContext('2d');
       if (!ctx) {
+        console.error('Failed to get canvas context');
         setIsSaving(false);
         return;
       }
@@ -167,8 +173,15 @@ export function PhotoAnnotationEditor({
       // Draw full image
       ctx.drawImage(img, 0, 0);
 
-      // Render all strokes at full resolution
-      renderStrokes(ctx, strokes, { scale: 1, offsetX: 0, offsetY: 0 });
+      // Calculate scale factor from display to full resolution
+      // Strokes were drawn on display-sized canvas, need to scale up to full res
+      const currentDisplayWidth = canvasRef.current.clientWidth || displaySize.width;
+      const scale = currentDisplayWidth > 0 ? img.width / currentDisplayWidth : 1;
+      
+      console.log(`Scaling strokes: display=${currentDisplayWidth}px, full=${img.width}px, scale=${scale}`);
+
+      // Render all strokes at full resolution with scaling
+      renderStrokes(ctx, strokes, { scale, offsetX: 0, offsetY: 0 });
 
       // Export to blob and wait for it
       const blob = await new Promise<Blob | null>((resolve) => {
@@ -181,6 +194,8 @@ export function PhotoAnnotationEditor({
         return;
       }
 
+      console.log(`Annotation blob created: ${blob.size} bytes`);
+
       // Create annotation metadata
       const annotationData = JSON.stringify({
         strokeCount: strokes.length,
@@ -188,15 +203,17 @@ export function PhotoAnnotationEditor({
         tools: [...new Set(strokes.map(s => s.type))],
         colors: [...new Set(strokes.map(s => s.color))],
         memoryUsage: totalMemory,
+        exportScale: scale,
       });
 
       await onSave(annotationData, blob);
+      console.log('Annotation saved successfully');
     } catch (error) {
       console.error('Failed to save annotation:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [strokes, imageUrl, totalMemory, onSave]);
+  }, [strokes, imageUrl, totalMemory, onSave, displaySize]);
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/80 flex flex-col animate-fade-in">
@@ -237,6 +254,7 @@ export function PhotoAnnotationEditor({
             canvasRef={canvasRef}
             onStrokeComplete={handleStrokeComplete}
             strokes={strokes}
+            onDisplaySizeChange={setDisplaySize}
           />
         )}
       </div>
