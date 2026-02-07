@@ -294,8 +294,8 @@ export async function addSummarySection(
   let commentary = '';
   if (safetyConcerns.length > 0) {
     commentary = lang === 'es'
-      ? 'Se observaron varias condiciones que requieren atención inmediata antes del cierre. Se recomienda encarecidamente la evaluación por especialistas con licencia.'
-      : 'Several conditions were observed that warrant immediate attention prior to closing. Evaluation by licensed specialists is strongly recommended.';
+      ? 'Se observaron varias condiciones que pueden requerir atención inmediata. Se recomienda una evaluación adicional por profesionales calificados y con licencia.'
+      : 'Several conditions were observed that may require prompt attention. Further evaluation by qualified, licensed professionals is recommended.';
   } else if (majorDefects.length > 0) {
     commentary = lang === 'es'
       ? 'Se observaron condiciones que justifican una evaluación adicional antes del cierre.'
