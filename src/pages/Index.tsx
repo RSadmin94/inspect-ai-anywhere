@@ -231,21 +231,25 @@ export default function Index() {
     );
   }
 
-  // No active inspection - show form
-  if (!inspection || showNewInspectionForm) {
+  // New Inspection Form Modal
+  const renderNewInspectionModal = () => {
+    if (!showNewInspectionForm) return null;
+    
     return (
-      <NewInspectionForm 
-        onStart={async (address, inspectorName, clientName, inspectionType) => {
-          await handleStartInspection(address, inspectorName, clientName, inspectionType);
-          setShowNewInspectionForm(false);
-          setCurrentPage('inspection');
-        }}
-        onLoadDemo={handleLoadDemo}
-        onClose={inspection ? () => setShowNewInspectionForm(false) : undefined}
-        t={t} 
-      />
+      <div className="fixed inset-0 z-50 bg-background">
+        <NewInspectionForm 
+          onStart={async (address, inspectorName, clientName, inspectionType) => {
+            await handleStartInspection(address, inspectorName, clientName, inspectionType);
+            setShowNewInspectionForm(false);
+            setCurrentPage('inspection');
+          }}
+          onLoadDemo={handleLoadDemo}
+          onClose={() => setShowNewInspectionForm(false)}
+          t={t} 
+        />
+      </div>
     );
-  }
+  };
 
 
   // Main inspection view
@@ -431,6 +435,9 @@ export default function Index() {
             onClearRoomNotes={handleClearRoomNotes}
           />
         )}
+
+        {/* New Inspection Modal */}
+        {renderNewInspectionModal()}
       </div>
     </div>
   );
