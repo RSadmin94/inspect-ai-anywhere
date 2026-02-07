@@ -96,10 +96,65 @@ serve(async (req) => {
 
     const licenseHash = hashLicenseKey(licenseKey);
 
-    // Handle reset_devices action
+    // Handle reset_devices action with 30-day cooldown
     if (action === 'reset_devices') {
-      console.log(`Resetting devices for license hash: ${licenseHash}`);
+      console.log(`Attempting device reset for license hash: ${licenseHash}`);
       
+      // First, fetch license to check cooldown
+      const { data: licenseForReset, error: resetLookupError } = await supabase
+        .from('licenses')
+        .select('last_reset_at, reset_count, max_devices')
+        .eq('license_key', licenseKey)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (resetLookupError || !licenseForReset) {
+        return new Response(JSON.stringify({
+          status: 'invalid',
+          valid: false,
+          message: 'Invalid license key',
+          productIdOrPermalink,
+          lastVerifiedAt: Date.now(),
+          nextCheckAt: Date.now() + 3600000,
+          graceDays: 7,
+          allowCreateNew: false,
+          allowAI: false,
+          allowExport: true,
+          device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+        } as LicenseState), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check 30-day cooldown
+      const COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+      if (licenseForReset.last_reset_at) {
+        const lastReset = new Date(licenseForReset.last_reset_at).getTime();
+        const nextAvailable = lastReset + COOLDOWN_MS;
+        
+        if (Date.now() < nextAvailable) {
+          const nextDate = new Date(nextAvailable).toISOString().split('T')[0];
+          return new Response(JSON.stringify({
+            status: 'error',
+            valid: true, // License is still valid, just can't reset yet
+            message: `Device reset is available once every 30 days. Next reset available on ${nextDate}.`,
+            productIdOrPermalink,
+            lastVerifiedAt: Date.now(),
+            nextCheckAt: Date.now() + 3600000,
+            graceDays: 7,
+            allowCreateNew: true,
+            allowAI: true,
+            allowExport: true,
+            device: { allowed: licenseForReset.max_devices || DEFAULT_ALLOWED_DEVICES, used: 0 },
+          } as LicenseState), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
+      // Cooldown passed or first reset - proceed with reset
       const { error: deleteError } = await supabase
         .from('license_devices')
         .delete()
@@ -124,6 +179,21 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+
+      // Update reset tracking
+      const { error: updateError } = await supabase
+        .from('licenses')
+        .update({ 
+          last_reset_at: new Date().toISOString(),
+          reset_count: (licenseForReset.reset_count || 0) + 1
+        })
+        .eq('license_key', licenseKey);
+
+      if (updateError) {
+        console.error('Failed to update reset tracking:', updateError);
+      }
+
+      console.log('Devices reset successfully, continuing to verify');
       // After reset, continue to verify the license
     }
 

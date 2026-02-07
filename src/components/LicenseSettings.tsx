@@ -52,8 +52,13 @@ export function LicenseSettings() {
 
     const result = await resetDevices();
     
-    if (result.valid) {
-      toast.success('Device activations reset successfully!');
+    if (result.status === 'error' && result.message?.includes('30 days')) {
+      // Cooldown denial - show warning with next available date
+      toast.warning(result.message);
+    } else if (result.valid || result.message?.includes('reset')) {
+      toast.success('Devices reset. Please verify again on this device.');
+      // Auto-verify after reset
+      await verifyLicense();
     } else {
       toast.error(result.message || 'Failed to reset devices');
     }
@@ -192,17 +197,24 @@ export function LicenseSettings() {
             )}
           </Button>
 
-          {licenseState.status === 'device_limit' && (
+          {(licenseState.status === 'device_limit' || licenseState.valid) && (
             <Button
               variant="outline"
               onClick={handleReset}
               disabled={!isOnline || isVerifying}
+              title="Reset all device activations (once per 30 days)"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
               Reset Devices
             </Button>
           )}
         </div>
+
+        {licenseState.status === 'device_limit' && (
+          <p className="text-sm text-destructive text-center">
+            Device limit reached. Use "Reset Devices" to clear all activations (30-day cooldown applies).
+          </p>
+        )}
 
         {!isOnline && (
           <p className="text-xs text-muted-foreground text-center">
