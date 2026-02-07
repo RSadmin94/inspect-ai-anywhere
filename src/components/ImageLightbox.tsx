@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
- import { X, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+ import { X, ZoomIn, ZoomOut, RotateCw, PenTool } from 'lucide-react';
  import { motion, AnimatePresence } from 'framer-motion';
  import { cn } from '@/lib/utils';
  
@@ -7,9 +7,10 @@ import { useState, useEffect, useRef } from 'react';
    imageUrl: string;
    isOpen: boolean;
    onClose: () => void;
+   onAnnotate?: () => void;
  }
  
- export function ImageLightbox({ imageUrl, isOpen, onClose }: ImageLightboxProps) {
+ export function ImageLightbox({ imageUrl, isOpen, onClose, onAnnotate }: ImageLightboxProps) {
    const [scale, setScale] = useState(1);
    const [rotation, setRotation] = useState(0);
   const lastTapRef = useRef(0);
@@ -57,37 +58,46 @@ import { useState, useEffect, useRef } from 'react';
            onClick={onClose}
          >
            {/* Header Controls */}
-           <div className="flex items-center justify-between p-4 safe-top">
-             <div className="flex items-center gap-2">
-               <button
-                 onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
-                 className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-               >
-                 <ZoomOut className="w-5 h-5" />
-               </button>
-               <span className="text-white text-sm font-medium min-w-[60px] text-center">
-                 {Math.round(scale * 100)}%
-               </span>
-               <button
-                 onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
-                 className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-               >
-                 <ZoomIn className="w-5 h-5" />
-               </button>
-               <button
-                 onClick={(e) => { e.stopPropagation(); handleRotate(); }}
-                 className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-               >
-                 <RotateCw className="w-5 h-5" />
-               </button>
-             </div>
-             <button
-               onClick={onClose}
-               className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
-             >
-               <X className="w-5 h-5" />
-             </button>
-           </div>
+            <div className="flex items-center justify-between p-4 safe-top">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleZoomOut(); }}
+                  className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                >
+                  <ZoomOut className="w-5 h-5" />
+                </button>
+                <span className="text-white text-sm font-medium min-w-[60px] text-center">
+                  {Math.round(scale * 100)}%
+                </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleZoomIn(); }}
+                  className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                >
+                  <ZoomIn className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleRotate(); }}
+                  className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                >
+                  <RotateCw className="w-5 h-5" />
+                </button>
+                {onAnnotate && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAnnotate(); }}
+                    className="w-10 h-10 rounded-full bg-primary/80 backdrop-blur flex items-center justify-center text-white hover:bg-primary transition-colors"
+                    title="Annotate"
+                  >
+                    <PenTool className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
  
            {/* Image Container */}
            <div 

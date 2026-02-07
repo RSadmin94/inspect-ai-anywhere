@@ -12,6 +12,7 @@ import { ImageLightbox } from './ImageLightbox';
 import { VoiceDictationButton } from './VoiceDictationButton';
 import { useVoiceDictation } from '@/hooks/useVoiceDictation';
 import { getSyncQueue } from '@/lib/offlineSyncQueue';
+import { toast } from 'sonner';
 
 interface PhotoDetailPanelProps {
    photo: PhotoRecord | null;
@@ -125,14 +126,21 @@ interface PhotoDetailPanelProps {
    };
 
    const handleAnnotationSave = async (annotationData: string, annotatedImage: Blob) => {
+      // Close editor immediately to provide instant feedback
+      setShowAnnotation(false);
+      
       try {
+        // Update the displayed image immediately with the annotated version
+        const newImageUrl = await blobToDataUrl(annotatedImage);
+        setImageUrl(newImageUrl);
+        
         // Try to save online
         await onUpdate(photo.id, {
           annotationData,
           annotatedImageBlob: annotatedImage,
           hasAnnotations: true,
         });
-        console.log('Annotation saved online');
+        toast.success('Annotation saved');
       } catch (error) {
         // Queue for offline sync
         console.warn('Offline - queueing annotation for sync:', error);
@@ -148,16 +156,10 @@ interface PhotoDetailPanelProps {
               annotatedImageBlob: annotatedImage,
             },
           });
-          console.log('Annotation saved offline. Will sync when online.');
+          toast.success('Annotation saved offline');
         } catch (queueError) {
           console.error('Failed to queue annotation for offline sync:', queueError);
-        }
-      } finally {
-        // Always close the annotation editor
-        setShowAnnotation(false);
-        // Reload the image to show annotations
-        if (photo) {
-          blobToDataUrl(annotatedImage).then(setImageUrl);
+          toast.error('Failed to save annotation');
         }
       }
     };
@@ -503,6 +505,10 @@ interface PhotoDetailPanelProps {
           imageUrl={imageUrl}
           isOpen={showLightbox}
           onClose={() => setShowLightbox(false)}
+          onAnnotate={() => {
+            setShowLightbox(false);
+            setShowAnnotation(true);
+          }}
         />
      </div>
    );
