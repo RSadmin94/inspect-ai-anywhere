@@ -15,7 +15,6 @@ interface CategorizedFindings {
   safety: CategorizedFinding[];
   repair: CategorizedFinding[];
   maintenance: CategorizedFinding[];
-  satisfactory: CategorizedFinding[];
 }
 
 function categorizeFindings(photos: PhotoRecord[], lang: Language): CategorizedFindings {
@@ -23,7 +22,6 @@ function categorizeFindings(photos: PhotoRecord[], lang: Language): CategorizedF
     safety: [],
     repair: [],
     maintenance: [],
-    satisfactory: [],
   };
 
   for (const photo of photos) {
@@ -32,14 +30,13 @@ function categorizeFindings(photos: PhotoRecord[], lang: Language): CategorizedF
     const room = photo.room || 'General';
     const finding: CategorizedFinding = { title, recommendation, room };
 
-    // Check if this is a "no issues" / satisfactory finding
+    // Skip "no issues" / satisfactory findings - they won't appear on summary
     const isNoIssue = !photo.aiFindingTitle || 
       photo.aiFindingTitle === 'No Significant Issues Observed' ||
       photo.aiFindingTitle === 'No Issues Detected' ||
       photo.aiSeverity === 'minor' && photo.aiFindingTitle?.includes('Minor');
 
     if (isNoIssue || photo.aiSeverity === undefined) {
-      findings.satisfactory.push({ title: title || room, recommendation: lang === 'es' ? 'Sin problemas significativos observados' : 'No significant issues observed', room });
       continue;
     }
     
@@ -217,9 +214,6 @@ export function addAgentSummarySection(
 
   const monitorItems = lang === 'es' ? 'ELEMENTOS A MONITOREAR / MANTENIMIENTO' : 'ITEMS TO MONITOR / MAINTENANCE';
   drawCategory(monitorItems, [202, 138, 4], '', findings.maintenance, 3);
-
-  const satisfactoryItems = lang === 'es' ? 'SATISFACTORIO' : 'SATISFACTORY';
-  drawCategory(satisfactoryItems, [34, 197, 94], '', findings.satisfactory, 3);
 
   // UPSELL OPPORTUNITIES SECTION
   const upsells = generateUpsellRecommendations(inspection, photos, lang);
