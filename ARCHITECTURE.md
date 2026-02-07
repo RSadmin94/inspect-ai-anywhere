@@ -111,13 +111,12 @@ interface InspectionRecord {
 ```
 
 **Inspection Types:**
-- Full Home Inspection
 - Pre-Purchase Inspection
 - Pre-Listing Inspection
+- Annual Inspection
+- Insurance Inspection
 - New Construction Inspection
-- 11-Month Warranty Inspection
-- 4-Point Inspection
-- Wind Mitigation Inspection
+- Warranty Inspection
 
 ---
 
@@ -158,10 +157,9 @@ interface PhotoRecord {
 
 **Room Categories:**
 - Exterior, Interior, Kitchen, Bathroom
-- Dining Room, Bedroom 1-3
-- Garage, Attic, Basement
-- HVAC, Electrical, Plumbing
-- Roof, Foundation, Other
+- Dining Room, Main Bedroom, Bedroom 2, Bedroom 3
+- Living Room, Garage, Attic, Basement
+- Roof, Electrical Panel, AC, Water Heater, Other
 
 ---
 
@@ -218,6 +216,7 @@ Photo Blob → Base64 Encoding → Edge Function → Gemini API → Structured A
 - No AI/software references in output
 - Licensed specialist recommendations for uncertain findings
 - No speculation beyond visible evidence
+- Confidence levels stated implicitly
 
 **Offline Behavior:**
 - Photos queued with `pending_offline` status
@@ -245,89 +244,109 @@ Photo Blob → Base64 Encoding → Edge Function → Gemini API → Structured A
 
 ### 6. Professional Report Generation
 
-**Purpose:** Generate publication-ready PDF inspection reports that are lender-safe and legally robust.
+**Purpose:** Generate publication-ready PDF inspection reports titled "PROPERTY INSPECTION REPORT" that are lender-safe and legally robust.
 
 **Key Components:**
 - `ReportReviewScreen.tsx` - Report preview and editing
-- `ReportBuilder.tsx` - Report configuration UI
+- `ReportBuilder.tsx` - Report configuration UI (Photos, Deferred, Maintenance, Legal tabs)
 - `lib/pdf/` - Modular PDF generation system:
-  - `reportTypes.ts` - Types and interfaces
+  - `reportTypes.ts` - Types, interfaces, and status labels
   - `pdfUtils.ts` - Shared utility functions
-  - `coverPage.ts` - Cover page with signature
-  - `tableOfContents.ts` - Clickable ToC
-  - `summarySection.ts` - Key findings summary
+  - `coverPage.ts` - Cover page with signature area
+  - `agentSummarySection.ts` - Standalone 1-page Agent-Friendly Summary
+  - `tableOfContents.ts` - Clickable ToC with page numbers
+  - `summarySection.ts` - Inspection Summary with Systems Overview
   - `scopeSection.ts` - Standards & limitations
   - `findingsSection.ts` - System-by-system findings
   - `conclusionSection.ts` - Disclaimers & credentials
+  - `upsellRecommendations.ts` - Maintenance recommendations
 - `lib/reportConfig.ts` - Report structure configuration
 
-**Report Structure (9 Sections):**
+**Report Structure:**
 ```
 1. Cover Page (Authority + Professionalism)
    - Property address
    - Inspection date & time
-   - Client name
-   - Inspector name, license #, company info
+   - Client name (PREPARED FOR section)
+   - Inspector name, license #, certifications
+   - Company branding, tagline, contact info
    - Digital signature area
-   - Company branding and tagline
+   - "Confidential and Proprietary" notice
 
-2. Table of Contents
+2. Agent-Friendly Summary (Standalone 1-page)
+   - Quick-reference summary for real estate agents
+   - Designed for easy forwarding to clients
+   - Key findings at a glance
+
+3. Table of Contents
    - Clickable section navigation
-   - Page numbers
-   - Dotted leader lines
+   - Page numbers with dotted leader lines
 
-3. Inspection Summary (MOST IMPORTANT)
-   - 🔴 Safety Concerns (immediate attention)
-   - 🟠 Major Defects (repair needed)
-   - 🟡 Items to Monitor / Maintenance
-   - Inspector's professional notes
+4. Inspection Summary (Page 4 - Overview)
+   - Header: "This summary highlights the most significant 
+     conditions observed during the inspection. Please refer 
+     to the full report for additional details."
+   - Inspected Systems Overview Table:
+     * System/Area name
+     * Condition status (Satisfactory/Maintenance/Marginal/Needs Attention)
+     * Items recorded count
+   - Key Findings Categories:
+     * 🔴 Safety Concerns (immediate attention)
+     * 🟠 Major Defects (repair recommended)
+     * 🟡 Items to Monitor / Maintenance
+   - Overall Assessment Commentary:
+     * "Several conditions were observed that may require 
+       prompt attention. Further evaluation by qualified, 
+       licensed professionals is recommended."
 
-4. Scope, Standards & Limitations
+5. Scope, Standards & Limitations
    - Inspection type description
    - Standards of practice
    - Custom scope (from company profile)
    - Inspector limitations list
    - Key exclusions box
 
-5. System-by-System Findings
+6. Detailed Inspection Findings (System-by-System)
    - System overview with condition status
    - Per-system disclaimer
    - Observations with:
      - Photo with annotation
-     - Status badge (Safety/Repair/Maintenance/Monitor)
-     - Observation → Implication → Recommendation
+     - Status badge (Safety/Repair Recommended/Maintenance/Monitor)
+     - Observation → Implication → Recommendation flow
      - Category and comments
 
-6. Deferred / Not Inspected Items
+7. Deferred / Not Inspected Items
    - Areas that couldn't be inspected
-   - Reasons (obstructed, weather, etc.)
+   - Reasons (obstructed, weather, inaccessible, etc.)
    - Re-inspection recommendations
 
-7. Maintenance Recommendations
+8. Maintenance Recommendations
    - Non-urgent items
    - Non-defect maintenance tips
    - Clearly labeled as optional
 
-8. End-of-Report Disclaimers
+9. End-of-Report Disclaimers
    - Pre-closing walkthrough guide
-   - Custom disclaimers (company profile)
+   - Custom disclaimers (from company profile)
    - Liability statement
+   - Scope and limitations text
    - Standard legal notices
-   - Additional disclaimers
 
-9. Inspector Credentials & Contact
-   - Company logo and name
-   - Inspector name and license
-   - Certifications and affiliations
-   - Full contact information
-   - Thank you message
+10. Inspector Credentials & Contact
+    - Company logo and name
+    - Inspector name and license
+    - Certifications and affiliations
+    - Full contact information
+    - Thank you message
 ```
 
-**Finding Status Labels:**
-- 🔴 **Safety** - Immediate safety concern
-- 🟠 **Repair** - Major defect requiring repair
-- 🟡 **Maintenance** - Routine maintenance item
-- 🔵 **Monitor** - Item to watch over time
+**Finding Status Labels (Standardized):**
+| Status | English | Spanish | Color |
+|--------|---------|---------|-------|
+| Safety | Safety | Seguridad | 🔴 Red |
+| Repair | Repair Recommended | Reparación Recomendada | 🟠 Orange |
+| Maintenance | Maintenance | Mantenimiento | 🟡 Yellow |
+| Monitor | Monitor | Monitorear | 🔵 Blue |
 
 **Condition Statuses (mapped from severity):**
 - Satisfactory - No issues found
@@ -335,43 +354,61 @@ Photo Blob → Base64 Encoding → Edge Function → Gemini API → Structured A
 - Professional Consultation - Expert evaluation recommended
 - Not Satisfactory - Significant issue
 
+**Technical Notes:**
+- Emojis replaced with vector graphics for cross-viewer stability
+- Reports appear human-authored (no AI/software references)
+
 ---
 
-### 7. Company Branding System
+### 7. Company Branding System (White-Label)
 
-**Purpose:** White-label reports with company identity.
+**Purpose:** Full white-labeling of reports with company identity and legal templates.
 
 **Key Components:**
 - `CompanyProfileSettings.tsx` - Configuration UI
 - `lib/companyProfile.ts` - Profile storage and retrieval
 
 **Customizable Elements:**
-- Company name and logo
-- Inspector name and license
-- Contact information (phone, email, website)
-- Address
-- Certifications and credentials
-
-**Storage:**
 ```typescript
 interface CompanyProfile {
+  id: string;
   companyName: string;
-  inspectorName: string;
-  licenseNumber?: string;
+  companyNameEs?: string;
+  inspectorName?: string;
   phone?: string;
   email?: string;
   website?: string;
   address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  logoUrl?: string;
   logoBlob?: Blob;
   certifications?: string[];
+  licenseNumber?: string;
+  tagline?: string;
+  taglineEs?: string;
+  // Custom legalese fields
+  customDisclaimer?: string;
+  customDisclaimerEs?: string;
+  scopeAndLimitations?: string;
+  scopeAndLimitationsEs?: string;
+  liabilityStatement?: string;
+  liabilityStatementEs?: string;
+  // Deferred items templates
+  deferredItemsTemplates?: Array<{ area: string; reason: string }>;
+  // Maintenance recommendations templates
+  maintenanceTemplates?: string[];
 }
 ```
+
+**Storage:** IndexedDB with separate logo blob storage
 
 ---
 
 ### 8. Bilingual Support (English/Spanish)
 
-**Purpose:** Full application localization for bilingual inspectors.
+**Purpose:** Full application localization for bilingual inspectors with formal professional Spanish tone.
 
 **Key Components:**
 - `lib/i18n.ts` - Translation dictionary
@@ -379,9 +416,10 @@ interface CompanyProfile {
 
 **Coverage:**
 - All UI elements
-- Report generation
+- PDF report generation (all sections)
 - Professional terminology
-- Formal Spanish tone
+- Formal Spanish tone throughout
+- Status labels and categories
 
 ---
 
@@ -426,13 +464,36 @@ interface SyncOperation {
 
 **Key Components:**
 - `lib/demoData.ts` - Demo inspection seeding
-- Sample photos with pre-analyzed defects
+- `src/assets/demo/` - Sample photos with pre-analyzed defects
 
 **Demo Content:**
 - Foundation crack (high severity)
 - Roof damage (high severity)
 - Plumbing leak (medium severity)
 - Electrical issue (medium severity)
+
+---
+
+### 11. Inspection Workflow Features
+
+**Quick Capture Mode:**
+- Rapid photo capture workflow
+- Room-context filtering
+
+**Room Selector:**
+- Persistent 'sticky' room selector
+- Manual drag-and-drop reordering
+- Custom room creation
+
+**Phrase Library:**
+- Searchable phrase database
+- Categories: Disclaimer, Note, Recommendation
+- Bilingual support
+
+**Live Notes Panel:**
+- Voice dictation organized by room
+- Real-time transcript display
+- Room-based grouping
 
 ---
 
@@ -476,7 +537,8 @@ interface SyncOperation {
      ├── Photos + annotations
      ├── AI analysis results
      ├── Room notes
-     └── Company profile
+     ├── Company profile
+     └── Legal templates
 ```
 
 ---
@@ -488,35 +550,69 @@ src/
 ├── components/
 │   ├── ui/                    # shadcn/ui components
 │   ├── AnnotationCanvas.tsx   # Photo markup
+│   ├── AnnotationControls.tsx
+│   ├── AnnotationToolbar.tsx
+│   ├── AppSidebar.tsx
 │   ├── CameraCapture.tsx      # Camera interface
 │   ├── CompanyProfileSettings.tsx
 │   ├── DashboardHub.tsx       # Main dashboard
+│   ├── DropZone.tsx
+│   ├── ImageLightbox.tsx
+│   ├── InspectionHeader.tsx
+│   ├── IssuePresetSelector.tsx
+│   ├── LiveNotesPanel.tsx
+│   ├── NewInspectionForm.tsx
 │   ├── PhotoAnnotationEditor.tsx
 │   ├── PhotoDetailPanel.tsx
 │   ├── PhotoGallery.tsx
+│   ├── PhraseLibrary.tsx
 │   ├── QuickCaptureMode.tsx
 │   ├── ReportBuilder.tsx
+│   ├── ReportDialog.tsx
 │   ├── ReportReviewScreen.tsx
 │   ├── RoomSelector.tsx
+│   ├── SideMenu.tsx
+│   ├── StatusBar.tsx
 │   └── VoiceDictationButton.tsx
 │
 ├── hooks/
+│   ├── use-mobile.tsx
+│   ├── use-toast.ts
 │   ├── useInspection.ts       # Inspection state
 │   ├── useLanguage.ts         # i18n hook
 │   ├── useOnlineStatus.ts     # Connectivity
 │   └── useVoiceDictation.ts   # Speech API
 │
 ├── lib/
+│   ├── pdf/                   # Modular PDF generation
+│   │   ├── agentSummarySection.ts
+│   │   ├── conclusionSection.ts
+│   │   ├── coverPage.ts
+│   │   ├── findingsSection.ts
+│   │   ├── index.ts
+│   │   ├── pdfUtils.ts
+│   │   ├── reportTypes.ts
+│   │   ├── scopeSection.ts
+│   │   ├── summarySection.ts
+│   │   ├── tableOfContents.ts
+│   │   └── upsellRecommendations.ts
 │   ├── aiAnalysis.ts          # AI orchestration
 │   ├── annotationUtils.ts     # Drawing utilities
+│   ├── bitmapUtils.ts
 │   ├── companyProfile.ts      # Branding storage
 │   ├── db.ts                  # IndexedDB operations
+│   ├── defaultData.ts
 │   ├── demoData.ts            # Demo mode
+│   ├── exportAnnotation.ts
 │   ├── i18n.ts                # Translations
 │   ├── imageUtils.ts          # Photo processing
 │   ├── offlineSyncQueue.ts    # Sync management
+│   ├── pdfGenerator.ts
 │   ├── professionalReportPdf.ts
 │   ├── reportConfig.ts        # Report structure
+│   ├── reportPdfGenerator.ts
+│   ├── strokeRenderer.ts
+│   ├── strokeTypes.ts
 │   └── utils.ts               # General utilities
 │
 ├── pages/
@@ -524,7 +620,18 @@ src/
 │   └── NotFound.tsx
 │
 └── assets/
-    └── demo/                  # Demo inspection photos
+    ├── demo/                  # Demo inspection photos
+    │   ├── electrical-issue.jpg
+    │   ├── foundation-crack.jpg
+    │   ├── plumbing-leak.jpg
+    │   └── roof-damage.jpg
+    └── logo.png
+
+supabase/
+├── functions/
+│   └── analyze-photo/
+│       └── index.ts           # AI analysis edge function
+└── config.toml
 ```
 
 ---
@@ -568,6 +675,20 @@ src/
 
 ---
 
+## UX Design Philosophy
+
+### Camera-First Interface
+- Optimized for one-handed thumb operation
+- "Deep Pro" dark theme with glassmorphism
+- Strict room-context filtering
+
+### Visual Design
+- Camera gallery shows only active room content
+- Live notes filtered by selected room
+- Persistent sticky room selector
+
+---
+
 ## Future Considerations
 
 1. **Multi-Inspector Support** - Team inspections with role-based access
@@ -584,7 +705,9 @@ src/
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-02 | Initial release with core features |
+| 1.1.0 | 2026-02 | Added Agent-Friendly Summary, Inspected Systems Overview |
+| 1.2.0 | 2026-02 | Rebranded to 365 InspectAI, updated status labels |
 
 ---
 
-*This document is maintained as the technical source of truth for InspectAI architecture and features.*
+*This document is maintained as the technical source of truth for 365 InspectAI architecture and features.*
