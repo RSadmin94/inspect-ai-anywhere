@@ -153,61 +153,133 @@ export function DashboardHub({
          <p className="text-muted-foreground">Welcome to 365 InspectAI Pro</p>
        </motion.div>
  
-      {/* Stats Grid */}
+      {/* Stats and Actions Row */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12"
-       >
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          const isPhotosClickable = stat.label === 'Photos Captured' && photoCount > 0 && onViewPhotos;
-          const isReportsClickable = stat.label === 'Reports Ready' && photoCount > 0 && onViewReports;
-          const isClickable = isPhotosClickable || isReportsClickable;
-          const handleClick = isPhotosClickable ? onViewPhotos : isReportsClickable ? onViewReports : undefined;
-          return (
-            <motion.div
-              key={index}
-              variants={itemVariants}
-              onClick={handleClick}
-              className={cn(
-                "group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg card-gradient border border-border/10",
-                isClickable && "cursor-pointer"
-              )}
-             >
-               {/* Hover glow */}
-               <div className={cn(
-                 "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300",
-                 stat.colorClass === 'text-primary' 
-                   ? 'bg-gradient-to-br from-primary to-transparent'
-                   : 'bg-gradient-to-br from-accent to-transparent'
-               )} />
- 
-               {/* Content */}
-               <div className="relative z-10">
-                 <div className="flex items-start justify-between mb-4">
-                   <div className={cn(
-                     "w-12 h-12 rounded-xl flex items-center justify-center border",
-                     stat.bgClass
-                   )}>
-                     <Icon size={24} className={stat.colorClass} />
-                   </div>
-                 </div>
-                 <p className="text-muted-foreground text-sm mb-2">{stat.label}</p>
-                 <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-               </div>
-             </motion.div>
-           );
-         })}
-       </motion.div>
+        className="flex flex-col lg:flex-row gap-6 mb-12"
+      >
+        {/* Left: Photo Stats */}
+        <div className="flex-1 grid grid-cols-2 gap-4">
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            const isPhotosClickable = stat.label === 'Photos Captured' && photoCount > 0 && onViewPhotos;
+            const isReportsClickable = stat.label === 'Reports Ready' && photoCount > 0 && onViewReports;
+            const isClickable = isPhotosClickable || isReportsClickable;
+            const handleClick = isPhotosClickable ? onViewPhotos : isReportsClickable ? onViewReports : undefined;
+            return (
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                onClick={handleClick}
+                className={cn(
+                  "group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg card-gradient border border-border/10",
+                  isClickable && "cursor-pointer"
+                )}
+              >
+                {/* Hover glow */}
+                <div className={cn(
+                  "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300",
+                  stat.colorClass === 'text-primary' 
+                    ? 'bg-gradient-to-br from-primary to-transparent'
+                    : 'bg-gradient-to-br from-accent to-transparent'
+                )} />
+
+                {/* Content */}
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={cn(
+                      "w-12 h-12 rounded-xl flex items-center justify-center border",
+                      stat.bgClass
+                    )}>
+                      <Icon size={24} className={stat.colorClass} />
+                    </div>
+                  </div>
+                  <p className="text-muted-foreground text-sm mb-2">{stat.label}</p>
+                  <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Right: Import/Export */}
+        <div className="flex-1 grid grid-cols-2 gap-4">
+          {/* Export Inspection Card */}
+          <motion.div
+            variants={itemVariants}
+            onClick={inspection ? handleExport : undefined}
+            className={cn(
+              "group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg card-gradient border border-border/10",
+              inspection ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <div className={cn(
+              "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300",
+              "bg-gradient-to-br from-primary to-transparent"
+            )} />
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center border bg-primary/10 border-primary/30">
+                  {isExporting ? (
+                    <Loader2 size={24} className="text-primary animate-spin" />
+                  ) : (
+                    <Download size={24} className="text-primary" />
+                  )}
+                </div>
+              </div>
+              <p className="text-muted-foreground text-sm mb-2">
+                {isExporting ? 'Exporting...' : 'Export'}
+              </p>
+              <p className="text-xl font-bold text-foreground">
+                {inspection ? 'Save .zip' : 'No Data'}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Import Inspection Card */}
+          <motion.div
+            variants={itemVariants}
+            onClick={handleImportClick}
+            className="group cursor-pointer relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:shadow-lg card-gradient border border-border/10"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 bg-gradient-to-br from-accent to-transparent" />
+
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center border bg-accent/10 border-accent/30">
+                  {isImporting ? (
+                    <Loader2 size={24} className="text-accent animate-spin" />
+                  ) : (
+                    <Upload size={24} className="text-accent" />
+                  )}
+                </div>
+              </div>
+              <p className="text-muted-foreground text-sm mb-2">
+                {isImporting ? 'Importing...' : 'Import'}
+              </p>
+              <p className="text-xl font-bold text-foreground">Load .zip</p>
+            </div>
+            
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".zip"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+          </motion.div>
+        </div>
+      </motion.div>
  
         {/* Main Actions Section */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
         >
           {/* Create Inspection Card */}
           <motion.div
@@ -240,95 +312,10 @@ export function DashboardHub({
             </div>
           </motion.div>
 
-          {/* Export Inspection Card */}
-          <motion.div
-            variants={itemVariants}
-            onClick={inspection ? handleExport : undefined}
-            className={cn(
-              "group relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl bg-primary/20 border-2 border-primary/30",
-              inspection ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
-            )}
-          >
-            <motion.div
-              animate={{
-                opacity: [0.3, 0.6, 0.3],
-              }}
-              transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-              className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.2)_0%,transparent_70%)]"
-            />
-
-            <div className="relative z-10 flex flex-col items-center justify-center text-center h-full gap-4">
-              <motion.div
-                whileHover={{ scale: inspection ? 1.1 : 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center btn-gradient">
-                  {isExporting ? (
-                    <Loader2 size={28} className="text-primary-foreground animate-spin" />
-                  ) : (
-                    <Download size={28} className="text-primary-foreground" />
-                  )}
-                </div>
-              </motion.div>
-              <div>
-                <p className="text-lg font-semibold text-foreground">
-                  {isExporting ? 'Exporting...' : 'Export Inspection'}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {inspection ? 'Save to transfer devices' : 'No active inspection'}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Import Inspection Card */}
-          <motion.div
-            variants={itemVariants}
-            onClick={handleImportClick}
-            className="group cursor-pointer relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl bg-accent/20 border-2 border-accent/30"
-          >
-            <motion.div
-              animate={{
-                opacity: [0.3, 0.6, 0.3],
-              }}
-              transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
-              className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--accent)/0.2)_0%,transparent_70%)]"
-            />
-
-            <div className="relative z-10 flex flex-col items-center justify-center text-center h-full gap-4">
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-accent text-accent-foreground">
-                  {isImporting ? (
-                    <Loader2 size={28} className="animate-spin" />
-                  ) : (
-                    <Upload size={28} />
-                  )}
-                </div>
-              </motion.div>
-              <div>
-                <p className="text-lg font-semibold text-foreground">
-                  {isImporting ? 'Importing...' : 'Import Inspection'}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">Continue from another device</p>
-              </div>
-            </div>
-            
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".zip"
-              onChange={handleImportFile}
-              className="hidden"
-            />
-          </motion.div>
-
           {/* Drop Zone */}
           <motion.div
             variants={itemVariants}
-            className="lg:col-span-2"
+            className="md:col-span-2"
           >
             <DropZone onFilesSelected={onFilesSelected} />
           </motion.div>
