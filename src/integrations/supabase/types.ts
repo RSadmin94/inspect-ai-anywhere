@@ -46,10 +46,12 @@ export type Database = {
           expires_at: string | null
           id: number
           is_active: boolean
+          last_reset_at: string | null
           license_key: string
           max_devices: number
           notes: string | null
           product_id: string
+          reset_count: number
         }
         Insert: {
           created_at?: string | null
@@ -58,10 +60,12 @@ export type Database = {
           expires_at?: string | null
           id?: never
           is_active?: boolean
+          last_reset_at?: string | null
           license_key: string
           max_devices?: number
           notes?: string | null
           product_id?: string
+          reset_count?: number
         }
         Update: {
           created_at?: string | null
@@ -70,10 +74,12 @@ export type Database = {
           expires_at?: string | null
           id?: never
           is_active?: boolean
+          last_reset_at?: string | null
           license_key?: string
           max_devices?: number
           notes?: string | null
           product_id?: string
+          reset_count?: number
         }
         Relationships: []
       }
