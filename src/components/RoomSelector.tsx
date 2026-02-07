@@ -4,11 +4,11 @@
  import { generateId } from '@/lib/imageUtils';
  import { cn } from '@/lib/utils';
  
- const DEFAULT_ROOMS = [
-  'exterior', 'interior', 'kitchen', 'diningRoom', 'bathroom', 
-  'mainBedroom', 'bedroom2', 'bedroom3', 'livingRoom', 
-  'basement', 'attic', 'garage', 'roof', 'other'
- ] as const;
+const DEFAULT_ROOMS = [
+ 'exterior', 'interior', 'kitchen', 'diningRoom', 'bathroom', 
+ 'mainBedroom', 'bedroom2', 'bedroom3', 'livingRoom', 
+ 'basement', 'attic', 'garage', 'roof', 'electricalPanel', 'ac', 'waterHeater', 'other'
+] as const;
  
  interface RoomSelectorProps {
    value: string;
