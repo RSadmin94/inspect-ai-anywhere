@@ -1,22 +1,25 @@
- import React, { useRef, useState } from 'react';
- import { motion } from 'framer-motion';
- import {
-   FileText,
-   Zap,
-   BarChart3,
-   Plus,
-   Camera,
-   Upload,
-   Loader2,
- } from 'lucide-react';
- import { DropZone } from './DropZone';
- import { cn } from '@/lib/utils';
+import React, { useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  FileText,
+  Zap,
+  BarChart3,
+  Plus,
+  Camera,
+  Upload,
+  Download,
+  Loader2,
+} from 'lucide-react';
+import { DropZone } from './DropZone';
+import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
-import { importInspection } from '@/lib/exportImport';
+import { importInspection, exportInspection, getExportFilename, downloadBlob } from '@/lib/exportImport';
 import { toast } from 'sonner';
- 
+import { InspectionRecord } from '@/lib/db';
+
 interface DashboardHubProps {
   photoCount: number;
+  inspection?: InspectionRecord | null;
   onCreateInspection: () => void;
   onFilesSelected: (files: File[]) => void;
   onViewPhotos?: () => void;
@@ -27,6 +30,7 @@ interface DashboardHubProps {
  
 export function DashboardHub({
   photoCount,
+  inspection,
   onCreateInspection,
   onFilesSelected,
   onViewPhotos,
@@ -35,7 +39,27 @@ export function DashboardHub({
   t,
 }: DashboardHubProps) {
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = async () => {
+    if (!inspection) {
+      toast.error('No inspection to export');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const zipBlob = await exportInspection(inspection.id);
+      const filename = getExportFilename(inspection);
+      downloadBlob(zipBlob, filename);
+      toast.success('Inspection exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export inspection');
+    }
+    setIsExporting(false);
+  };
 
   const handleImportClick = () => {
     importInputRef.current?.click();
@@ -76,36 +100,22 @@ export function DashboardHub({
     }
   };
 
-   const stats = [
-     {
-       label: 'Photos Captured',
-       value: photoCount,
-       icon: Camera,
-       colorClass: 'text-primary',
-       bgClass: 'bg-primary/10 border-primary/30',
-     },
-     {
-       label: 'AI Analyses',
-       value: photoCount,
-       icon: Zap,
-       colorClass: 'text-accent',
-       bgClass: 'bg-accent/10 border-accent/30',
-     },
-     {
-       label: 'Reports Ready',
-       value: photoCount > 0 ? '1' : '0',
-       icon: BarChart3,
-       colorClass: 'text-primary',
-       bgClass: 'bg-primary/10 border-primary/30',
-     },
-     {
-       label: 'Status',
-       value: 'Active',
-       icon: FileText,
-       colorClass: 'text-accent',
-       bgClass: 'bg-accent/10 border-accent/30',
-     },
-   ];
+  const stats = [
+    {
+      label: 'Photos Captured',
+      value: photoCount,
+      icon: Camera,
+      colorClass: 'text-primary',
+      bgClass: 'bg-primary/10 border-primary/30',
+    },
+    {
+      label: 'Reports Ready',
+      value: photoCount > 0 ? '1' : '0',
+      icon: BarChart3,
+      colorClass: 'text-primary',
+      bgClass: 'bg-primary/10 border-primary/30',
+    },
+  ];
  
    const containerVariants = {
      hidden: { opacity: 0 },
@@ -143,12 +153,12 @@ export function DashboardHub({
          <p className="text-muted-foreground">Welcome to 365 InspectAI Pro</p>
        </motion.div>
  
-       {/* Stats Grid */}
-       <motion.div
-         variants={containerVariants}
-         initial="hidden"
-         animate="visible"
-         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+      {/* Stats Grid */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12"
        >
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -226,6 +236,47 @@ export function DashboardHub({
               <div>
                 <p className="text-lg font-semibold text-foreground">{t('newInspection')}</p>
                 <p className="text-sm text-muted-foreground mt-1">Start a new property audit</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Export Inspection Card */}
+          <motion.div
+            variants={itemVariants}
+            onClick={inspection ? handleExport : undefined}
+            className={cn(
+              "group relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl bg-primary/20 border-2 border-primary/30",
+              inspection ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <motion.div
+              animate={{
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+              className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.2)_0%,transparent_70%)]"
+            />
+
+            <div className="relative z-10 flex flex-col items-center justify-center text-center h-full gap-4">
+              <motion.div
+                whileHover={{ scale: inspection ? 1.1 : 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center btn-gradient">
+                  {isExporting ? (
+                    <Loader2 size={28} className="text-primary-foreground animate-spin" />
+                  ) : (
+                    <Download size={28} className="text-primary-foreground" />
+                  )}
+                </div>
+              </motion.div>
+              <div>
+                <p className="text-lg font-semibold text-foreground">
+                  {isExporting ? 'Exporting...' : 'Export Inspection'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {inspection ? 'Save to transfer devices' : 'No active inspection'}
+                </p>
               </div>
             </div>
           </motion.div>

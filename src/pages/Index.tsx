@@ -293,6 +293,7 @@ export default function Index() {
           {currentPage === 'dashboard' && (
             <DashboardHub
               photoCount={photos.length}
+              inspection={inspection}
               onCreateInspection={() => setCurrentPage('inspection')}
               onFilesSelected={handleFilesSelected}
               onViewPhotos={() => setCurrentPage('inspection')}
