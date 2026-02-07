@@ -230,11 +230,9 @@ export function DashboardHub({
                   )}
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm mb-2">
-                {isExporting ? 'Exporting...' : 'Export'}
-              </p>
-              <p className="text-xl font-bold text-foreground">
-                {inspection ? 'Save .zip' : 'No Data'}
+              <p className="text-muted-foreground text-sm mb-2">Export Inspection</p>
+              <p className="text-lg font-bold text-foreground">
+                {isExporting ? 'Exporting...' : inspection ? 'Transfer Devices' : 'No Data'}
               </p>
             </div>
           </motion.div>
@@ -257,10 +255,10 @@ export function DashboardHub({
                   )}
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm mb-2">
-                {isImporting ? 'Importing...' : 'Import'}
+              <p className="text-muted-foreground text-sm mb-2">Import Inspection</p>
+              <p className="text-lg font-bold text-foreground">
+                {isImporting ? 'Importing...' : 'From Device'}
               </p>
-              <p className="text-xl font-bold text-foreground">Load .zip</p>
             </div>
             
             <input
