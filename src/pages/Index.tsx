@@ -280,6 +280,10 @@ export default function Index() {
               onFilesSelected={handleFilesSelected}
               onViewPhotos={() => setCurrentPage('inspection')}
               onViewReports={() => setShowReport(true)}
+              onImportComplete={async (inspectionId) => {
+                await loadInspection(inspectionId);
+                setCurrentPage('inspection');
+              }}
               t={t}
             />
           )}
