@@ -8,6 +8,7 @@ import { analyzePhoto, analyzeAllPending } from '@/lib/aiAnalysis';
 import { loadDemoInspection } from '@/lib/demoData';
 
 import { NewInspectionForm } from '@/components/NewInspectionForm';
+import { WelcomePage, hasCompletedOnboarding } from '@/components/WelcomePage';
 import { StatusBar } from '@/components/StatusBar';
 import { InspectionHeader } from '@/components/InspectionHeader';
 import { CameraCapture } from '@/components/CameraCapture';
@@ -56,6 +57,7 @@ export default function Index() {
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [showNewInspectionForm, setShowNewInspectionForm] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState('other');
+  const [showWelcome, setShowWelcome] = useState(() => !hasCompletedOnboarding());
 
   const handleDictation = useCallback(async (text: string, room: string) => {
     await appendRoomNotes(room, text);
@@ -228,6 +230,16 @@ export default function Index() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
+    );
+  }
+
+  // Welcome/License activation screen for first-time users
+  if (showWelcome) {
+    return (
+      <WelcomePage 
+        onComplete={() => setShowWelcome(false)} 
+        t={t} 
+      />
     );
   }
 
