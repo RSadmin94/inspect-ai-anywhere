@@ -94,11 +94,17 @@ export function SideMenu({
             </div>
  
            {/* Footer */}
-           <div className="p-4 border-t border-border">
-             <p className="text-xs text-muted-foreground text-center">
-               365 InspectAI v1.0 • Offline-First PWA
-             </p>
-           </div>
+            <div className="p-4 border-t border-border space-y-2">
+              <p className="text-xs text-muted-foreground text-center">
+                365 InspectAI v1.0 • Offline-First PWA
+              </p>
+              <a 
+                href="mailto:support@365globalsolutions.com" 
+                className="block text-xs text-primary hover:underline text-center"
+              >
+                support@365globalsolutions.com
+              </a>
+            </div>
          </div>
        </div>
  
