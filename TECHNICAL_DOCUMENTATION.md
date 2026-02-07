@@ -8,22 +8,26 @@
 5. [Core Features](#core-features)
 6. [Offline-First Architecture](#offline-first-architecture)
 7. [AI Integration](#ai-integration)
-8. [PWA Configuration](#pwa-configuration)
-9. [File Structure](#file-structure)
-10. [API Reference](#api-reference)
+8. [PDF Report System](#pdf-report-system)
+9. [PWA Configuration](#pwa-configuration)
+10. [File Structure](#file-structure)
+11. [API Reference](#api-reference)
 
 ---
 
 ## Overview
 
-**InspectAI** is a mobile-first, offline-first Progressive Web Application (PWA) designed for field property inspections. The application enables inspectors to capture photos, add notes, receive AI-powered analysis of property issues, and generate professional PDF reports—all without requiring internet connectivity.
+**365 InspectAI** is a mobile-first, offline-first Progressive Web Application (PWA) designed for field property inspections. The application enables inspectors to capture photos, add notes, receive AI-powered analysis of property issues, and generate professional PDF reports—all without requiring internet connectivity.
 
 ### Key Characteristics
 - **Offline-First**: Full functionality without internet connection
-- **Mobile-First**: Optimized for field use on tablets and smartphones
+- **Mobile-First**: Optimized for field use on tablets and smartphones (one-handed thumb operation)
+- **Camera-First Interface**: "Deep Pro" dark theme with glassmorphism
 - **No Authentication Required**: Standalone operation without user accounts
 - **Local Data Storage**: All data persisted in IndexedDB
-- **AI-Powered Analysis**: Automated defect detection and categorization
+- **AI-Powered Analysis**: Automated defect detection with professional tone
+- **Bilingual Support**: Full English and Spanish localization with formal tone
+- **White-Label Reports**: Complete company branding and legal customization
 
 ---
 
@@ -36,7 +40,7 @@
 │                        User Interface                           │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
 │  │Dashboard │ │ Camera   │ │ Photo    │ │ Report Builder   │   │
-│  │   Hub    │ │ Capture  │ │ Gallery  │ │                  │   │
+│  │   Hub    │ │ Capture  │ │ Gallery  │ │ (Tabbed UI)      │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -56,9 +60,9 @@
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │   │
 │  │  │inspections│ │  photos  │ │ settings │ │customRooms│    │   │
 │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘    │   │
-│  │  ┌──────────┐ ┌──────────────┐                          │   │
-│  │  │ phrases  │ │ issuePresets │                          │   │
-│  │  └──────────┘ └──────────────┘                          │   │
+│  │  ┌──────────┐ ┌──────────────┐ ┌─────────────────┐      │   │
+│  │  │ phrases  │ │ issuePresets │ │ companyProfile  │      │   │
+│  │  └──────────┘ └──────────────┘ └─────────────────┘      │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
@@ -67,7 +71,7 @@
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │              Lovable Cloud (Supabase)                     │   │
 │  │  ┌──────────────────┐                                    │   │
-│  │  │ Edge Function:   │  AI Photo Analysis                 │   │
+│  │  │ Edge Function:   │  AI Photo Analysis via Gemini      │   │
 │  │  │ analyze-photo    │  (when online)                     │   │
 │  │  └──────────────────┘                                    │   │
 │  └──────────────────────────────────────────────────────────┘   │
@@ -84,17 +88,19 @@ App.tsx
 │   │   ├── DashboardHub
 │   │   │   ├── NewInspectionForm
 │   │   │   ├── InspectionHeader
-│   │   │   ├── RoomSelector
+│   │   │   ├── RoomSelector (sticky, drag-and-drop)
 │   │   │   ├── QuickCaptureMode
 │   │   │   │   ├── CameraCapture
 │   │   │   │   ├── DropZone
 │   │   │   │   └── LiveNotesPanel
 │   │   │   ├── PhotoGallery
 │   │   │   │   ├── PhotoDetailPanel
+│   │   │   │   ├── PhotoAnnotationEditor
 │   │   │   │   ├── IssuePresetSelector
 │   │   │   │   └── ImageLightbox
-│   │   │   ├── ReportBuilder
-│   │   │   └── ReportReviewScreen
+│   │   │   ├── ReportBuilder (Tabbed: Photos/Deferred/Maintenance/Legal)
+│   │   │   ├── ReportReviewScreen
+│   │   │   └── CompanyProfileSettings
 │   │   └── StatusBar
 │   └── NotFound.tsx
 └── Providers (QueryClient, Tooltip, Toast)
@@ -145,6 +151,7 @@ App.tsx
 |------------|---------|---------|
 | jsPDF | ^4.1.0 | PDF Creation |
 | html2canvas | ^1.4.1 | HTML to Canvas Conversion |
+| DOMPurify | ^3.3.1 | HTML Sanitization |
 
 ### Backend (Optional)
 | Technology | Purpose |
@@ -181,8 +188,7 @@ type InspectionType =
   | 'annual' 
   | 'insurance' 
   | 'new_construction' 
-  | 'warranty' 
-  | 'other';
+  | 'warranty';
 ```
 **Index**: `by-date` on `createdAt`
 
@@ -196,6 +202,7 @@ interface PhotoRecord {
   notes: string;                 // User notes
   thumbnailBlob: Blob;           // Compressed thumbnail (320px)
   fullImageBlob: Blob;           // Full image (max 2048px)
+  annotatedBlob?: Blob;          // Annotated image blob
   
   // AI Analysis Fields
   aiStatus: AIStatus;
@@ -283,6 +290,41 @@ interface SettingsRecord {
 // Known Settings Keys:
 // - 'roomOrder': string[] - Custom room ordering
 // - 'language': 'en' | 'es' - UI language preference
+// - 'company-profile': CompanyProfile JSON
+// - 'company-profile-logo': Base64 logo string
+```
+
+#### Company Profile Model
+```typescript
+interface CompanyProfile {
+  id: string;
+  companyName: string;
+  companyNameEs?: string;
+  inspectorName?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  logoUrl?: string;
+  logoBlob?: Blob;
+  certifications?: string[];
+  licenseNumber?: string;
+  tagline?: string;
+  taglineEs?: string;
+  // Custom legalese fields
+  customDisclaimer?: string;
+  customDisclaimerEs?: string;
+  scopeAndLimitations?: string;
+  scopeAndLimitationsEs?: string;
+  liabilityStatement?: string;
+  liabilityStatementEs?: string;
+  // Templates
+  deferredItemsTemplates?: Array<{ area: string; reason: string }>;
+  maintenanceTemplates?: string[];
+}
 ```
 
 ---
@@ -338,14 +380,16 @@ const newPhoto = await capturePhoto(imageBlob, selectedRoom);
 ### 3. Room/Area Management
 
 **Default Rooms**
-- Exterior, Interior, Kitchen, Bathroom, Bedroom
-- Living Room, Dining Room, Garage, Attic, Basement
-- Roof, Foundation, HVAC, Electrical, Plumbing, Other
+- Exterior, Interior, Kitchen, Bathroom
+- Dining Room, Main Bedroom, Bedroom 2, Bedroom 3
+- Living Room, Basement, Attic, Garage
+- Roof, Electrical Panel, AC, Water Heater, Other
 
 **Custom Rooms**
 - Users can add custom rooms/areas
 - Rooms can be reordered via drag-and-drop
 - Order persisted in settings store
+- Room selector is "sticky" and persists selection
 
 ### 4. AI-Powered Analysis
 
@@ -367,7 +411,7 @@ Photo Captured
       │
       ▼
 ┌─────────────────┐
-│ AI Model        │
+│ Gemini API      │
 │ Analysis        │
 └─────────────────┘
       │
@@ -377,6 +421,14 @@ Photo Captured
 │ with AI Results │
 └─────────────────┘
 ```
+
+**AI Prompt Guidelines**
+- Professional, neutral, third-person tone
+- "Observation → Implication → Recommendation" flow
+- No AI/software references in output (appears human-authored)
+- Licensed specialist recommendations for uncertain findings
+- No speculation beyond visible evidence
+- Confidence levels stated implicitly
 
 **AI Response Structure**
 ```typescript
@@ -393,35 +445,7 @@ interface AIAnalysisResult {
 }
 ```
 
-### 5. Report Generation
-
-**Report Builder Features**
-- Select/deselect photos for inclusion
-- Reorder photos via drag-and-drop
-- Preview report before generation
-- Export to PDF
-
-**PDF Generation**
-- Uses jsPDF for PDF creation
-- html2canvas for complex element rendering
-- Includes property details, photos, findings, recommendations
-
-### 6. Internationalization (i18n)
-
-**Supported Languages**
-- English (en) - Default
-- Spanish (es)
-
-**Implementation**
-```typescript
-// Hook usage
-const { t, language, setLanguage } = useLanguage();
-
-// Translation function
-t('key.path'); // Returns translated string
-```
-
-### 7. Voice Dictation
+### 5. Voice Dictation
 
 **Web Speech API Integration**
 ```typescript
@@ -432,6 +456,27 @@ const {
   stopListening,
   transcript
 } = useVoiceDictation();
+```
+
+**Live Notes Panel Features**
+- Room-based note organization
+- Real-time speech-to-text
+- Append/clear per room
+- Grouped transcripts by room
+
+### 6. Internationalization (i18n)
+
+**Supported Languages**
+- English (en) - Default
+- Spanish (es) - Formal professional tone
+
+**Implementation**
+```typescript
+// Hook usage
+const { t, language, setLanguage } = useLanguage();
+
+// Translation function
+t('keyName'); // Returns translated string
 ```
 
 ---
@@ -507,13 +552,6 @@ const isOnline = useOnlineStatus();
 
 **Location**: `supabase/functions/analyze-photo/index.ts`
 
-**Configuration**:
-```toml
-# supabase/config.toml
-[functions.analyze-photo]
-verify_jwt = false  # Public access (no auth required)
-```
-
 **Request Format**:
 ```typescript
 POST /functions/v1/analyze-photo
@@ -544,6 +582,75 @@ Content-Type: application/json
 }
 ```
 
+**System Prompt Key Points**:
+- Expert licensed property inspector persona
+- Best-of Hybrid Inspection Report format
+- Court-defensible professional language
+- Observation → Implication → Recommendation structure
+- No emojis, marketing language, or casual phrasing
+
+---
+
+## PDF Report System
+
+### Report Title
+All reports are titled: **"PROPERTY INSPECTION REPORT"**
+
+### Report Structure
+
+| Section | Description |
+|---------|-------------|
+| **1. Cover Page** | Property address, date/time, client name, inspector credentials, company branding, signature area |
+| **2. Agent-Friendly Summary** | Standalone 1-page quick-reference for real estate agents |
+| **3. Table of Contents** | Clickable navigation with page numbers |
+| **4. Inspection Summary** | Systems Overview table, Key Findings (Safety/Major/Monitor), Overall Assessment |
+| **5. Scope & Limitations** | Standards, custom scope, exclusions |
+| **6. Detailed Findings** | System-by-system with photos, status badges, Observation→Implication→Recommendation |
+| **7. Deferred Items** | Areas not inspected with reasons |
+| **8. Maintenance** | Non-urgent recommendations |
+| **9. Disclaimers** | Legal notices, liability statements |
+| **10. Credentials** | Inspector info, certifications, contact |
+
+### Finding Status Labels
+
+| Status | English | Spanish | Use Case |
+|--------|---------|---------|----------|
+| Safety | Safety | Seguridad | Immediate safety concern |
+| Repair | Repair Recommended | Reparación Recomendada | Major defect requiring repair |
+| Maintenance | Maintenance | Mantenimiento | Routine maintenance item |
+| Monitor | Monitor | Monitorear | Item to watch over time |
+
+### Inspection Summary Assessment Text
+
+When defects are present, the following standardized text is used:
+
+**English**: *"Several conditions were observed that may require prompt attention. Further evaluation by qualified, licensed professionals is recommended."*
+
+**Spanish**: *"Se observaron varias condiciones que pueden requerir atención inmediata. Se recomienda una evaluación adicional por profesionales calificados y con licencia."*
+
+### PDF Module Structure
+
+```
+src/lib/pdf/
+├── index.ts                  # Main export and orchestration
+├── reportTypes.ts            # Types, interfaces, status labels
+├── pdfUtils.ts               # Shared utility functions
+├── coverPage.ts              # Cover page generation
+├── agentSummarySection.ts    # Agent-friendly 1-pager
+├── tableOfContents.ts        # Clickable ToC
+├── summarySection.ts         # Inspection Summary with Systems Overview
+├── scopeSection.ts           # Scope, Standards & Limitations
+├── findingsSection.ts        # Detailed system-by-system findings
+├── conclusionSection.ts      # Disclaimers & conclusion
+└── upsellRecommendations.ts  # Maintenance recommendations
+```
+
+### Technical Notes
+- Emojis replaced with vector graphics for PDF viewer stability
+- All content sanitized with DOMPurify
+- Reports appear human-authored (no AI/software references)
+- Full bilingual support (English/Spanish)
+
 ---
 
 ## PWA Configuration
@@ -551,11 +658,11 @@ Content-Type: application/json
 ### Manifest (`public/manifest.json`)
 ```json
 {
-  "name": "InspectAI",
-  "short_name": "InspectAI",
-  "description": "AI-powered property inspection app",
-  "theme_color": "#1e3a5f",
-  "background_color": "#f5f7fa",
+  "name": "365 InspectAI - Home Inspection Software",
+  "short_name": "365 InspectAI",
+  "description": "Professional home inspection software with AI-powered analysis",
+  "theme_color": "#2563eb",
+  "background_color": "#0F172A",
   "display": "standalone",
   "orientation": "portrait-primary",
   "start_url": "/",
@@ -571,7 +678,20 @@ Content-Type: application/json
 VitePWA({
   registerType: "autoUpdate",
   includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
-  manifest: { /* ... */ },
+  manifest: {
+    name: "365 InspectAI",
+    short_name: "365 InspectAI",
+    description: "AI-powered property inspection app for field inspectors",
+    theme_color: "#1e3a5f",
+    background_color: "#f5f7fa",
+    display: "standalone",
+    orientation: "portrait-primary",
+    start_url: "/",
+    icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" }
+    ]
+  },
   workbox: {
     globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
     runtimeCaching: [/* Google Fonts caching */]
@@ -583,7 +703,7 @@ VitePWA({
 ```html
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="InspectAI" />
+<meta name="apple-mobile-web-app-title" content="365 InspectAI" />
 <link rel="apple-touch-icon" href="/logo.png" />
 ```
 
@@ -592,7 +712,7 @@ VitePWA({
 ## File Structure
 
 ```
-inspectai/
+365-inspectai/
 ├── public/
 │   ├── favicon.ico
 │   ├── icon-192.png
@@ -603,15 +723,20 @@ inspectai/
 │   └── robots.txt
 ├── src/
 │   ├── assets/
+│   │   ├── demo/
+│   │   │   ├── electrical-issue.jpg
+│   │   │   ├── foundation-crack.jpg
+│   │   │   ├── plumbing-leak.jpg
+│   │   │   └── roof-damage.jpg
 │   │   └── logo.png
 │   ├── components/
-│   │   ├── ui/                    # shadcn/ui components
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── dialog.tsx
-│   │   │   └── ... (40+ components)
+│   │   ├── ui/                    # shadcn/ui components (40+)
+│   │   ├── AnnotationCanvas.tsx
+│   │   ├── AnnotationControls.tsx
+│   │   ├── AnnotationToolbar.tsx
 │   │   ├── AppSidebar.tsx
 │   │   ├── CameraCapture.tsx
+│   │   ├── CompanyProfileSettings.tsx
 │   │   ├── DashboardHub.tsx
 │   │   ├── DropZone.tsx
 │   │   ├── ImageLightbox.tsx
@@ -620,6 +745,7 @@ inspectai/
 │   │   ├── LiveNotesPanel.tsx
 │   │   ├── NavLink.tsx
 │   │   ├── NewInspectionForm.tsx
+│   │   ├── PhotoAnnotationEditor.tsx
 │   │   ├── PhotoDetailPanel.tsx
 │   │   ├── PhotoGallery.tsx
 │   │   ├── PhraseLibrary.tsx
@@ -643,14 +769,36 @@ inspectai/
 │   │       ├── client.ts          # Auto-generated
 │   │       └── types.ts           # Auto-generated
 │   ├── lib/
+│   │   ├── pdf/
+│   │   │   ├── agentSummarySection.ts
+│   │   │   ├── conclusionSection.ts
+│   │   │   ├── coverPage.ts
+│   │   │   ├── findingsSection.ts
+│   │   │   ├── index.ts
+│   │   │   ├── pdfUtils.ts
+│   │   │   ├── reportTypes.ts
+│   │   │   ├── scopeSection.ts
+│   │   │   ├── summarySection.ts
+│   │   │   ├── tableOfContents.ts
+│   │   │   └── upsellRecommendations.ts
 │   │   ├── aiAnalysis.ts
-│   │   ├── db.ts                  # IndexedDB operations
+│   │   ├── annotationUtils.ts
+│   │   ├── bitmapUtils.ts
+│   │   ├── companyProfile.ts
+│   │   ├── db.ts
 │   │   ├── defaultData.ts
-│   │   ├── i18n.ts                # Translations
+│   │   ├── demoData.ts
+│   │   ├── exportAnnotation.ts
+│   │   ├── i18n.ts
 │   │   ├── imageUtils.ts
+│   │   ├── offlineSyncQueue.ts
 │   │   ├── pdfGenerator.ts
+│   │   ├── professionalReportPdf.ts
+│   │   ├── reportConfig.ts
 │   │   ├── reportPdfGenerator.ts
-│   │   └── utils.ts               # cn() utility
+│   │   ├── strokeRenderer.ts
+│   │   ├── strokeTypes.ts
+│   │   └── utils.ts
 │   ├── pages/
 │   │   ├── Index.tsx
 │   │   └── NotFound.tsx
@@ -659,7 +807,7 @@ inspectai/
 │   │   └── setup.ts
 │   ├── App.css
 │   ├── App.tsx
-│   ├── index.css                  # Tailwind + Design Tokens
+│   ├── index.css
 │   ├── main.tsx
 │   └── vite-env.d.ts
 ├── supabase/
@@ -667,8 +815,10 @@ inspectai/
 │   │   └── analyze-photo/
 │   │       └── index.ts
 │   └── config.toml
-├── .env                           # Environment variables
-├── components.json                # shadcn/ui config
+├── .env
+├── ARCHITECTURE.md
+├── TECHNICAL_DOCUMENTATION.md
+├── components.json
 ├── index.html
 ├── package.json
 ├── postcss.config.js
@@ -734,6 +884,14 @@ inspectai/
 | `getAllIssuePresets` | - | `Promise<IssuePreset[]>` |
 | `getPresetsByCategory` | `category` | `Promise<IssuePreset[]>` |
 | `deleteIssuePreset` | `id: string` | `Promise<void>` |
+
+#### Company Profile Operations
+| Function | Parameters | Returns |
+|----------|------------|---------|
+| `getCompanyProfile` | - | `Promise<CompanyProfile \| null>` |
+| `saveCompanyProfile` | `CompanyProfile` | `Promise<void>` |
+| `getCompanyLogo` | - | `Promise<string \| null>` |
+| `getDefaultCompanyProfile` | - | `CompanyProfile` |
 
 ### Image Utilities (`src/lib/imageUtils.ts`)
 
@@ -826,8 +984,9 @@ Static files in `dist/` directory, ready for deployment to any static hosting se
 
 1. **No Authentication**: App operates without user accounts - all data is local
 2. **Local Data Only**: Sensitive inspection data never leaves the device (except for AI analysis)
-3. **Edge Function**: `verify_jwt = false` - publicly accessible for offline-first compatibility
+3. **Edge Function**: Publicly accessible for offline-first compatibility
 4. **No Server-Side Storage**: All photos and reports stored locally in IndexedDB
+5. **Data Sanitization**: All user input and AI content sanitized with DOMPurify
 
 ---
 
@@ -849,5 +1008,6 @@ Static files in `dist/` directory, ready for deployment to any static hosting se
 
 ---
 
-*Last Updated: February 2025*
-*Version: 1.0.0*
+*Last Updated: February 2026*
+*Version: 1.2.0*
+*Brand: 365 InspectAI*
