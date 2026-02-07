@@ -45,13 +45,12 @@ serve(async (req) => {
   }
 
   try {
-    const GUMROAD_ACCESS_TOKEN = Deno.env.get('GUMROAD_ACCESS_TOKEN');
-    const ALLOWED_DEVICES = parseInt(Deno.env.get('ALLOWED_DEVICES') || '2', 10);
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const DEFAULT_ALLOWED_DEVICES = 2;
 
-    if (!GUMROAD_ACCESS_TOKEN) {
-      console.error('GUMROAD_ACCESS_TOKEN not configured');
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase configuration');
       return new Response(JSON.stringify({
         status: 'error',
         valid: false,
@@ -63,7 +62,7 @@ serve(async (req) => {
         allowCreateNew: false,
         allowAI: false,
         allowExport: true,
-        device: { allowed: ALLOWED_DEVICES, used: 0 },
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
       } as LicenseState), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -73,7 +72,7 @@ serve(async (req) => {
     const body: VerifyRequest = await req.json();
     const { licenseKey, productIdOrPermalink, deviceId, action } = body;
 
-    if (!licenseKey || !productIdOrPermalink || !deviceId) {
+    if (!licenseKey || !deviceId) {
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
@@ -85,7 +84,7 @@ serve(async (req) => {
         allowCreateNew: false,
         allowAI: false,
         allowExport: true,
-        device: { allowed: ALLOWED_DEVICES, used: 0 },
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
       } as LicenseState), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -93,10 +92,7 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client with service role
-    const supabase = createClient(
-      SUPABASE_URL!,
-      SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const licenseHash = hashLicenseKey(licenseKey);
 
@@ -122,77 +118,88 @@ serve(async (req) => {
           allowCreateNew: false,
           allowAI: false,
           allowExport: true,
-          device: { allowed: ALLOWED_DEVICES, used: 0 },
+          device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
         } as LicenseState), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-
-      // After reset, verify the license again
+      // After reset, continue to verify the license
     }
 
-    // Verify with Gumroad API
-    console.log(`Verifying license with Gumroad for product: ${productIdOrPermalink}`);
+    // Verify license against local database
+    console.log(`Verifying license key against database`);
     
-    const gumroadParams = new URLSearchParams({
-      product_id: productIdOrPermalink,
-      license_key: licenseKey,
-    });
+    const { data: licenseData, error: licenseError } = await supabase
+      .from('licenses')
+      .select('*')
+      .eq('license_key', licenseKey)
+      .eq('is_active', true)
+      .maybeSingle();
 
-    // Gumroad also accepts product_permalink, try that if product_id fails
-    const gumroadResponse = await fetch('https://api.gumroad.com/v2/licenses/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: gumroadParams.toString() + `&access_token=${GUMROAD_ACCESS_TOKEN}`,
-    });
-
-    const gumroadData = await gumroadResponse.json();
-    console.log('Gumroad response:', JSON.stringify(gumroadData));
-
-    // Check if license is valid
-    if (!gumroadData.success) {
-      // Try with permalink if product_id failed
-      const gumroadParamsAlt = new URLSearchParams({
-        product_permalink: productIdOrPermalink,
-        license_key: licenseKey,
+    if (licenseError) {
+      console.error('Database error:', licenseError);
+      return new Response(JSON.stringify({
+        status: 'error',
+        valid: false,
+        message: 'License verification failed',
+        productIdOrPermalink: productIdOrPermalink || '',
+        lastVerifiedAt: Date.now(),
+        nextCheckAt: Date.now() + 3600000,
+        graceDays: 7,
+        allowCreateNew: false,
+        allowAI: false,
+        allowExport: true,
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      } as LicenseState), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-
-      const gumroadResponseAlt = await fetch('https://api.gumroad.com/v2/licenses/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: gumroadParamsAlt.toString() + `&access_token=${GUMROAD_ACCESS_TOKEN}`,
-      });
-
-      const gumroadDataAlt = await gumroadResponseAlt.json();
-      
-      if (!gumroadDataAlt.success) {
-        return new Response(JSON.stringify({
-          status: 'invalid',
-          valid: false,
-          message: gumroadDataAlt.message || 'Invalid license key',
-          productIdOrPermalink,
-          lastVerifiedAt: Date.now(),
-          nextCheckAt: Date.now() + 3600000,
-          graceDays: 7,
-          allowCreateNew: false,
-          allowAI: false,
-          allowExport: true,
-          device: { allowed: ALLOWED_DEVICES, used: 0 },
-        } as LicenseState), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
     }
 
-    // License is valid with Gumroad, now check device limit
-    
-    // Get current device count
+    // License not found or inactive
+    if (!licenseData) {
+      return new Response(JSON.stringify({
+        status: 'invalid',
+        valid: false,
+        message: 'Invalid or inactive license key',
+        productIdOrPermalink: productIdOrPermalink || '',
+        lastVerifiedAt: Date.now(),
+        nextCheckAt: Date.now() + 3600000,
+        graceDays: 7,
+        allowCreateNew: false,
+        allowAI: false,
+        allowExport: true,
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      } as LicenseState), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if license has expired
+    if (licenseData.expires_at && new Date(licenseData.expires_at) < new Date()) {
+      return new Response(JSON.stringify({
+        status: 'invalid',
+        valid: false,
+        message: 'License has expired',
+        productIdOrPermalink: licenseData.product_id,
+        lastVerifiedAt: Date.now(),
+        nextCheckAt: Date.now() + 3600000,
+        graceDays: 7,
+        allowCreateNew: false,
+        allowAI: false,
+        allowExport: true,
+        device: { allowed: licenseData.max_devices, used: 0 },
+      } as LicenseState), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const ALLOWED_DEVICES = licenseData.max_devices || DEFAULT_ALLOWED_DEVICES;
+
+    // License is valid, now check device limit
     const { data: devices, error: devicesError } = await supabase
       .from('license_devices')
       .select('device_id')
@@ -214,7 +221,7 @@ serve(async (req) => {
         status: 'device_limit',
         valid: false,
         message: `Device limit reached (${ALLOWED_DEVICES} devices). Reset activations to use on a new device.`,
-        productIdOrPermalink,
+        productIdOrPermalink: licenseData.product_id,
         lastVerifiedAt: Date.now(),
         nextCheckAt: Date.now() + 3600000,
         graceDays: 7,
@@ -263,7 +270,7 @@ serve(async (req) => {
       status: 'active',
       valid: true,
       message: 'License verified successfully',
-      productIdOrPermalink,
+      productIdOrPermalink: licenseData.product_id,
       lastVerifiedAt: Date.now(),
       nextCheckAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
       graceDays: 7,

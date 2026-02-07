@@ -16,19 +16,16 @@ export function LicenseSettings() {
     isLoading,
     isVerifying,
     licenseKey,
-    productId,
     deviceId,
     effectivePermissions,
     remainingGraceDays,
     isWithinGrace,
     setLicenseKey,
-    setProductId,
     verifyLicense,
     resetDevices,
   } = useLicense();
 
   const [keyInput, setKeyInput] = useState(licenseKey);
-  const [productInput, setProductInput] = useState(productId);
 
   const handleVerify = async () => {
     if (!isOnline) {
@@ -37,7 +34,6 @@ export function LicenseSettings() {
     }
 
     setLicenseKey(keyInput);
-    setProductId(productInput);
 
     const result = await verifyLicense();
     
@@ -100,7 +96,7 @@ export function LicenseSettings() {
           )}
         </CardTitle>
         <CardDescription>
-          Enter your Gumroad license key to activate all features
+          Enter your license key to activate all features
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -157,23 +153,12 @@ export function LicenseSettings() {
         {/* License Input */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="productId">Product ID or Permalink</Label>
-            <Input
-              id="productId"
-              value={productInput}
-              onChange={(e) => setProductInput(e.target.value)}
-              placeholder="e.g., abc123 or my-product"
-              disabled={isVerifying}
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="licenseKey">License Key</Label>
             <Input
               id="licenseKey"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="Enter your Gumroad license key"
+              placeholder="Enter your license key"
               disabled={isVerifying}
               type="password"
             />
@@ -194,7 +179,7 @@ export function LicenseSettings() {
         <div className="flex gap-3">
           <Button
             onClick={handleVerify}
-            disabled={!isOnline || isVerifying || !keyInput || !productInput}
+            disabled={!isOnline || isVerifying || !keyInput}
             className="flex-1"
           >
             {isVerifying ? (

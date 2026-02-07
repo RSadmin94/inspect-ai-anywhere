@@ -14,8 +14,6 @@ import {
   loadLicenseState,
   saveLicenseKey,
   loadLicenseKey,
-  saveProductId,
-  loadProductId,
 } from '@/lib/licenseCache';
 import { useOnlineStatus } from './useOnlineStatus';
 
@@ -24,7 +22,6 @@ interface UseLicenseReturn {
   isLoading: boolean;
   isVerifying: boolean;
   licenseKey: string;
-  productId: string;
   deviceId: string;
   effectivePermissions: {
     allowCreateNew: boolean;
@@ -34,7 +31,6 @@ interface UseLicenseReturn {
   remainingGraceDays: number;
   isWithinGrace: boolean;
   setLicenseKey: (key: string) => void;
-  setProductId: (id: string) => void;
   verifyLicense: () => Promise<LicenseState>;
   resetDevices: () => Promise<LicenseState>;
 }
@@ -45,21 +41,18 @@ export function useLicense(): UseLicenseReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const [licenseKey, setLicenseKeyState] = useState('');
-  const [productId, setProductIdState] = useState('');
   const [deviceId] = useState(() => getDeviceId());
 
   // Load cached state on mount
   useEffect(() => {
     async function loadCached() {
       try {
-        const [state, key, product] = await Promise.all([
+        const [state, key] = await Promise.all([
           loadLicenseState(),
           loadLicenseKey(),
-          loadProductId(),
         ]);
         setLicenseState(state);
         setLicenseKeyState(key);
-        setProductIdState(product);
       } catch (e) {
         console.error('Failed to load license cache:', e);
       } finally {
@@ -75,20 +68,14 @@ export function useLicense(): UseLicenseReturn {
     saveLicenseKey(key).catch(console.error);
   }, []);
 
-  // Persist product ID changes
-  const setProductId = useCallback((id: string) => {
-    setProductIdState(id);
-    saveProductId(id).catch(console.error);
-  }, []);
-
   // Call edge function
   const callVerifyLicense = useCallback(async (
     action: 'verify' | 'reset_devices'
   ): Promise<LicenseState> => {
-    if (!licenseKey || !productId) {
+    if (!licenseKey) {
       return {
         ...DEFAULT_LICENSE_STATE,
-        message: 'License key and product ID are required',
+        message: 'License key is required',
       };
     }
 
@@ -97,7 +84,7 @@ export function useLicense(): UseLicenseReturn {
     try {
       const request: LicenseVerifyRequest = {
         licenseKey,
-        productIdOrPermalink: productId,
+        productIdOrPermalink: '', // Not needed for self-hosted
         deviceId,
         action,
       };
@@ -132,7 +119,7 @@ export function useLicense(): UseLicenseReturn {
     } finally {
       setIsVerifying(false);
     }
-  }, [licenseKey, productId, deviceId, licenseState]);
+  }, [licenseKey, deviceId, licenseState]);
 
   const verifyLicense = useCallback(() => callVerifyLicense('verify'), [callVerifyLicense]);
   const resetDevices = useCallback(() => callVerifyLicense('reset_devices'), [callVerifyLicense]);
@@ -147,13 +134,11 @@ export function useLicense(): UseLicenseReturn {
     isLoading,
     isVerifying,
     licenseKey,
-    productId,
     deviceId,
     effectivePermissions,
     remainingGraceDays,
     isWithinGrace,
     setLicenseKey,
-    setProductId,
     verifyLicense,
     resetDevices,
   };
