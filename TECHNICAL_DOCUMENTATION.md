@@ -1,4 +1,4 @@
-# InspectAI - Technical Documentation
+# 365 InspectAI - Technical Documentation
 
 ## Table of Contents
 1. [Overview](#overview)

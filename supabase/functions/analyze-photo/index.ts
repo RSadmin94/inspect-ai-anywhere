@@ -29,7 +29,7 @@ serve(async (req) => {
       );
     }
 
-    // InspectAI Best-of Hybrid Report System Prompt
+    // 365 InspectAI Best-of Hybrid Report System Prompt
     const systemPrompt = `You are an expert licensed property inspector analyzing photos for a professional, court-defensible home inspection report.
 
 SYSTEM ROLE:

@@ -1,8 +1,8 @@
-# InspectAI - Architecture & Features Documentation
+# 365 InspectAI - Architecture & Features Documentation
 
 ## Overview
 
-InspectAI is an offline-first Progressive Web Application (PWA) designed for professional home inspectors. It enables field-based photo capture, AI-powered defect analysis, and professional PDF report generation—all while maintaining full functionality without internet connectivity.
+365 InspectAI is an offline-first Progressive Web Application (PWA) designed for professional home inspectors. It enables field-based photo capture, AI-powered defect analysis, and professional PDF report generation—all while maintaining full functionality without internet connectivity.
 
 ---
 

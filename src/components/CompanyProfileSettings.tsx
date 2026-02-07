@@ -146,7 +146,7 @@ export function CompanyProfileSettings() {
             <Input
               value={profile.companyName}
               onChange={(e) => updateField('companyName', e.target.value)}
-              placeholder="InspectAI"
+              placeholder="365 InspectAI"
             />
           </div>
           <div className="space-y-2">
@@ -154,7 +154,7 @@ export function CompanyProfileSettings() {
             <Input
               value={profile.companyNameEs || ''}
               onChange={(e) => updateField('companyNameEs', e.target.value)}
-              placeholder="InspectAI"
+              placeholder="365 InspectAI"
             />
           </div>
         </div>

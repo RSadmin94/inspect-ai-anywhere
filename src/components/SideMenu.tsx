@@ -96,7 +96,7 @@ export function SideMenu({
            {/* Footer */}
            <div className="p-4 border-t border-border">
              <p className="text-xs text-muted-foreground text-center">
-               InspectAI v1.0 • Offline-First PWA
+               365 InspectAI v1.0 • Offline-First PWA
              </p>
            </div>
          </div>

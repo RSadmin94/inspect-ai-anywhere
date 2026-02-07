@@ -1,9 +1,9 @@
  export type Language = 'en' | 'es';
  
  export const translations = {
-   en: {
-     // App
-     appName: 'InspectAI',
+  en: {
+    // App
+    appName: '365 InspectAI',
      language: 'English',
      switchLanguage: 'Español',
      
@@ -186,9 +186,9 @@
         settings: 'Settings',
         companyProfile: 'Company Profile',
       },
-   es: {
-     // App
-     appName: 'InspectAI',
+  es: {
+    // App
+    appName: '365 InspectAI',
      language: 'Español',
      switchLanguage: 'English',
      

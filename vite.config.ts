@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
       manifest: {
-        name: "InspectAI",
-        short_name: "InspectAI",
+        name: "365 InspectAI",
+        short_name: "365 InspectAI",
         description: "AI-powered property inspection app for field inspectors",
         theme_color: "#1e3a5f",
         background_color: "#f5f7fa",

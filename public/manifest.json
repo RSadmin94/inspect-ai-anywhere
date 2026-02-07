@@ -1,6 +1,6 @@
- {
-   "name": "InspectAI - Home Inspection Software",
-   "short_name": "InspectAI",
+{
+  "name": "365 InspectAI - Home Inspection Software",
+  "short_name": "365 InspectAI",
    "description": "Professional home inspection software with AI-powered analysis",
    "start_url": "/",
    "display": "standalone",

@@ -110,11 +110,11 @@ import { useIsMobile } from '@/hooks/use-mobile';
            >
             <img 
               src={logoImage} 
-              alt="InspectAI Logo" 
+              alt="365 InspectAI Logo" 
               className="w-20 h-20 rounded-lg object-contain"
             />
              <div>
-               <h1 className="text-lg font-bold text-foreground">InspectAI</h1>
+               <h1 className="text-lg font-bold text-foreground">365 InspectAI</h1>
                <p className="text-xs text-muted-foreground">Pro</p>
              </div>
            </motion.div>
