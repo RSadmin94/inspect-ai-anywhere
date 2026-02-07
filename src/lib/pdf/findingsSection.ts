@@ -128,7 +128,7 @@ export async function addFindingsSection(
   const { pdf, margin, contentWidth } = ctx;
   
   // Section title
-  const findingsTitle = lang === 'es' ? 'HALLAZGOS POR SISTEMA' : 'SYSTEM-BY-SYSTEM FINDINGS';
+  const findingsTitle = lang === 'es' ? 'HALLAZGOS DETALLADOS DE LA INSPECCIÓN' : 'DETAILED INSPECTION FINDINGS';
   drawSectionHeader(ctx, findingsTitle);
   
   // Intro paragraph
