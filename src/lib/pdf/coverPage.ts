@@ -24,8 +24,8 @@ export async function addCoverPage(
   pdf.setFontSize(28);
   pdf.setFont('helvetica', 'bold');
   const reportTitle = lang === 'es' 
-    ? 'INFORME DE INSPECCIÓN DE BIENES RAÍCES' 
-    : 'REAL ESTATE INSPECTION REPORT';
+    ? 'INFORME DE INSPECCIÓN DE PROPIEDAD' 
+    : 'PROPERTY INSPECTION REPORT';
   pdf.text(reportTitle, pageWidth / 2, ctx.yPos, { align: 'center' });
   ctx.yPos += 20;
 

@@ -82,11 +82,6 @@ export function addAgentSummarySection(
     level: 1,
   });
 
-  // Header with accent bar
-  pdf.setFillColor(59, 130, 246); // Blue accent
-  pdf.rect(margin, ctx.yPos, contentWidth, 8, 'F');
-  ctx.yPos += 12;
-
   // Title
   pdf.setFontSize(18);
   pdf.setFont('helvetica', 'bold');
