@@ -146,46 +146,57 @@ export function PhotoAnnotationEditor({
     try {
       // Create full-resolution canvas for export
       const fullCanvas = document.createElement('canvas');
-      fullCanvas.width = photo.fullImageBlob.size > 5000000 ? 2048 : 1024; // Estimate from blob size
-      fullCanvas.height = (fullCanvas.width * 3) / 4; // Assume 4:3 aspect ratio
-
+      
       const ctx = fullCanvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) {
+        setIsSaving(false);
+        return;
+      }
 
-      // Load full image
-      const img = new Image();
-      img.onload = async () => {
-        fullCanvas.width = img.width;
-        fullCanvas.height = img.height;
+      // Load full image and wait for it
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = imageUrl;
+      });
 
-        // Draw full image
-        ctx.drawImage(img, 0, 0);
+      fullCanvas.width = img.width;
+      fullCanvas.height = img.height;
 
-        // Render all strokes at full resolution
-        renderStrokes(ctx, strokes, { scale: 1, offsetX: 0, offsetY: 0 });
+      // Draw full image
+      ctx.drawImage(img, 0, 0);
 
-        // Export to blob
-        fullCanvas.toBlob(async blob => {
-          if (!blob) return;
+      // Render all strokes at full resolution
+      renderStrokes(ctx, strokes, { scale: 1, offsetX: 0, offsetY: 0 });
 
-          // Create annotation metadata
-          const annotationData = JSON.stringify({
-            strokeCount: strokes.length,
-            timestamp: Date.now(),
-            tools: [...new Set(strokes.map(s => s.type))],
-            colors: [...new Set(strokes.map(s => s.color))],
-            memoryUsage: totalMemory,
-          });
+      // Export to blob and wait for it
+      const blob = await new Promise<Blob | null>((resolve) => {
+        fullCanvas.toBlob(resolve, 'image/png');
+      });
 
-          await onSave(annotationData, blob);
-        }, 'image/png');
-      };
+      if (!blob) {
+        console.error('Failed to create annotation blob');
+        setIsSaving(false);
+        return;
+      }
 
-      img.src = imageUrl;
+      // Create annotation metadata
+      const annotationData = JSON.stringify({
+        strokeCount: strokes.length,
+        timestamp: Date.now(),
+        tools: [...new Set(strokes.map(s => s.type))],
+        colors: [...new Set(strokes.map(s => s.color))],
+        memoryUsage: totalMemory,
+      });
+
+      await onSave(annotationData, blob);
+    } catch (error) {
+      console.error('Failed to save annotation:', error);
     } finally {
       setIsSaving(false);
     }
-  }, [photo.fullImageBlob, strokes, imageUrl, totalMemory, onSave]);
+  }, [strokes, imageUrl, totalMemory, onSave]);
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/80 flex flex-col animate-fade-in">
