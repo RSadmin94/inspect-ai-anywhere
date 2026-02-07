@@ -43,9 +43,12 @@
      livingRoom: 'Living Room',
      basement: 'Basement',
      attic: 'Attic',
-     garage: 'Garage',
-     roof: 'Roof',
-     other: 'Other',
+      garage: 'Garage',
+      roof: 'Roof',
+      electricalPanel: 'Electrical Panel',
+      ac: 'AC',
+      waterHeater: 'Water Heater',
+      other: 'Other',
      
      // AI Status
      aiStatus: 'AI Analysis',
@@ -225,9 +228,12 @@
      livingRoom: 'Sala de Estar',
      basement: 'Sótano',
      attic: 'Ático',
-     garage: 'Garaje',
-     roof: 'Techo',
-     other: 'Otro',
+      garage: 'Garaje',
+      roof: 'Techo',
+      electricalPanel: 'Panel Eléctrico',
+      ac: 'Aire Acondicionado',
+      waterHeater: 'Calentador de Agua',
+      other: 'Otro',
      
      // AI Status
      aiStatus: 'Análisis de IA',
