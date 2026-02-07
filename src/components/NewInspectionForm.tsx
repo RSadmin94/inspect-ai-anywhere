@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { MapPin, User, ArrowRight, Clipboard, Building, ChevronDown, FlaskConical, Loader2 } from 'lucide-react';
+import { MapPin, User, ArrowRight, Clipboard, Building, ChevronDown, FlaskConical, Loader2, X } from 'lucide-react';
 import { InspectionType } from '@/lib/db';
 
 interface NewInspectionFormProps {
   onStart: (address: string, inspectorName?: string, clientName?: string, inspectionType?: InspectionType) => Promise<unknown>;
   onLoadDemo?: () => Promise<void>;
+  onClose?: () => void;
   t: (key: string) => string;
 }
 
 const INSPECTION_TYPES: InspectionType[] = ['pre_purchase', 'pre_listing', 'annual', 'insurance', 'new_construction', 'warranty', 'other'];
 
-export function NewInspectionForm({ onStart, onLoadDemo, t }: NewInspectionFormProps) {
+export function NewInspectionForm({ onStart, onLoadDemo, onClose, t }: NewInspectionFormProps) {
   const [address, setAddress] = useState('');
   const [inspectorName, setInspectorName] = useState('');
   const [clientName, setClientName] = useState('');
@@ -42,14 +43,25 @@ export function NewInspectionForm({ onStart, onLoadDemo, t }: NewInspectionFormP
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="safe-top px-6 pt-8 pb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center">
-            <Clipboard className="w-6 h-6 text-primary-foreground" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center">
+              <Clipboard className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">365 InspectAI</h1>
+              <p className="text-sm text-muted-foreground">{t('newInspection')}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">365 InspectAI</h1>
-            <p className="text-sm text-muted-foreground">{t('newInspection')}</p>
-          </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+          )}
         </div>
       </div>
 
