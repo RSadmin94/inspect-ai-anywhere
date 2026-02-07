@@ -1,4 +1,4 @@
- import React from 'react';
+ import React, { useRef, useState } from 'react';
  import { motion } from 'framer-motion';
  import {
    FileText,
@@ -6,10 +6,14 @@
    BarChart3,
    Plus,
    Camera,
+   Upload,
+   Loader2,
  } from 'lucide-react';
  import { DropZone } from './DropZone';
  import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
+import { importInspection } from '@/lib/exportImport';
+import { toast } from 'sonner';
  
 interface DashboardHubProps {
   photoCount: number;
@@ -17,6 +21,7 @@ interface DashboardHubProps {
   onFilesSelected: (files: File[]) => void;
   onViewPhotos?: () => void;
   onViewReports?: () => void;
+  onImportComplete?: (inspectionId: string) => void;
   t: (key: string) => string;
 }
  
@@ -26,8 +31,51 @@ export function DashboardHub({
   onFilesSelected,
   onViewPhotos,
   onViewReports,
+  onImportComplete,
   t,
 }: DashboardHubProps) {
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.zip')) {
+      toast.error('Please select a .zip file');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const result = await importInspection(file);
+      
+      if (result.success) {
+        toast.success(
+          `Imported ${result.photosImported} photos` + 
+          (result.photosSkipped > 0 ? ` (${result.photosSkipped} skipped)` : '')
+        );
+        if (result.inspectionId && onImportComplete) {
+          onImportComplete(result.inspectionId);
+        }
+      } else {
+        toast.error(`Import failed: ${result.errors[0] || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Import failed:', error);
+      toast.error('Failed to import inspection');
+    }
+    setIsImporting(false);
+    
+    if (importInputRef.current) {
+      importInputRef.current.value = '';
+    }
+  };
+
    const stats = [
      {
        label: 'Photos Captured',
@@ -144,52 +192,96 @@ export function DashboardHub({
          })}
        </motion.div>
  
-       {/* Main Actions Section */}
-       <motion.div
-         variants={containerVariants}
-         initial="hidden"
-         animate="visible"
-         className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12"
-       >
-         {/* Create Inspection Card */}
-         <motion.div
-           variants={itemVariants}
-           onClick={onCreateInspection}
-           className="lg:col-span-1 group cursor-pointer relative overflow-hidden rounded-3xl p-8 transition-all duration-300 hover:shadow-2xl bg-primary/20 border-2 border-primary/30"
-         >
-           {/* Animated background */}
-           <motion.div
-             animate={{
-               opacity: [0.3, 0.6, 0.3],
-             }}
-             transition={{ duration: 3, repeat: Infinity }}
-             className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.2)_0%,transparent_70%)]"
-           />
- 
-           <div className="relative z-10 flex flex-col items-center justify-center text-center h-full gap-4">
-             <motion.div
-               whileHover={{ scale: 1.1, rotate: 90 }}
-               transition={{ duration: 0.3 }}
-             >
-               <div className="w-16 h-16 rounded-2xl flex items-center justify-center btn-gradient">
-                 <Plus size={32} className="text-primary-foreground" />
-               </div>
-             </motion.div>
-             <div>
-               <p className="text-lg font-semibold text-foreground">{t('newInspection')}</p>
-               <p className="text-sm text-muted-foreground mt-1">Start a new property audit</p>
-             </div>
-           </div>
-         </motion.div>
- 
-         {/* Drop Zone */}
-         <motion.div
-           variants={itemVariants}
-           className="lg:col-span-2"
-         >
-           <DropZone onFilesSelected={onFilesSelected} />
-         </motion.div>
-       </motion.div>
+        {/* Main Actions Section */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+        >
+          {/* Create Inspection Card */}
+          <motion.div
+            variants={itemVariants}
+            onClick={onCreateInspection}
+            className="group cursor-pointer relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl bg-primary/20 border-2 border-primary/30"
+          >
+            {/* Animated background */}
+            <motion.div
+              animate={{
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.2)_0%,transparent_70%)]"
+            />
+
+            <div className="relative z-10 flex flex-col items-center justify-center text-center h-full gap-4">
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center btn-gradient">
+                  <Plus size={28} className="text-primary-foreground" />
+                </div>
+              </motion.div>
+              <div>
+                <p className="text-lg font-semibold text-foreground">{t('newInspection')}</p>
+                <p className="text-sm text-muted-foreground mt-1">Start a new property audit</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Import Inspection Card */}
+          <motion.div
+            variants={itemVariants}
+            onClick={handleImportClick}
+            className="group cursor-pointer relative overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl bg-accent/20 border-2 border-accent/30"
+          >
+            <motion.div
+              animate={{
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+              className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--accent)/0.2)_0%,transparent_70%)]"
+            />
+
+            <div className="relative z-10 flex flex-col items-center justify-center text-center h-full gap-4">
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-accent text-accent-foreground">
+                  {isImporting ? (
+                    <Loader2 size={28} className="animate-spin" />
+                  ) : (
+                    <Upload size={28} />
+                  )}
+                </div>
+              </motion.div>
+              <div>
+                <p className="text-lg font-semibold text-foreground">
+                  {isImporting ? 'Importing...' : 'Import Inspection'}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">Continue from another device</p>
+              </div>
+            </div>
+            
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".zip"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+          </motion.div>
+
+          {/* Drop Zone */}
+          <motion.div
+            variants={itemVariants}
+            className="lg:col-span-2"
+          >
+            <DropZone onFilesSelected={onFilesSelected} />
+          </motion.div>
+        </motion.div>
  
        {/* Features Section */}
        <motion.div
