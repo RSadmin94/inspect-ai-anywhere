@@ -7,6 +7,7 @@ import {
   ReportOptions,
   PDFContext,
   DeferredItem,
+  AncillarySection,
   createPDFContext,
   addPageFooter,
 } from '@/lib/pdf';
@@ -15,10 +16,10 @@ import { addTableOfContentsPlaceholder, fillTableOfContents } from '@/lib/pdf/ta
 import { addSummarySection } from '@/lib/pdf/summarySection';
 import { addScopeSection, addDeferredItemsSection } from '@/lib/pdf/scopeSection';
 import { addFindingsSection } from '@/lib/pdf/findingsSection';
-import { addMaintenanceSection, addDisclaimersSection, addCredentialsSection } from '@/lib/pdf/conclusionSection';
+import { addMaintenanceSection, addDisclaimersSection, addCredentialsSection, addAncillarySection } from '@/lib/pdf/conclusionSection';
 import { addAgentSummarySection } from '@/lib/pdf/agentSummarySection';
 
-export type { ReportLanguage, ReportOptions, DeferredItem };
+export type { ReportLanguage, ReportOptions, DeferredItem, AncillarySection };
 
 export async function generateProfessionalReportPDF(options: ReportOptions): Promise<Blob> {
   const {
@@ -32,6 +33,7 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
     includeConclusion = true,
     deferredItems = [],
     maintenanceRecommendations = [],
+    ancillarySections = [],
   } = options;
 
   const pdf = new jsPDF({
@@ -96,7 +98,14 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
       addMaintenanceSection(ctx, maintenanceRecommendations, lang);
     }
     
-    // 8. Scope, Standards & Limitations (moved towards end)
+    // 8. Ancillary Sections (Radon, WDI, Mold)
+    for (const section of ancillarySections) {
+      if (section.enabled) {
+        addAncillarySection(ctx, section, lang);
+      }
+    }
+    
+    // 9. Scope, Standards & Limitations (moved towards end)
     if (includeIntroduction) {
       addScopeSection(ctx, companyProfile, lang);
     }

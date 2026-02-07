@@ -6,11 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Building2, Upload, X, Plus, Save } from 'lucide-react';
+import { Building2, Upload, X, Plus, Save, FileText, Shield } from 'lucide-react';
 import { CompanyProfile, getCompanyProfile, saveCompanyProfile, getDefaultCompanyProfile } from '@/lib/companyProfile';
 import { useLanguage } from '@/hooks/useLanguage';
+import { StorageMeter } from './StorageMeter';
+import { LicenseSettings } from './LicenseSettings';
+import { TermsOfService } from './TermsOfService';
+import { PrivacyPolicy } from './PrivacyPolicy';
 
 export function CompanyProfileSettings() {
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const { language, t } = useLanguage();
   const [profile, setProfile] = useState<CompanyProfile>(getDefaultCompanyProfile());
   const [isLoading, setIsLoading] = useState(true);
@@ -386,7 +392,50 @@ export function CompanyProfileSettings() {
             ? (language === 'es' ? 'Guardando...' : 'Saving...') 
             : (language === 'es' ? 'Guardar Perfil' : 'Save Profile')}
         </Button>
+
+        {/* Storage Meter */}
+        <div className="pt-6 border-t border-border">
+          <h3 className="text-lg font-semibold mb-4">
+            {language === 'es' ? 'Almacenamiento' : 'Storage'}
+          </h3>
+          <StorageMeter />
+        </div>
+
+        {/* License Settings */}
+        <div className="pt-6 border-t border-border">
+          <h3 className="text-lg font-semibold mb-4">
+            {language === 'es' ? 'Licencia' : 'License'}
+          </h3>
+          <LicenseSettings />
+        </div>
+
+        {/* Legal Links */}
+        <div className="pt-6 border-t border-border">
+          <h3 className="text-lg font-semibold mb-4">
+            {language === 'es' ? 'Legal' : 'Legal'}
+          </h3>
+          <div className="space-y-2">
+            <button
+              onClick={() => setShowTerms(true)}
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+            >
+              <FileText className="w-5 h-5 text-primary" />
+              <span className="font-medium">{language === 'es' ? 'Términos de Servicio' : 'Terms of Service'}</span>
+            </button>
+            <button
+              onClick={() => setShowPrivacy(true)}
+              className="w-full flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-left"
+            >
+              <Shield className="w-5 h-5 text-primary" />
+              <span className="font-medium">{language === 'es' ? 'Política de Privacidad' : 'Privacy Policy'}</span>
+            </button>
+          </div>
+        </div>
       </CardContent>
+
+      {/* Legal Modals */}
+      <TermsOfService isOpen={showTerms} onClose={() => setShowTerms(false)} />
+      <PrivacyPolicy isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
     </Card>
   );
 }

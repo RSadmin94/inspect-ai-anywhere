@@ -1,14 +1,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, FileText, Download, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp, BookOpen, Loader2, Plus, Trash2, AlertTriangle, Wrench } from 'lucide-react';
+import { X, FileText, Download, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp, BookOpen, Loader2, Plus, Trash2, AlertTriangle, Wrench, Radiation, Bug, Droplets } from 'lucide-react';
 import { PhotoRecord, InspectionRecord, Phrase, getAllPhrases } from '@/lib/db';
 import { blobToDataUrl } from '@/lib/imageUtils';
 import { Language } from '@/lib/i18n';
-import { generateProfessionalReportPDF, DeferredItem } from '@/lib/professionalReportPdf';
+import { generateProfessionalReportPDF, DeferredItem, AncillarySection } from '@/lib/professionalReportPdf';
 import { cn } from '@/lib/utils';
 import { PhraseLibrary } from './PhraseLibrary';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ReportBuilderProps {
   isOpen: boolean;
@@ -27,6 +30,54 @@ interface PhotoGroup {
   collapsed: boolean;
 }
 
+const DEFAULT_RADON_SECTION: AncillarySection = {
+  type: 'radon',
+  enabled: false,
+  title: 'Radon Testing',
+  titleEs: 'Prueba de Radón',
+  scope: 'Radon testing was conducted using a continuous radon monitor (CRM) placed in the lowest livable area of the property for a minimum of 48 hours.',
+  scopeEs: 'La prueba de radón se realizó utilizando un monitor continuo de radón (CRM) colocado en el área habitable más baja de la propiedad durante un mínimo de 48 horas.',
+  limitations: 'Radon levels can vary significantly over time due to weather, ventilation, and seasonal changes. This test provides a snapshot and may not represent long-term exposure levels.',
+  limitationsEs: 'Los niveles de radón pueden variar significativamente con el tiempo debido al clima, la ventilación y los cambios estacionales. Esta prueba proporciona una instantánea y puede no representar los niveles de exposición a largo plazo.',
+  findings: '',
+  findingsEs: '',
+  result: 'monitor',
+  recommendation: 'If radon levels exceed 4.0 pCi/L, mitigation by a qualified radon professional is recommended.',
+  recommendationEs: 'Si los niveles de radón exceden 4.0 pCi/L, se recomienda la mitigación por un profesional calificado en radón.',
+};
+
+const DEFAULT_WDI_SECTION: AncillarySection = {
+  type: 'wdi',
+  enabled: false,
+  title: 'Wood-Destroying Insect (WDI) Inspection',
+  titleEs: 'Inspección de Insectos Destructores de Madera',
+  scope: 'A visual inspection was conducted for evidence of wood-destroying insects including termites, carpenter ants, carpenter bees, and powder post beetles.',
+  scopeEs: 'Se realizó una inspección visual en busca de evidencia de insectos destructores de madera, incluidas termitas, hormigas carpinteras, abejas carpinteras y escarabajos de polvo.',
+  limitations: 'This inspection is limited to visible and accessible areas. Hidden damage or active infestations in inaccessible areas cannot be detected.',
+  limitationsEs: 'Esta inspección se limita a áreas visibles y accesibles. No se puede detectar daño oculto o infestaciones activas en áreas inaccesibles.',
+  findings: '',
+  findingsEs: '',
+  result: 'monitor',
+  recommendation: 'Further evaluation by a licensed pest control professional is recommended if evidence of WDI activity is observed.',
+  recommendationEs: 'Se recomienda una evaluación adicional por un profesional de control de plagas con licencia si se observa evidencia de actividad de insectos destructores de madera.',
+};
+
+const DEFAULT_MOLD_SECTION: AncillarySection = {
+  type: 'mold',
+  enabled: false,
+  title: 'Mold Assessment',
+  titleEs: 'Evaluación de Moho',
+  scope: 'A visual assessment was conducted for visible mold growth, water staining, and conditions conducive to mold development.',
+  scopeEs: 'Se realizó una evaluación visual en busca de crecimiento visible de moho, manchas de agua y condiciones propicias para el desarrollo de moho.',
+  limitations: 'This is a visual assessment only and does not include air quality testing or laboratory analysis. Mold can exist in hidden areas not accessible during inspection.',
+  limitationsEs: 'Esta es solo una evaluación visual y no incluye pruebas de calidad del aire ni análisis de laboratorio. El moho puede existir en áreas ocultas no accesibles durante la inspección.',
+  findings: '',
+  findingsEs: '',
+  result: 'monitor',
+  recommendation: 'If mold-like substances are observed or suspected, testing by a certified mold inspector is recommended.',
+  recommendationEs: 'Si se observan o sospechan sustancias similares al moho, se recomienda realizar pruebas por un inspector de moho certificado.',
+};
+
 export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t }: ReportBuilderProps) {
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>('en');
   const [photoGroups, setPhotoGroups] = useState<PhotoGroup[]>([]);
@@ -37,6 +88,11 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
   const [maintenanceRecs, setMaintenanceRecs] = useState<string[]>([]);
   const [newDeferred, setNewDeferred] = useState({ area: '', reason: '' });
   const [newMaintenance, setNewMaintenance] = useState('');
+  
+  // Ancillary sections
+  const [radonSection, setRadonSection] = useState<AncillarySection>(DEFAULT_RADON_SECTION);
+  const [wdiSection, setWdiSection] = useState<AncillarySection>(DEFAULT_WDI_SECTION);
+  const [moldSection, setMoldSection] = useState<AncillarySection>(DEFAULT_MOLD_SECTION);
  
    // Group photos by room
    useEffect(() => {
@@ -151,6 +207,9 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
         }))
       );
 
+      // Collect enabled ancillary sections
+      const ancillarySections = [radonSection, wdiSection, moldSection].filter(s => s.enabled);
+
       const pdfBlob = await generateProfessionalReportPDF({
         inspection,
         photos: orderedPhotos,
@@ -162,6 +221,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
         includeConclusion: true,
         deferredItems,
         maintenanceRecommendations: maintenanceRecs,
+        ancillarySections,
       });
 
       const url = URL.createObjectURL(pdfBlob);

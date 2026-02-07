@@ -1,4 +1,4 @@
-import { PDFContext } from './reportTypes';
+import { PDFContext, AncillarySection, findingStatusLabels, findingStatusColors, FindingStatus } from './reportTypes';
 import { Language } from '@/lib/i18n';
 import { CompanyProfile } from '@/lib/companyProfile';
 import { drawSectionHeader, checkNewPage, addPageFooter, drawParagraph, drawBulletList, drawDivider } from './pdfUtils';
@@ -269,6 +269,122 @@ export function addCredentialsSection(
     ctx.yPos += 5;
   }
   pdf.setTextColor(0);
+  
+  addPageFooter(ctx);
+}
+
+export function addAncillarySection(
+  ctx: PDFContext,
+  section: AncillarySection,
+  lang: Language
+): void {
+  if (!section.enabled) return;
+  
+  ctx.pdf.addPage();
+  ctx.pageNumber++;
+  ctx.yPos = ctx.margin;
+  
+  const { pdf, margin, contentWidth, pageWidth } = ctx;
+  
+  // Section title
+  const title = lang === 'es' && section.titleEs ? section.titleEs : section.title;
+  drawSectionHeader(ctx, title.toUpperCase());
+  
+  // Add to TOC
+  ctx.tocEntries.push({
+    title: title,
+    pageNumber: ctx.pageNumber,
+    level: 1,
+  });
+  
+  // Scope
+  const scopeTitle = lang === 'es' ? 'ALCANCE DE LA INSPECCIÓN' : 'INSPECTION SCOPE';
+  pdf.setFontSize(11);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(scopeTitle, margin, ctx.yPos);
+  ctx.yPos += 6;
+  
+  const scope = lang === 'es' && section.scopeEs ? section.scopeEs : section.scope;
+  drawParagraph(ctx, scope);
+  ctx.yPos += 8;
+  
+  // Limitations
+  const limitationsTitle = lang === 'es' ? 'LIMITACIONES' : 'LIMITATIONS';
+  checkNewPage(ctx, 30);
+  pdf.setFontSize(11);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(limitationsTitle, margin, ctx.yPos);
+  ctx.yPos += 6;
+  
+  const limitations = lang === 'es' && section.limitationsEs ? section.limitationsEs : section.limitations;
+  drawParagraph(ctx, limitations);
+  ctx.yPos += 8;
+  
+  // Result Status Badge
+  const resultTitle = lang === 'es' ? 'RESULTADO' : 'RESULT';
+  checkNewPage(ctx, 30);
+  pdf.setFontSize(11);
+  pdf.setFont('helvetica', 'bold');
+  pdf.text(resultTitle, margin, ctx.yPos);
+  ctx.yPos += 8;
+  
+  // Map result to status for color
+  const resultStatus: FindingStatus = section.result === 'not_tested' ? 'monitor' : (section.result as FindingStatus);
+  const statusLabel = section.result === 'not_tested' 
+    ? (lang === 'es' ? 'No Probado' : 'Not Tested')
+    : (lang === 'es' ? findingStatusLabels[resultStatus]?.es : findingStatusLabels[resultStatus]?.en) || section.result;
+  
+  const statusColor = findingStatusColors[resultStatus] || [100, 100, 100];
+  
+  // Draw status badge
+  pdf.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+  const badgeWidth = pdf.getTextWidth(statusLabel) + 10;
+  pdf.roundedRect(margin, ctx.yPos - 4, badgeWidth, 8, 2, 2, 'F');
+  
+  pdf.setFontSize(9);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(255, 255, 255);
+  pdf.text(statusLabel, margin + 5, ctx.yPos + 1);
+  pdf.setTextColor(0, 0, 0);
+  ctx.yPos += 12;
+  
+  // Findings
+  const findings = lang === 'es' && section.findingsEs ? section.findingsEs : section.findings;
+  if (findings && findings.trim()) {
+    const findingsTitle = lang === 'es' ? 'HALLAZGOS' : 'FINDINGS';
+    checkNewPage(ctx, 30);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(findingsTitle, margin, ctx.yPos);
+    ctx.yPos += 6;
+    
+    drawParagraph(ctx, findings);
+    ctx.yPos += 8;
+  }
+  
+  // Recommendation
+  const recommendation = lang === 'es' && section.recommendationEs ? section.recommendationEs : section.recommendation;
+  if (recommendation && recommendation.trim()) {
+    const recTitle = lang === 'es' ? 'RECOMENDACIÓN' : 'RECOMMENDATION';
+    checkNewPage(ctx, 30);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(recTitle, margin, ctx.yPos);
+    ctx.yPos += 6;
+    
+    pdf.setFillColor(245, 245, 245);
+    const recLines = pdf.splitTextToSize(recommendation, contentWidth - 10);
+    const boxHeight = recLines.length * 5 + 10;
+    pdf.rect(margin, ctx.yPos - 2, contentWidth, boxHeight, 'F');
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'italic');
+    for (const line of recLines) {
+      pdf.text(line, margin + 5, ctx.yPos + 3);
+      ctx.yPos += 5;
+    }
+    ctx.yPos += 5;
+  }
   
   addPageFooter(ctx);
 }
