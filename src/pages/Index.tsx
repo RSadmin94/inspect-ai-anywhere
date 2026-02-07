@@ -241,6 +241,7 @@ export default function Index() {
           setCurrentPage('inspection');
         }}
         onLoadDemo={handleLoadDemo}
+        onClose={inspection ? () => setShowNewInspectionForm(false) : undefined}
         t={t} 
       />
     );
