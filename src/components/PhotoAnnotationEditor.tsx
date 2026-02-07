@@ -9,7 +9,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { AnnotationToolbar } from './AnnotationToolbar';
-import { AnnotationCanvas } from './AnnotationCanvas';
+import { ZoomableAnnotationCanvas } from './ZoomableAnnotationCanvas';
 import { AnnotationControls } from './AnnotationControls';
 import { PhotoRecord } from '@/lib/db';
 import { blobToDataUrl } from '@/lib/imageUtils';
@@ -227,9 +227,9 @@ export function PhotoAnnotationEditor({
       />
 
       {/* Canvas Area */}
-      <div className="flex-1 overflow-auto flex items-center justify-center p-4 bg-black/50">
+      <div className="flex-1 overflow-hidden flex items-center justify-center p-4 bg-black/50">
         {imageUrl && (
-          <AnnotationCanvas
+          <ZoomableAnnotationCanvas
             imageUrl={imageUrl}
             tool={currentTool}
             color={currentColor}

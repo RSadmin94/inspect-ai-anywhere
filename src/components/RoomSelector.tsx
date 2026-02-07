@@ -5,9 +5,20 @@
  import { cn } from '@/lib/utils';
  
 const DEFAULT_ROOMS = [
- 'exterior', 'interior', 'kitchen', 'diningRoom', 'bathroom', 
- 'mainBedroom', 'bedroom2', 'bedroom3', 'livingRoom', 
- 'basement', 'attic', 'garage', 'roof', 'electricalPanel', 'ac', 'waterHeater', 'other'
+  // Main areas
+  'exterior', 'interior', 'livingRoom', 'diningRoom', 'kitchen',
+  // Bedrooms  
+  'mainBedroom', 'bedroom2', 'bedroom3', 'bedroom4',
+  // Bathrooms
+  'bathroom', 'masterBath', 'halfBath',
+  // Utility
+  'laundryRoom', 'utilityRoom', 'garage', 'basement', 'crawlSpace', 'attic',
+  // Outdoor
+  'deck', 'patio', 'pool', 'driveway', 'roof',
+  // Systems
+  'electricalPanel', 'ac', 'waterHeater', 'furnace',
+  // Other spaces
+  'hallway', 'stairs', 'closet', 'office', 'fireplace', 'other'
 ] as const;
  
  interface RoomSelectorProps {
