@@ -84,24 +84,26 @@ interface PhotoDetailPanelProps {
   }, [onUpdate]);
  
    useEffect(() => {
-     if (photo) {
-       blobToDataUrl(photo.fullImageBlob).then(setImageUrl);
-       setNotes(photo.notes);
-       setRoom(photo.room);
-       // Load manual finding if exists
-       if (photo.manualTitle) {
-         setManualFinding({
-           title: photo.manualTitle,
-           severity: photo.manualSeverity,
-           category: photo.manualCategory,
-           description: photo.manualDescription,
-           recommendation: photo.manualRecommendation,
-         });
-       } else {
-         setManualFinding(null);
-       }
-     }
-   }, [photo]);
+      if (photo) {
+        // Prefer annotated image if available, otherwise use original
+        const imageBlob = photo.annotatedImageBlob || photo.fullImageBlob;
+        blobToDataUrl(imageBlob).then(setImageUrl);
+        setNotes(photo.notes);
+        setRoom(photo.room);
+        // Load manual finding if exists
+        if (photo.manualTitle) {
+          setManualFinding({
+            title: photo.manualTitle,
+            severity: photo.manualSeverity,
+            category: photo.manualCategory,
+            description: photo.manualDescription,
+            recommendation: photo.manualRecommendation,
+          });
+        } else {
+          setManualFinding(null);
+        }
+      }
+    }, [photo]);
  
    if (!photo) return null;
  
@@ -123,33 +125,42 @@ interface PhotoDetailPanelProps {
    };
 
    const handleAnnotationSave = async (annotationData: string, annotatedImage: Blob) => {
-     try {
-       // Try to save online
-       await onUpdate(photo.id, {
-         annotationData,
-         annotatedImageBlob: annotatedImage,
-         hasAnnotations: true,
-       });
-       console.log('Annotation saved online');
-     } catch (error) {
-       // Queue for offline sync
-       console.warn('Offline - queueing annotation for sync:', error);
-       const queue = await getSyncQueue();
-        await queue.enqueue({
-          photoId: photo.id,
-          action: 'save_annotation',
-          revision: Date.now(),
-          timestamp: Date.now(),
-          payload: {
-            annotationData,
-            annotatedImageBlob: annotatedImage,
-          },
+      try {
+        // Try to save online
+        await onUpdate(photo.id, {
+          annotationData,
+          annotatedImageBlob: annotatedImage,
+          hasAnnotations: true,
         });
-       // Show user feedback
-       console.log('Annotation saved offline. Will sync when online.');
-     }
-     setShowAnnotation(false);
-   };
+        console.log('Annotation saved online');
+      } catch (error) {
+        // Queue for offline sync
+        console.warn('Offline - queueing annotation for sync:', error);
+        try {
+          const queue = await getSyncQueue();
+          await queue.enqueue({
+            photoId: photo.id,
+            action: 'save_annotation',
+            revision: Date.now(),
+            timestamp: Date.now(),
+            payload: {
+              annotationData,
+              annotatedImageBlob: annotatedImage,
+            },
+          });
+          console.log('Annotation saved offline. Will sync when online.');
+        } catch (queueError) {
+          console.error('Failed to queue annotation for offline sync:', queueError);
+        }
+      } finally {
+        // Always close the annotation editor
+        setShowAnnotation(false);
+        // Reload the image to show annotations
+        if (photo) {
+          blobToDataUrl(annotatedImage).then(setImageUrl);
+        }
+      }
+    };
  
    const handleDelete = async () => {
      setIsDeleting(true);

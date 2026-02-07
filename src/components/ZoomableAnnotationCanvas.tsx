@@ -12,6 +12,7 @@ interface Props {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   onStrokeComplete: (stroke: Stroke) => void;
   strokes: Stroke[];
+  onDisplaySizeChange?: (size: { width: number; height: number }) => void;
 }
 
 interface ViewTransform {
@@ -28,6 +29,7 @@ export function ZoomableAnnotationCanvas({
   canvasRef,
   onStrokeComplete,
   strokes,
+  onDisplaySizeChange,
 }: Props) {
   const [baseBitmap, setBaseBitmap] = useState<ImageBitmap | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -102,6 +104,7 @@ export function ZoomableAnnotationCanvas({
     canvas.style.height = `${containerHeight}px`;
     
     setDisplaySize({ width: containerWidth, height: containerHeight });
+    onDisplaySizeChange?.({ width: containerWidth, height: containerHeight });
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, containerWidth, containerHeight);
