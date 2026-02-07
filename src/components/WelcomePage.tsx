@@ -61,7 +61,7 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
           <img 
             src={logo} 
             alt="365 InspectAI Logo" 
-            className="w-20 h-20 rounded-2xl shadow-lg"
+            className="w-[120px] h-[120px] rounded-3xl shadow-lg"
           />
           <div>
             <h1 className="text-3xl font-bold text-foreground">365 InspectAI</h1>
