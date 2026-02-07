@@ -83,22 +83,22 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
     // 4. Inspection Summary (MOST IMPORTANT)
     await addSummarySection(ctx, inspection, photos, roomOrder, lang);
     
-    // 5. Scope, Standards & Limitations
-    if (includeIntroduction) {
-      addScopeSection(ctx, companyProfile, lang);
-    }
-    
-    // 6. System-by-System Findings
+    // 5. System-by-System Findings
     await addFindingsSection(ctx, photos, roomOrder, lang);
     
-    // 7. Deferred / Not Inspected Items
+    // 6. Deferred / Not Inspected Items
     if (deferredItems.length > 0) {
       addDeferredItemsSection(ctx, deferredItems, lang);
     }
     
-    // 8. Maintenance Recommendations
+    // 7. Maintenance Recommendations
     if (maintenanceRecommendations.length > 0) {
       addMaintenanceSection(ctx, maintenanceRecommendations, lang);
+    }
+    
+    // 8. Scope, Standards & Limitations (moved towards end)
+    if (includeIntroduction) {
+      addScopeSection(ctx, companyProfile, lang);
     }
     
     // 9. Disclaimers

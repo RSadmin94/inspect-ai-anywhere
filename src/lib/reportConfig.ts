@@ -114,33 +114,6 @@ export const inspectorLimitations = {
   ]
 };
 
-export const preClosingWalkthrough = {
-  en: `The walk-through prior to closing is the time for Client to inspect the property. Conditions can change between the time of a home inspection and the time of closing. Restrictions that existed during the inspection may have been removed for the walk-through. Defects or problems that were not found during the home inspection may be discovered during the walk-through.
-
-The following are recommendations for the pre-closing walk through your new house:
-1. Check the heating and cooling system
-2. Operate all appliances
-3. Run water at all fixtures and flush toilets. Look for plumbing leaks
-4. Operate all exterior doors, windows, and locks
-5. Test smoke and carbon monoxide detectors
-6. Ask for all remote controls to any garage door openers, fans, gas fireplaces, etc.
-7. Inspect areas that may have been restricted at the time of the inspection
-8. Ask seller questions about anything that was not covered during the home inspection
-9. Read the seller's disclosure`,
-  es: `El recorrido previo al cierre es el momento para que el Cliente inspeccione la propiedad. Las condiciones pueden cambiar entre el momento de la inspección de la vivienda y el momento del cierre.
-
-Las siguientes son recomendaciones para el recorrido previo al cierre:
-1. Verifique el sistema de calefacción y refrigeración
-2. Opere todos los electrodomésticos
-3. Abra el agua en todos los accesorios y descargue los inodoros
-4. Opere todas las puertas exteriores, ventanas y cerraduras
-5. Pruebe los detectores de humo y monóxido de carbono
-6. Solicite todos los controles remotos
-7. Inspeccione las áreas que pudieron haber estado restringidas
-8. Haga preguntas al vendedor
-9. Lea la divulgación del vendedor`
-};
-
 // Map rooms to report sections
 export const roomToSection: Record<string, { section: string; title: { en: string; es: string } }> = {
   'exterior': { section: 'exterior_structure', title: { en: 'Exterior & Structure', es: 'Exterior y Estructura' } },
