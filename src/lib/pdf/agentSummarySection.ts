@@ -215,16 +215,16 @@ export function addAgentSummarySection(
   pdf.setFontSize(8);
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(80);
-  drawCategory(safetyConcerns, [220, 38, 38], '🔴', findings.safety, 3);
+  drawCategory(safetyConcerns, [220, 38, 38], '', findings.safety, 3);
 
   const majorDefects = lang === 'es' ? 'DEFECTOS MAYORES' : 'MAJOR DEFECTS';
-  drawCategory(majorDefects, [234, 88, 12], '🟠', findings.repair, 3);
+  drawCategory(majorDefects, [234, 88, 12], '', findings.repair, 3);
 
   const monitorItems = lang === 'es' ? 'ELEMENTOS A MONITOREAR / MANTENIMIENTO' : 'ITEMS TO MONITOR / MAINTENANCE';
-  drawCategory(monitorItems, [202, 138, 4], '🟡', findings.maintenance, 3);
+  drawCategory(monitorItems, [202, 138, 4], '', findings.maintenance, 3);
 
   const satisfactoryItems = lang === 'es' ? 'SATISFACTORIO' : 'SATISFACTORY';
-  drawCategory(satisfactoryItems, [34, 197, 94], '🟢', findings.satisfactory, 3);
+  drawCategory(satisfactoryItems, [34, 197, 94], '', findings.satisfactory, 3);
 
   // UPSELL OPPORTUNITIES SECTION
   const upsells = generateUpsellRecommendations(inspection, photos, lang);
