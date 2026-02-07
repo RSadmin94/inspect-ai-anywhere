@@ -81,7 +81,7 @@ export async function addSummarySection(
     }
   }
   
-  // 🔴 Safety Concerns
+  // Safety Concerns
   const safetyConcerns = categorized.safety;
   if (safetyConcerns.length > 0) {
     checkNewPage(ctx, 30);
@@ -89,7 +89,7 @@ export async function addSummarySection(
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(findingStatusColors.safety[0], findingStatusColors.safety[1], findingStatusColors.safety[2]);
-    const safetyLabel = lang === 'es' ? '🔴 PREOCUPACIONES DE SEGURIDAD' : '🔴 SAFETY CONCERNS';
+    const safetyLabel = lang === 'es' ? 'PREOCUPACIONES DE SEGURIDAD' : 'SAFETY CONCERNS';
     pdf.text(safetyLabel, margin, ctx.yPos);
     ctx.yPos += 8;
     pdf.setTextColor(0);
@@ -112,7 +112,7 @@ export async function addSummarySection(
     ctx.yPos += 5;
   }
   
-  // 🟠 Major Defects (Repair Needed)
+  // Major Defects (Repair Needed)
   const majorDefects = categorized.repair;
   if (majorDefects.length > 0) {
     checkNewPage(ctx, 30);
@@ -120,7 +120,7 @@ export async function addSummarySection(
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(findingStatusColors.repair[0], findingStatusColors.repair[1], findingStatusColors.repair[2]);
-    const repairLabel = lang === 'es' ? '🟠 DEFECTOS MAYORES' : '🟠 MAJOR DEFECTS';
+    const repairLabel = lang === 'es' ? 'DEFECTOS MAYORES' : 'MAJOR DEFECTS';
     pdf.text(repairLabel, margin, ctx.yPos);
     ctx.yPos += 8;
     pdf.setTextColor(0);
@@ -143,7 +143,7 @@ export async function addSummarySection(
     ctx.yPos += 5;
   }
   
-  // 🟡 Items to Monitor / Maintenance
+  // Items to Monitor / Maintenance
   const monitorItems = [...categorized.maintenance, ...categorized.monitor];
   if (monitorItems.length > 0) {
     checkNewPage(ctx, 30);
@@ -151,7 +151,7 @@ export async function addSummarySection(
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.setTextColor(findingStatusColors.maintenance[0], findingStatusColors.maintenance[1], findingStatusColors.maintenance[2]);
-    const monitorLabel = lang === 'es' ? '🟡 ELEMENTOS A MONITOREAR / MANTENIMIENTO' : '🟡 ITEMS TO MONITOR / MAINTENANCE';
+    const monitorLabel = lang === 'es' ? 'ELEMENTOS A MONITOREAR / MANTENIMIENTO' : 'ITEMS TO MONITOR / MAINTENANCE';
     pdf.text(monitorLabel, margin, ctx.yPos);
     ctx.yPos += 8;
     pdf.setTextColor(0);
