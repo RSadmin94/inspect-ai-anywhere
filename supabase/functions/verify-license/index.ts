@@ -72,12 +72,44 @@ serve(async (req) => {
     const body: VerifyRequest = await req.json();
     const { licenseKey, productIdOrPermalink, deviceId, action } = body;
 
-    if (!licenseKey || !deviceId) {
+    // Input validation: check presence, length, and format
+    const MAX_LICENSE_KEY_LENGTH = 100;
+    const MAX_DEVICE_ID_LENGTH = 64;
+    const MAX_PRODUCT_ID_LENGTH = 50;
+    const VALID_INPUT_PATTERN = /^[A-Za-z0-9\-_]+$/;
+
+    const isValidInput = (value: string | undefined, maxLength: number): boolean => {
+      return !!value && value.length <= maxLength && VALID_INPUT_PATTERN.test(value);
+    };
+
+    if (!isValidInput(licenseKey, MAX_LICENSE_KEY_LENGTH) || !isValidInput(deviceId, MAX_DEVICE_ID_LENGTH)) {
+      console.log('Input validation failed: invalid format or missing fields');
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
-        message: 'Missing required fields',
-        productIdOrPermalink: productIdOrPermalink || '',
+        message: 'License verification failed',
+        productIdOrPermalink: '',
+        lastVerifiedAt: Date.now(),
+        nextCheckAt: Date.now() + 3600000,
+        graceDays: 7,
+        allowCreateNew: false,
+        allowAI: false,
+        allowExport: true,
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      } as LicenseState), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate productIdOrPermalink if provided
+    if (productIdOrPermalink && !isValidInput(productIdOrPermalink, MAX_PRODUCT_ID_LENGTH)) {
+      console.log('Input validation failed: invalid product ID format');
+      return new Response(JSON.stringify({
+        status: 'invalid',
+        valid: false,
+        message: 'License verification failed',
+        productIdOrPermalink: '',
         lastVerifiedAt: Date.now(),
         nextCheckAt: Date.now() + 3600000,
         graceDays: 7,
@@ -208,32 +240,12 @@ serve(async (req) => {
       .maybeSingle();
 
     if (licenseError) {
-      console.error('Database error:', licenseError);
-      return new Response(JSON.stringify({
-        status: 'error',
-        valid: false,
-        message: 'License verification failed',
-        productIdOrPermalink: productIdOrPermalink || '',
-        lastVerifiedAt: Date.now(),
-        nextCheckAt: Date.now() + 3600000,
-        graceDays: 7,
-        allowCreateNew: false,
-        allowAI: false,
-        allowExport: true,
-        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
-      } as LicenseState), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // License not found or inactive
-    if (!licenseData) {
+      console.error('Database error during license lookup:', licenseError);
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
-        message: 'Invalid or inactive license key',
-        productIdOrPermalink: productIdOrPermalink || '',
+        message: 'License verification failed',
+        productIdOrPermalink: '',
         lastVerifiedAt: Date.now(),
         nextCheckAt: Date.now() + 3600000,
         graceDays: 7,
@@ -247,20 +259,42 @@ serve(async (req) => {
       });
     }
 
-    // Check if license has expired
-    if (licenseData.expires_at && new Date(licenseData.expires_at) < new Date()) {
+    // License not found or inactive - use generic message to prevent enumeration
+    if (!licenseData) {
+      console.log('License not found or inactive');
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
-        message: 'License has expired',
-        productIdOrPermalink: licenseData.product_id,
+        message: 'License verification failed',
+        productIdOrPermalink: '',
         lastVerifiedAt: Date.now(),
         nextCheckAt: Date.now() + 3600000,
         graceDays: 7,
         allowCreateNew: false,
         allowAI: false,
         allowExport: true,
-        device: { allowed: licenseData.max_devices, used: 0 },
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      } as LicenseState), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if license has expired - use generic message to prevent enumeration
+    if (licenseData.expires_at && new Date(licenseData.expires_at) < new Date()) {
+      console.log('License has expired');
+      return new Response(JSON.stringify({
+        status: 'invalid',
+        valid: false,
+        message: 'License verification failed',
+        productIdOrPermalink: '',
+        lastVerifiedAt: Date.now(),
+        nextCheckAt: Date.now() + 3600000,
+        graceDays: 7,
+        allowCreateNew: false,
+        allowAI: false,
+        allowExport: true,
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
       } as LicenseState), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
