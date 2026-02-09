@@ -1,10 +1,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+// Allowed origins for CORS - restricts API access to known domains
+const ALLOWED_ORIGINS = [
+  'https://inspect-ai-anywhere.lovable.app',
+  'https://id-preview--8cd0f791-ce4c-4a88-8c8b-73979d499fed.lovable.app',
+  'http://localhost:5173',
+  'http://localhost:8080',
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  // Check if origin is in allowed list
+  const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
+    origin === allowed || origin.endsWith('.lovable.app')
+  ) ? origin : ALLOWED_ORIGINS[0];
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 interface LicenseState {
   status: 'active' | 'inactive' | 'invalid' | 'device_limit' | 'error';
@@ -27,18 +43,35 @@ interface VerifyRequest {
   action: 'verify' | 'reset_devices';
 }
 
-// Hash the license key for storage (simple hash, not for security)
-function hashLicenseKey(key: string): string {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    const char = key.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+// Cryptographically secure hash using SHA-256
+async function hashLicenseKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return `lh_${hashHex.substring(0, 32)}`; // Use first 32 chars for reasonable length
+}
+
+// Sanitize data for logging - remove sensitive information
+function sanitizeForLog(data: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (['licenseKey', 'license_key', 'deviceId', 'device_id', 'email', 'license_hash'].includes(key)) {
+      sanitized[key] = '[REDACTED]';
+    } else if (typeof value === 'object' && value !== null) {
+      sanitized[key] = sanitizeForLog(value as Record<string, unknown>);
+    } else {
+      sanitized[key] = value;
+    }
   }
-  return `lh_${Math.abs(hash).toString(36)}`;
+  return sanitized;
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -50,7 +83,7 @@ serve(async (req) => {
     const DEFAULT_ALLOWED_DEVICES = 2;
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('Missing Supabase configuration');
+      console.error('Missing configuration');
       return new Response(JSON.stringify({
         status: 'error',
         valid: false,
@@ -83,7 +116,7 @@ serve(async (req) => {
     };
 
     if (!isValidInput(licenseKey, MAX_LICENSE_KEY_LENGTH) || !isValidInput(deviceId, MAX_DEVICE_ID_LENGTH)) {
-      console.log('Input validation failed: invalid format or missing fields');
+      console.log('Input validation failed');
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
@@ -104,7 +137,7 @@ serve(async (req) => {
 
     // Validate productIdOrPermalink if provided
     if (productIdOrPermalink && !isValidInput(productIdOrPermalink, MAX_PRODUCT_ID_LENGTH)) {
-      console.log('Input validation failed: invalid product ID format');
+      console.log('Input validation failed');
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
@@ -126,11 +159,11 @@ serve(async (req) => {
     // Initialize Supabase client with service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const licenseHash = hashLicenseKey(licenseKey);
+    const licenseHash = await hashLicenseKey(licenseKey);
 
     // Handle reset_devices action with 30-day cooldown
     if (action === 'reset_devices') {
-      console.log(`Attempting device reset for license hash: ${licenseHash}`);
+      console.log('Processing device reset request');
       
       // First, fetch license to check cooldown
       const { data: licenseForReset, error: resetLookupError } = await supabase
@@ -144,7 +177,7 @@ serve(async (req) => {
         return new Response(JSON.stringify({
           status: 'invalid',
           valid: false,
-          message: 'Invalid license key',
+          message: 'License verification failed',
           productIdOrPermalink,
           lastVerifiedAt: Date.now(),
           nextCheckAt: Date.now() + 3600000,
@@ -193,7 +226,7 @@ serve(async (req) => {
         .eq('license_hash', licenseHash);
 
       if (deleteError) {
-        console.error('Failed to reset devices:', deleteError);
+        console.error('Device reset failed');
         return new Response(JSON.stringify({
           status: 'error',
           valid: false,
@@ -222,15 +255,15 @@ serve(async (req) => {
         .eq('license_key', licenseKey);
 
       if (updateError) {
-        console.error('Failed to update reset tracking:', updateError);
+        console.error('Reset tracking update failed');
       }
 
-      console.log('Devices reset successfully, continuing to verify');
+      console.log('Device reset completed');
       // After reset, continue to verify the license
     }
 
     // Verify license against local database
-    console.log(`Verifying license key against database`);
+    console.log('Verifying license');
     
     const { data: licenseData, error: licenseError } = await supabase
       .from('licenses')
@@ -240,7 +273,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (licenseError) {
-      console.error('Database error during license lookup:', licenseError);
+      console.error('License lookup failed');
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
@@ -261,7 +294,7 @@ serve(async (req) => {
 
     // License not found or inactive - use generic message to prevent enumeration
     if (!licenseData) {
-      console.log('License not found or inactive');
+      console.log('License not found');
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
@@ -282,7 +315,7 @@ serve(async (req) => {
 
     // Check if license has expired - use generic message to prevent enumeration
     if (licenseData.expires_at && new Date(licenseData.expires_at) < new Date()) {
-      console.log('License has expired');
+      console.log('License expired');
       return new Response(JSON.stringify({
         status: 'invalid',
         valid: false,
@@ -310,14 +343,14 @@ serve(async (req) => {
       .eq('license_hash', licenseHash);
 
     if (devicesError) {
-      console.error('Failed to fetch devices:', devicesError);
+      console.error('Device lookup failed');
     }
 
     const currentDevices = devices || [];
     const deviceExists = currentDevices.some(d => d.device_id === deviceId);
     const deviceCount = currentDevices.length;
 
-    console.log(`Device check: exists=${deviceExists}, count=${deviceCount}, allowed=${ALLOWED_DEVICES}`);
+    console.log(`Device status: registered=${deviceExists}, total=${deviceCount}`);
 
     // Check if device limit exceeded
     if (!deviceExists && deviceCount >= ALLOWED_DEVICES) {
@@ -357,7 +390,7 @@ serve(async (req) => {
         });
 
       if (insertError) {
-        console.error('Failed to register device:', insertError);
+        console.error('Device registration failed');
       }
     }
 
@@ -384,7 +417,7 @@ serve(async (req) => {
       device: { allowed: ALLOWED_DEVICES, used: finalDeviceCount },
     };
 
-    console.log('Returning active license state');
+    console.log('License verified successfully');
     
     return new Response(JSON.stringify(activeState), {
       status: 200,
@@ -392,12 +425,12 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('License verification error:', error);
+    console.error('Verification error');
     
     return new Response(JSON.stringify({
       status: 'error',
       valid: false,
-      message: error instanceof Error ? error.message : 'Verification failed',
+      message: 'Verification failed',
       productIdOrPermalink: '',
       lastVerifiedAt: Date.now(),
       nextCheckAt: Date.now() + 3600000,
