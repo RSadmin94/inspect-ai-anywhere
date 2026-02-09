@@ -1,11 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+// Allowed origins for CORS - restricts API access to known domains
+const ALLOWED_ORIGINS = [
+  'https://inspect-ai-anywhere.lovable.app',
+  'https://id-preview--8cd0f791-ce4c-4a88-8c8b-73979d499fed.lovable.app',
+  'http://localhost:5173',
+  'http://localhost:8080',
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  // Check if origin is in allowed list
+  const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
+    origin === allowed || origin.endsWith('.lovable.app')
+  ) ? origin : ALLOWED_ORIGINS[0];
+  
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -22,7 +41,7 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
+      console.error("AI service not configured");
       return new Response(
         JSON.stringify({ error: "AI service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -97,7 +116,7 @@ You MUST respond using the suggest_findings tool with your analysis.`;
       ? "Analiza esta foto de inspección de propiedad. Identifica hallazgos siguiendo el formato Observación → Implicación → Recomendación. Usa lenguaje profesional de informe de inspección."
       : "Analyze this property inspection photo. Identify findings following the Observation → Implication → Recommendation format. Use professional home inspection report language.";
 
-    console.log("Calling Lovable AI for photo analysis...");
+    console.log("Processing photo analysis request");
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -223,8 +242,8 @@ You MUST respond using the suggest_findings tool with your analysis.`;
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      await response.text(); // Consume body to prevent resource leak
+      console.error("AI request failed with status:", response.status);
       
       if (response.status === 429) {
         return new Response(
@@ -251,7 +270,7 @@ You MUST respond using the suggest_findings tool with your analysis.`;
     // Extract tool call result
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall || toolCall.function.name !== "suggest_findings") {
-      console.error("No valid tool call in response");
+      console.error("Invalid response format");
       return new Response(
         JSON.stringify({ error: "Invalid AI response format" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -265,7 +284,8 @@ You MUST respond using the suggest_findings tool with your analysis.`;
     else if (result.overallCondition === "marginal") result.overallCondition = "fair";
     else if (result.overallCondition === "deficient") result.overallCondition = "poor";
     
-    console.log("Analysis complete:", result.findings?.length || 0, "findings");
+    const findingsCount = result.findings?.length || 0;
+    console.log(`Analysis complete: ${findingsCount} findings`);
 
     return new Response(
       JSON.stringify(result),
@@ -273,9 +293,9 @@ You MUST respond using the suggest_findings tool with your analysis.`;
     );
 
   } catch (error) {
-    console.error("Error in analyze-photo:", error);
+    console.error("Photo analysis error");
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Analysis failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
