@@ -48,7 +48,32 @@ export async function addCoverPage(
   const timeStr = formatTime(inspection.createdAt, lang);
   const dateTimeLabel = lang === 'es' ? 'Fecha y Hora de Inspección' : 'Inspection Date & Time';
   pdf.text(`${dateTimeLabel}: ${dateStr} at ${timeStr}`, pageWidth / 2, ctx.yPos, { align: 'center' });
-  ctx.yPos += 20;
+  ctx.yPos += 15;
+
+  // Property Photo Placeholder
+  const photoBoxWidth = 100;
+  const photoBoxHeight = 70;
+  const photoBoxX = (pageWidth - photoBoxWidth) / 2;
+  
+  // Draw placeholder box with light gray background
+  pdf.setFillColor(245, 245, 245);
+  pdf.setDrawColor(180);
+  pdf.setLineWidth(0.5);
+  pdf.rect(photoBoxX, ctx.yPos, photoBoxWidth, photoBoxHeight, 'FD');
+  
+  // Add placeholder text
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(150);
+  const photoLabel = lang === 'es' ? 'Foto de la Propiedad' : 'Property Photo';
+  pdf.text(photoLabel, pageWidth / 2, ctx.yPos + photoBoxHeight / 2 - 5, { align: 'center' });
+  
+  // Small icon hint
+  pdf.setFontSize(24);
+  pdf.text('🏠', pageWidth / 2, ctx.yPos + photoBoxHeight / 2 + 10, { align: 'center' });
+  pdf.setTextColor(0);
+  
+  ctx.yPos += photoBoxHeight + 10;
 
   // Client Information Box
   pdf.setFillColor(248, 248, 248);
