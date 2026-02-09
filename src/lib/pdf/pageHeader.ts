@@ -146,6 +146,13 @@ export function drawNavigationTabs(
     
     pdf.rect(tabX, tabBarY, tabWidth, tabHeight, 'F');
     
+    // Add clickable internal link to section page if available
+    const sectionPageNum = ctx.sectionPageNumbers?.get(tab.id);
+    if (sectionPageNum && sectionPageNum > 0) {
+      // Create internal link to the section's page
+      pdf.link(tabX, tabBarY, tabWidth, tabHeight, { pageNumber: sectionPageNum });
+    }
+    
     // Draw tab text
     pdf.setFontSize(5.5);
     pdf.setFont('helvetica', isActive ? 'bold' : 'normal');

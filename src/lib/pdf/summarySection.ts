@@ -46,7 +46,11 @@ export async function addSummarySection(
   ctx.pageNumber++;
   ctx.yPos = ctx.margin;
   
+  // Register summary section page number for clickable navigation
+  ctx.sectionPageNumbers.set('summary', ctx.pageNumber);
+  
   const { pdf, margin, contentWidth, pageWidth } = ctx;
+
   
   // Add tabbed header for Summary section
   addPageHeaderWithTabs(ctx, inspection, 'summary', lang);

@@ -92,6 +92,8 @@ export interface PDFContext {
   sectionNumber: number;
   tocEntries: TOCEntry[];
   language: Language;
+  // Section page numbers for navigation tab links
+  sectionPageNumbers: Map<string, number>;
 }
 
 export interface TOCEntry {

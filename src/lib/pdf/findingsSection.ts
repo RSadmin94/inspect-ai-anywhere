@@ -155,6 +155,11 @@ export async function addFindingsSection(
     ctx.pageNumber++;
     ctx.yPos = ctx.margin;
     
+    // Register this section's page number for clickable navigation
+    if (!ctx.sectionPageNumbers.has(tabId)) {
+      ctx.sectionPageNumbers.set(tabId, ctx.pageNumber);
+    }
+    
     // Add tabbed header for this section
     addPageHeaderWithTabs(ctx, inspection, tabId, lang);
     
