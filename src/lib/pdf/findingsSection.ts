@@ -1,9 +1,10 @@
 import { PDFContext, FindingStatus, severityToStatus, findingStatusLabels, findingStatusColors } from './reportTypes';
-import { PhotoRecord } from '@/lib/db';
+import { PhotoRecord, InspectionRecord } from '@/lib/db';
 import { Language, translations } from '@/lib/i18n';
 import { blobToDataUrl } from '@/lib/imageUtils';
 import { drawSectionHeader, drawSubsectionHeader, checkNewPage, addPageFooter, getRoomName, addTocEntry } from './pdfUtils';
 import { sectionDisclaimers, roomToSection, severityToCondition, getConditionLabel } from '@/lib/reportConfig';
+import { addPageHeaderWithTabs, roomToTabId, checkNewPageWithHeader } from './pageHeader';
 
 async function drawPhoto(ctx: PDFContext, photo: PhotoRecord, lang: Language): Promise<void> {
   const { pdf, margin, contentWidth } = ctx;
@@ -117,30 +118,14 @@ async function drawPhoto(ctx: PDFContext, photo: PhotoRecord, lang: Language): P
 
 export async function addFindingsSection(
   ctx: PDFContext,
+  inspection: InspectionRecord,
   photos: PhotoRecord[],
   roomOrder: string[],
   lang: Language
 ): Promise<void> {
-  ctx.pdf.addPage();
-  ctx.pageNumber++;
-  ctx.yPos = ctx.margin;
-  
   const { pdf, margin, contentWidth } = ctx;
   
-  // Section title
-  const findingsTitle = lang === 'es' ? 'HALLAZGOS DETALLADOS DE LA INSPECCIÓN' : 'DETAILED INSPECTION FINDINGS';
-  drawSectionHeader(ctx, findingsTitle);
-  
-  // Intro paragraph
-  pdf.setFontSize(9);
-  pdf.setFont('helvetica', 'normal');
-  const introText = lang === 'es'
-    ? 'La siguiente sección proporciona hallazgos detallados organizados por área/sistema de la propiedad.'
-    : 'The following section provides detailed findings organized by property area/system.';
-  pdf.text(introText, margin, ctx.yPos);
-  ctx.yPos += 10;
-  
-  // Group photos by room
+  // Group photos by room first to determine sections
   const groupedByRoom = new Map<string, PhotoRecord[]>();
   for (const room of roomOrder) {
     groupedByRoom.set(room, []);
@@ -151,114 +136,147 @@ export async function addFindingsSection(
     groupedByRoom.set(photo.room, existing);
   }
   
-  let systemNumber = 0;
-  
+  // Group rooms by their tab section
+  const roomsByTab = new Map<string, string[]>();
   for (const [room, roomPhotos] of groupedByRoom) {
     if (roomPhotos.length === 0) continue;
+    const tabId = roomToTabId(room);
+    const existing = roomsByTab.get(tabId) || [];
+    existing.push(room);
+    roomsByTab.set(tabId, existing);
+  }
+  
+  let systemNumber = 0;
+  
+  // Iterate through each section (tab)
+  for (const [tabId, rooms] of roomsByTab) {
+    // Start new page for each major section with header tabs
+    ctx.pdf.addPage();
+    ctx.pageNumber++;
+    ctx.yPos = ctx.margin;
     
-    systemNumber++;
-    const sectionInfo = roomToSection[room] || { section: 'interior', title: { en: room, es: room } };
-    const disclaimer = sectionDisclaimers[sectionInfo.section];
+    // Add tabbed header for this section
+    addPageHeaderWithTabs(ctx, inspection, tabId, lang);
     
-    // Room/System header
-    checkNewPage(ctx, 50);
+    // Add to TOC
+    const sectionTitle = lang === 'es' 
+      ? (tabId === 'summary' ? 'RESUMEN' : tabId.toUpperCase())
+      : tabId.toUpperCase();
+    addTocEntry(ctx, sectionTitle, 1);
     
-    // Add to ToC at level 2
-    const roomName = getRoomName(room, lang, ctx.customRoomMap);
-    addTocEntry(ctx, `  ${roomName}`, 2);
-    
-    // System header with background
-    pdf.setFillColor(230, 240, 250);
-    pdf.rect(margin, ctx.yPos - 2, contentWidth, 12, 'F');
-    
-    pdf.setFontSize(13);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(`${systemNumber}. ${roomName}`, margin + 3, ctx.yPos + 6);
-    ctx.yPos += 16;
-    
-    // System overview
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'bold');
-    const overviewLabel = lang === 'es' ? 'Resumen del Sistema' : 'System Overview';
-    pdf.text(overviewLabel, margin, ctx.yPos);
-    ctx.yPos += 6;
-    
-    // General condition based on findings
-    const severities = roomPhotos.map(p => p.manualSeverity || p.aiSeverity).filter(Boolean);
-    let generalCondition = lang === 'es' ? 'Satisfactorio' : 'Satisfactory';
-    if (severities.some(s => s === 'severe')) {
-      generalCondition = lang === 'es' ? 'Deficiente' : 'Deficient';
-    } else if (severities.some(s => s === 'moderate')) {
-      generalCondition = lang === 'es' ? 'Marginal' : 'Marginal';
-    }
-    
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    const conditionLabel = lang === 'es' ? 'Condición General:' : 'General Condition:';
-    pdf.text(`${conditionLabel} ${generalCondition}`, margin, ctx.yPos);
-    ctx.yPos += 5;
-    
-    const itemsLabel = lang === 'es' ? 'Elementos Documentados:' : 'Items Documented:';
-    pdf.text(`${itemsLabel} ${roomPhotos.length}`, margin, ctx.yPos);
-    ctx.yPos += 8;
-    
-    // Section disclaimer (once per section)
-    if (disclaimer) {
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'italic');
-      pdf.setTextColor(80);
-      const disclaimerLines = pdf.splitTextToSize(disclaimer[lang], contentWidth);
-      for (let i = 0; i < Math.min(disclaimerLines.length, 3); i++) {
-        checkNewPage(ctx, 6);
-        pdf.text(disclaimerLines[i], margin, ctx.yPos);
-        ctx.yPos += 3.5;
+    // Process each room in this section
+    for (const room of rooms) {
+      const roomPhotos = groupedByRoom.get(room) || [];
+      if (roomPhotos.length === 0) continue;
+      
+      systemNumber++;
+      const sectionInfo = roomToSection[room] || { section: 'interior', title: { en: room, es: room } };
+      const disclaimer = sectionDisclaimers[sectionInfo.section];
+      
+      // Check if we need a new page (with header)
+      checkNewPageWithHeader(ctx, inspection, tabId, lang, 50);
+      
+      // Add to ToC at level 2
+      const roomName = getRoomName(room, lang, ctx.customRoomMap);
+      addTocEntry(ctx, `  ${roomName}`, 2);
+      
+      // System header with background
+      pdf.setFillColor(230, 240, 250);
+      pdf.rect(margin, ctx.yPos - 2, contentWidth, 12, 'F');
+      
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`${systemNumber}. ${roomName}`, margin + 3, ctx.yPos + 6);
+      ctx.yPos += 16;
+      
+      // System overview
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      const overviewLabel = lang === 'es' ? 'Resumen del Sistema' : 'System Overview';
+      pdf.text(overviewLabel, margin, ctx.yPos);
+      ctx.yPos += 6;
+      
+      // General condition based on findings
+      const severities = roomPhotos.map(p => p.manualSeverity || p.aiSeverity).filter(Boolean);
+      let generalCondition = lang === 'es' ? 'Satisfactorio' : 'Satisfactory';
+      if (severities.some(s => s === 'severe')) {
+        generalCondition = lang === 'es' ? 'Deficiente' : 'Deficient';
+      } else if (severities.some(s => s === 'moderate')) {
+        generalCondition = lang === 'es' ? 'Marginal' : 'Marginal';
       }
-      pdf.setTextColor(0);
+      
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      const conditionLabel = lang === 'es' ? 'Condición General:' : 'General Condition:';
+      pdf.text(`${conditionLabel} ${generalCondition}`, margin, ctx.yPos);
+      ctx.yPos += 5;
+      
+      const itemsLabel = lang === 'es' ? 'Elementos Documentados:' : 'Items Documented:';
+      pdf.text(`${itemsLabel} ${roomPhotos.length}`, margin, ctx.yPos);
+      ctx.yPos += 8;
+      
+      // Section disclaimer (once per section)
+      if (disclaimer) {
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(80);
+        const disclaimerLines = pdf.splitTextToSize(disclaimer[lang], contentWidth);
+        for (let i = 0; i < Math.min(disclaimerLines.length, 3); i++) {
+          checkNewPageWithHeader(ctx, inspection, tabId, lang, 6);
+          pdf.text(disclaimerLines[i], margin, ctx.yPos);
+          ctx.yPos += 3.5;
+        }
+        pdf.setTextColor(0);
+        ctx.yPos += 5;
+      }
+      
+      // Observations header
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      const obsHeader = lang === 'es' ? 'Observaciones y Hallazgos' : 'Observations & Findings';
+      pdf.text(obsHeader, margin, ctx.yPos);
+      ctx.yPos += 8;
+      
+      // Photos in this room (max 10 per room as per spec)
+      let findingNumber = 0;
+      for (const photo of roomPhotos.slice(0, 10)) {
+        findingNumber++;
+        
+        // Finding subheader
+        const findingTitle = lang === 'es'
+          ? (photo.manualTitleEs || photo.aiFindingTitleEs || photo.manualTitle || photo.aiFindingTitle || 'Observación')
+          : (photo.manualTitle || photo.aiFindingTitle || 'Observation');
+        
+        // Check for new page with header before drawing
+        checkNewPageWithHeader(ctx, inspection, tabId, lang, 50);
+        
+        drawSubsectionHeader(ctx, `${systemNumber}.${findingNumber}`, findingTitle);
+        
+        // Draw the photo with all details
+        await drawPhoto(ctx, photo, lang);
+        
+        // Comments/Notes
+        if (photo.notes) {
+          pdf.setFontSize(8);
+          pdf.setFont('helvetica', 'bold');
+          const commentsLabel = lang === 'es' ? 'Comentarios:' : 'Comments:';
+          pdf.text(commentsLabel, margin, ctx.yPos);
+          ctx.yPos += 4;
+          
+          pdf.setFont('helvetica', 'normal');
+          const noteLines = pdf.splitTextToSize(photo.notes, contentWidth);
+          for (const line of noteLines.slice(0, 2)) {
+            checkNewPageWithHeader(ctx, inspection, tabId, lang, 5);
+            pdf.text(line, margin, ctx.yPos);
+            ctx.yPos += 3.5;
+          }
+          ctx.yPos += 3;
+        }
+      }
+      
       ctx.yPos += 5;
     }
     
-    // Observations header
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'bold');
-    const obsHeader = lang === 'es' ? 'Observaciones y Hallazgos' : 'Observations & Findings';
-    pdf.text(obsHeader, margin, ctx.yPos);
-    ctx.yPos += 8;
-    
-    // Photos in this room (max 3 per issue as per spec)
-    let findingNumber = 0;
-    for (const photo of roomPhotos.slice(0, 10)) { // Limit to prevent massive reports
-      findingNumber++;
-      
-      // Finding subheader
-      const findingTitle = lang === 'es'
-        ? (photo.manualTitleEs || photo.aiFindingTitleEs || photo.manualTitle || photo.aiFindingTitle || 'Observación')
-        : (photo.manualTitle || photo.aiFindingTitle || 'Observation');
-      
-      drawSubsectionHeader(ctx, `${systemNumber}.${findingNumber}`, findingTitle);
-      
-      // Draw the photo with all details
-      await drawPhoto(ctx, photo, lang);
-      
-      // Comments/Notes
-      if (photo.notes) {
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'bold');
-        const commentsLabel = lang === 'es' ? 'Comentarios:' : 'Comments:';
-        pdf.text(commentsLabel, margin, ctx.yPos);
-        ctx.yPos += 4;
-        
-        pdf.setFont('helvetica', 'normal');
-        const noteLines = pdf.splitTextToSize(photo.notes, contentWidth);
-        for (const line of noteLines.slice(0, 2)) {
-          checkNewPage(ctx, 5);
-          pdf.text(line, margin, ctx.yPos);
-          ctx.yPos += 3.5;
-        }
-        ctx.yPos += 3;
-      }
-    }
-    
-    ctx.yPos += 5;
     addPageFooter(ctx);
   }
 }

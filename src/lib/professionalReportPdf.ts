@@ -86,7 +86,7 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
     await addSummarySection(ctx, inspection, photos, roomOrder, lang);
     
     // 5. System-by-System Findings
-    await addFindingsSection(ctx, photos, roomOrder, lang);
+    await addFindingsSection(ctx, inspection, photos, roomOrder, lang);
     
     // 6. Deferred / Not Inspected Items
     if (deferredItems.length > 0) {

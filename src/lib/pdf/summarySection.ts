@@ -2,6 +2,7 @@ import { PDFContext, FindingStatus, severityToStatus, findingStatusLabels, findi
 import { PhotoRecord, InspectionRecord } from '@/lib/db';
 import { Language } from '@/lib/i18n';
 import { drawSectionHeader, checkNewPage, addPageFooter, getRoomName, drawDivider } from './pdfUtils';
+import { addPageHeaderWithTabs, checkNewPageWithHeader } from './pageHeader';
 
 interface CategorizedFinding {
   photo: PhotoRecord;
@@ -47,9 +48,8 @@ export async function addSummarySection(
   
   const { pdf, margin, contentWidth, pageWidth } = ctx;
   
-  // Section title
-  const summaryTitle = lang === 'es' ? 'RESUMEN DE INSPECCIÓN' : 'INSPECTION SUMMARY';
-  drawSectionHeader(ctx, summaryTitle);
+  // Add tabbed header for Summary section
+  addPageHeaderWithTabs(ctx, inspection, 'summary', lang);
   
   // Intro paragraph
   ctx.yPos += 5;
@@ -116,7 +116,7 @@ export async function addSummarySection(
   for (const [room, data] of roomConditions) {
     if (data.photos.length === 0) continue;
     
-    checkNewPage(ctx, 8);
+    checkNewPageWithHeader(ctx, inspection, 'summary', lang, 8);
     
     const roomName = getRoomName(room, lang, ctx.customRoomMap);
     
@@ -188,7 +188,7 @@ export async function addSummarySection(
   
   // Safety Concerns
   if (safetyConcerns.length > 0) {
-    checkNewPage(ctx, 30);
+    checkNewPageWithHeader(ctx, inspection, 'summary', lang, 30);
     
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
@@ -199,7 +199,7 @@ export async function addSummarySection(
     pdf.setTextColor(0);
     
     for (const finding of safetyConcerns) {
-      checkNewPage(ctx, 15);
+      checkNewPageWithHeader(ctx, inspection, 'summary', lang, 15);
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
       pdf.text(`• ${finding.title}`, margin + 3, ctx.yPos);
@@ -218,7 +218,7 @@ export async function addSummarySection(
   
   // Major Defects (Repair Needed)
   if (majorDefects.length > 0) {
-    checkNewPage(ctx, 30);
+    checkNewPageWithHeader(ctx, inspection, 'summary', lang, 30);
     
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
@@ -229,7 +229,7 @@ export async function addSummarySection(
     pdf.setTextColor(0);
     
     for (const finding of majorDefects) {
-      checkNewPage(ctx, 15);
+      checkNewPageWithHeader(ctx, inspection, 'summary', lang, 15);
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
       pdf.text(`• ${finding.title}`, margin + 3, ctx.yPos);
@@ -248,7 +248,7 @@ export async function addSummarySection(
   
   // Items to Monitor / Maintenance
   if (monitorItems.length > 0) {
-    checkNewPage(ctx, 30);
+    checkNewPageWithHeader(ctx, inspection, 'summary', lang, 30);
     
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
@@ -259,7 +259,7 @@ export async function addSummarySection(
     pdf.setTextColor(0);
     
     for (const finding of monitorItems) {
-      checkNewPage(ctx, 15);
+      checkNewPageWithHeader(ctx, inspection, 'summary', lang, 15);
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'bold');
       pdf.text(`• ${finding.title}`, margin + 3, ctx.yPos);
