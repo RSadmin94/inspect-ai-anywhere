@@ -1,33 +1,46 @@
-# 365 InspectAI - Technical Documentation
+# 365 InspectAI — Technical Documentation
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Architecture](#architecture)
 3. [Technology Stack](#technology-stack)
 4. [Data Models](#data-models)
-5. [Core Features](#core-features)
-6. [Offline-First Architecture](#offline-first-architecture)
-7. [AI Integration](#ai-integration)
-8. [PDF Report System](#pdf-report-system)
-9. [PWA Configuration](#pwa-configuration)
-10. [File Structure](#file-structure)
-11. [API Reference](#api-reference)
+5. [IndexedDB Schema](#indexeddb-schema)
+6. [Core Features API](#core-features-api)
+7. [Edge Functions](#edge-functions)
+8. [Licensing System](#licensing-system)
+9. [AI Integration](#ai-integration)
+10. [PDF Report System](#pdf-report-system)
+11. [Offline-First Architecture](#offline-first-architecture)
+12. [PWA Configuration](#pwa-configuration)
+13. [Annotation System](#annotation-system)
+14. [Internationalization](#internationalization)
+15. [Security](#security)
+16. [File Structure](#file-structure)
+17. [Environment Variables](#environment-variables)
+18. [Deployment](#deployment)
+19. [Browser Support](#browser-support)
 
 ---
 
 ## Overview
 
-**365 InspectAI** is a mobile-first, offline-first Progressive Web Application (PWA) designed for field property inspections. The application enables inspectors to capture photos, add notes, receive AI-powered analysis of property issues, and generate professional PDF reports—all without requiring internet connectivity.
+**365 InspectAI** is a mobile-first, offline-first Progressive Web Application (PWA) for professional property inspectors. It operates as a standalone tool — no user accounts, no cloud dependency — with all data persisted locally in IndexedDB.
 
 ### Key Characteristics
-- **Offline-First**: Full functionality without internet connection
-- **Mobile-First**: Optimized for field use on tablets and smartphones (one-handed thumb operation)
-- **Camera-First Interface**: "Deep Pro" dark theme with glassmorphism
-- **No Authentication Required**: Standalone operation without user accounts
-- **Local Data Storage**: All data persisted in IndexedDB
-- **AI-Powered Analysis**: Automated defect detection with professional tone
-- **Bilingual Support**: Full English and Spanish localization with formal tone
-- **White-Label Reports**: Complete company branding and legal customization
+- **Offline-First**: Full functionality without internet
+- **Mobile-First**: One-handed thumb operation, portrait-primary
+- **Camera-First**: "Deep Pro" dark theme with glassmorphism
+- **No Authentication**: Standalone operation, no user accounts
+- **Local Storage**: All data in IndexedDB
+- **AI-Powered**: Gemini 2.5 Flash for defect analysis
+- **Bilingual**: English + Spanish (formal professional tone)
+- **White-Label**: Full company branding customization
+- **Licensed**: Self-hosted license system with device management
+
+**Production URL**: https://inspect-ai-anywhere.lovable.app  
+**Support**: support@365globalsolutions.com
 
 ---
 
@@ -38,186 +51,160 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        User Interface                           │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
-│  │Dashboard │ │ Camera   │ │ Photo    │ │ Report Builder   │   │
-│  │   Hub    │ │ Capture  │ │ Gallery  │ │ (Tabbed UI)      │   │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────────┐
-│                      Business Logic Layer                        │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐    │
-│  │useInspection │ │useVoice      │ │ Image Processing     │    │
-│  │    Hook      │ │Dictation     │ │ (browser-image-      │    │
-│  │              │ │              │ │  compression)        │    │
-│  └──────────────┘ └──────────────┘ └──────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────────┐
-│                      Data Persistence Layer                      │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    IndexedDB (idb)                        │   │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │   │
-│  │  │inspections│ │  photos  │ │ settings │ │customRooms│    │   │
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘    │   │
-│  │  ┌──────────┐ ┌──────────────┐ ┌─────────────────┐      │   │
-│  │  │ phrases  │ │ issuePresets │ │ companyProfile  │      │   │
-│  │  └──────────┘ └──────────────┘ └─────────────────┘      │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────────┐
-│                      Cloud Services (Optional)                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │              Lovable Cloud (Supabase)                     │   │
-│  │  ┌──────────────────┐                                    │   │
-│  │  │ Edge Function:   │  AI Photo Analysis via Gemini      │   │
-│  │  │ analyze-photo    │  (when online)                     │   │
-│  │  └──────────────────┘                                    │   │
-│  └──────────────────────────────────────────────────────────┘   │
+│  Dashboard │ Camera │ Photo Gallery │ Report Builder │ Settings │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                    Business Logic Layer                          │
+│  useInspection │ useLicense │ useLanguage │ useVoiceDictation   │
+│  useOnlineStatus │ Image Processing │ AI Orchestration          │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                    Data Persistence Layer                        │
+│  IndexedDB v2 via idb                                           │
+│  Stores: inspections, photos, settings, customRooms, phrases,  │
+│          issuePresets                                            │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                  Cloud Services (Optional)                       │
+│  Edge Functions: analyze-photo, verify-license                  │
+│  Database: licenses, license_devices (RLS-protected)            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Architecture
+### Component Tree
 
 ```
-App.tsx
-├── BrowserRouter
-│   ├── Index.tsx (Main Page)
-│   │   ├── AppSidebar
-│   │   ├── DashboardHub
-│   │   │   ├── NewInspectionForm
-│   │   │   ├── InspectionHeader
-│   │   │   ├── RoomSelector (sticky, drag-and-drop)
-│   │   │   ├── QuickCaptureMode
-│   │   │   │   ├── CameraCapture
-│   │   │   │   ├── DropZone
-│   │   │   │   └── LiveNotesPanel
-│   │   │   ├── PhotoGallery
-│   │   │   │   ├── PhotoDetailPanel
-│   │   │   │   ├── PhotoAnnotationEditor
-│   │   │   │   ├── IssuePresetSelector
-│   │   │   │   └── ImageLightbox
-│   │   │   ├── ReportBuilder (Tabbed: Photos/Deferred/Maintenance/Legal)
-│   │   │   ├── ReportReviewScreen
-│   │   │   └── CompanyProfileSettings
-│   │   └── StatusBar
-│   └── NotFound.tsx
-└── Providers (QueryClient, Tooltip, Toast)
+App.tsx → BrowserRouter
+├── Index.tsx (single route, view-switching)
+│   ├── AppSidebar / SideMenu
+│   ├── DashboardHub
+│   │   ├── WelcomePage
+│   │   ├── NewInspectionForm
+│   │   ├── InspectionHeader
+│   │   ├── RoomSelector
+│   │   ├── QuickCaptureMode
+│   │   │   ├── CameraCapture
+│   │   │   ├── DropZone
+│   │   │   └── LiveNotesPanel
+│   │   ├── PhotoGallery
+│   │   │   ├── PhotoDetailPanel
+│   │   │   ├── PhotoAnnotationEditor
+│   │   │   ├── IssuePresetSelector
+│   │   │   └── ImageLightbox
+│   │   ├── ReportBuilder
+│   │   ├── ReportReviewScreen / ReportDialog
+│   │   ├── CompanyProfileSettings
+│   │   ├── LicenseSettings
+│   │   ├── PhraseLibrary
+│   │   └── StorageMeter
+│   └── StatusBar
+└── NotFound.tsx
 ```
 
 ---
 
 ## Technology Stack
 
-### Frontend Framework
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | ^18.3.1 | UI Framework |
-| TypeScript | - | Type Safety |
-| Vite | - | Build Tool & Dev Server |
-| React Router DOM | ^6.30.1 | Client-side Routing |
+### Frontend
 
-### UI Components & Styling
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Tailwind CSS | - | Utility-first CSS |
-| shadcn/ui | - | Component Library |
-| Radix UI | Various | Accessible Primitives |
-| Lucide React | ^0.462.0 | Icon Library |
-| Framer Motion | ^12.31.0 | Animations |
+| Package | Version | Purpose |
+|---------|---------|---------|
+| react | ^18.3.1 | UI Framework |
+| typescript | - | Type Safety |
+| vite | - | Build Tool |
+| react-router-dom | ^6.30.1 | Routing |
+| tailwindcss + tailwindcss-animate | - | Styling |
+| shadcn/ui (Radix UI) | Various | Component Library |
+| lucide-react | ^0.462.0 | Icons |
+| framer-motion | ^12.31.0 | Animations |
 
-### Data Management
-| Technology | Version | Purpose |
-|------------|---------|---------|
+### Data
+
+| Package | Version | Purpose |
+|---------|---------|---------|
 | idb | ^8.0.3 | IndexedDB Wrapper |
-| TanStack React Query | ^5.83.0 | Server State Management |
-| React Hook Form | ^7.61.1 | Form Management |
-| Zod | ^3.25.76 | Schema Validation |
+| @tanstack/react-query | ^5.83.0 | Server State |
+| react-hook-form | ^7.61.1 | Forms |
+| zod | ^3.25.76 | Validation |
 
-### PWA & Offline
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| vite-plugin-pwa | ^1.2.0 | PWA Generation |
-| Workbox | (via plugin) | Service Worker & Caching |
+### Media & PDF
 
-### Image Processing
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| browser-image-compression | ^2.0.2 | Client-side Image Compression |
+| Package | Version | Purpose |
+|---------|---------|---------|
+| browser-image-compression | ^2.0.2 | Image Compression |
+| jspdf | ^4.1.0 | PDF Generation |
+| html2canvas | ^1.4.1 | HTML to Canvas |
+| dompurify | ^3.3.1 | Sanitization |
+| jszip | ^3.10.1 | Export/Import |
 
-### PDF Generation
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| jsPDF | ^4.1.0 | PDF Creation |
-| html2canvas | ^1.4.1 | HTML to Canvas Conversion |
-| DOMPurify | ^3.3.1 | HTML Sanitization |
+### PWA
 
-### Backend (Optional)
+| Package | Version | Purpose |
+|---------|---------|---------|
+| vite-plugin-pwa | ^1.2.0 | Service Worker + Manifest |
+
+### Backend
+
 | Technology | Purpose |
 |------------|---------|
-| Lovable Cloud (Supabase) | Edge Functions for AI Analysis |
+| Lovable Cloud | Edge Functions + Database |
+| Gemini 2.5 Flash | AI Photo Analysis |
 
 ---
 
 ## Data Models
 
-### Database Schema (IndexedDB)
+### InspectionRecord
 
-The application uses IndexedDB with the following object stores:
-
-#### `inspections` Store
 ```typescript
 interface InspectionRecord {
-  id: string;                    // Primary key (generated UUID)
-  propertyAddress: string;       // Required - property location
-  inspectorName?: string;        // Optional - inspector's name
-  createdAt: number;             // Unix timestamp
-  updatedAt: number;             // Unix timestamp
-  photoIds: string[];            // Array of photo IDs
-  isComplete: boolean;           // Inspection completion status
-  clientName?: string;           // Optional - client name
-  inspectionType?: InspectionType; // Type of inspection
-  customRooms?: string[];        // IDs of custom rooms
-  roomNotes?: Record<string, string>; // Notes by room key
+  id: string;                              // UUID primary key
+  propertyAddress: string;                 // Required
+  inspectorName?: string;
+  createdAt: number;                       // Unix timestamp (ms)
+  updatedAt: number;                       // Unix timestamp (ms)
+  photoIds: string[];                      // Array of photo IDs
+  isComplete: boolean;
+  clientName?: string;
+  inspectionType?: InspectionType;
+  customRooms?: string[];                  // Custom room IDs
+  roomNotes?: Record<string, string>;      // Notes keyed by room
 }
 
-type InspectionType = 
-  | 'pre_purchase' 
-  | 'pre_listing' 
-  | 'annual' 
-  | 'insurance' 
-  | 'new_construction' 
-  | 'warranty';
+type InspectionType =
+  | 'pre_purchase' | 'pre_listing' | 'annual'
+  | 'insurance' | 'new_construction' | 'warranty' | 'other';
 ```
-**Index**: `by-date` on `createdAt`
 
-#### `photos` Store
+### PhotoRecord
+
 ```typescript
 interface PhotoRecord {
-  id: string;                    // Primary key
-  inspectionId: string;          // Foreign key to inspection
-  room: string;                  // Room/area identifier
-  timestamp: number;             // Capture timestamp
-  notes: string;                 // User notes
-  thumbnailBlob: Blob;           // Compressed thumbnail (320px)
-  fullImageBlob: Blob;           // Full image (max 2048px)
-  annotatedBlob?: Blob;          // Annotated image blob
-  
-  // AI Analysis Fields
+  id: string;
+  inspectionId: string;
+  room: string;
+  timestamp: number;
+  notes: string;
+  thumbnailBlob: Blob;                     // 320px, 80% quality
+  fullImageBlob: Blob;                     // max 2048px, 85% quality
+
+  // AI Analysis
   aiStatus: AIStatus;
   aiFindingTitle?: string;
-  aiFindingTitleEs?: string;     // Spanish translation
+  aiFindingTitleEs?: string;
   aiSeverity?: Severity;
-  aiConfidence?: number;         // 0-100
+  aiConfidence?: number;                   // 0–100
   aiDescription?: string;
   aiDescriptionEs?: string;
   aiRecommendation?: string;
   aiRecommendationEs?: string;
   aiCategory?: Category;
-  aiFullAnalysis?: string;       // Raw AI response JSON
-  
-  // Manual Issue Fields
+  aiFullAnalysis?: string;                 // Full JSON from AI
+
+  // Manual Issue (from preset or custom)
   manualTitle?: string;
   manualTitleEs?: string;
   manualSeverity?: Severity;
@@ -226,31 +213,37 @@ interface PhotoRecord {
   manualDescriptionEs?: string;
   manualRecommendation?: string;
   manualRecommendationEs?: string;
-  
-  // Report Builder Fields
+
+  // Report Builder
   includeInReport?: boolean;
   reportOrder?: number;
+
+  // Annotations
+  annotationData?: string;                 // JSON stroke metadata
+  annotatedImageBlob?: Blob;               // Rendered annotation image
+  hasAnnotations?: boolean;
 }
 
 type AIStatus = 'pending_offline' | 'analyzing' | 'complete' | 'failed';
 type Severity = 'minor' | 'moderate' | 'severe';
-type Category = 'roofing' | 'plumbing' | 'electrical' | 'hvac' | 
-                'foundation' | 'safety' | 'general';
+type Category = 'roofing' | 'plumbing' | 'electrical' | 'hvac'
+              | 'foundation' | 'safety' | 'general';
 ```
-**Index**: `by-inspection` on `inspectionId`
 
-#### `customRooms` Store
+### CustomRoom
+
 ```typescript
 interface CustomRoom {
   id: string;
   name: string;
-  nameEs?: string;               // Spanish translation
+  nameEs?: string;
   isDefault: boolean;
   order: number;
 }
 ```
 
-#### `phrases` Store
+### Phrase
+
 ```typescript
 interface Phrase {
   id: string;
@@ -261,9 +254,9 @@ interface Phrase {
   createdAt: number;
 }
 ```
-**Indexes**: `by-category`, `by-favorite`
 
-#### `issuePresets` Store
+### IssuePreset
+
 ```typescript
 interface IssuePreset {
   id: string;
@@ -278,23 +271,27 @@ interface IssuePreset {
   createdAt: number;
 }
 ```
-**Index**: `by-category`
 
-#### `settings` Store
+### LicenseState
+
 ```typescript
-interface SettingsRecord {
-  key: string;                   // Primary key
-  value: string;                 // JSON-serialized value
+interface LicenseState {
+  status: 'active' | 'inactive' | 'invalid' | 'device_limit' | 'error';
+  valid: boolean;
+  message?: string;
+  productIdOrPermalink: string;
+  lastVerifiedAt: number;
+  nextCheckAt: number;
+  graceDays: number;                       // Default: 7
+  allowCreateNew: boolean;
+  allowAI: boolean;
+  allowExport: boolean;                    // Always true
+  device: { allowed: number; used: number };
 }
-
-// Known Settings Keys:
-// - 'roomOrder': string[] - Custom room ordering
-// - 'language': 'en' | 'es' - UI language preference
-// - 'company-profile': CompanyProfile JSON
-// - 'company-profile-logo': Base64 logo string
 ```
 
-#### Company Profile Model
+### CompanyProfile
+
 ```typescript
 interface CompanyProfile {
   id: string;
@@ -314,14 +311,12 @@ interface CompanyProfile {
   licenseNumber?: string;
   tagline?: string;
   taglineEs?: string;
-  // Custom legalese fields
   customDisclaimer?: string;
   customDisclaimerEs?: string;
   scopeAndLimitations?: string;
   scopeAndLimitationsEs?: string;
   liabilityStatement?: string;
   liabilityStatementEs?: string;
-  // Templates
   deferredItemsTemplates?: Array<{ area: string; reason: string }>;
   maintenanceTemplates?: string[];
 }
@@ -329,383 +324,564 @@ interface CompanyProfile {
 
 ---
 
-## Core Features
+## IndexedDB Schema
 
-### 1. Inspection Management
+**Database Name:** `inspectai-db`  
+**Version:** 2
 
-**Creating an Inspection**
+| Store | Key Path | Indexes |
+|-------|----------|---------|
+| `inspections` | `id` | `by-date` (createdAt) |
+| `photos` | `id` | `by-inspection` (inspectionId) |
+| `settings` | `key` | — |
+| `customRooms` | `id` | — |
+| `phrases` | `id` | `by-category`, `by-favorite` |
+| `issuePresets` | `id` | `by-category` |
+
+**Known Settings Keys:**
+- `roomOrder` — JSON string[] of room order
+- `language` — `"en"` or `"es"`
+- `company-profile` — JSON CompanyProfile
+- `company-profile-logo` — Base64 logo string
+- `license_state` — JSON LicenseState
+- `license_key` — Plain license key string
+
+---
+
+## Core Features API
+
+### Database Operations (`src/lib/db.ts`)
+
+#### Inspections
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `saveInspection` | `(inspection: InspectionRecord) → Promise<void>` | Create/update |
+| `getInspection` | `(id: string) → Promise<InspectionRecord?>` | Get by ID |
+| `getCurrentInspection` | `() → Promise<InspectionRecord?>` | Get active (non-complete) |
+| `deleteInspection` | `(id: string) → Promise<void>` | Delete with all photos |
+
+#### Photos
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `savePhoto` | `(photo: PhotoRecord) → Promise<void>` | Create/update |
+| `getPhoto` | `(id: string) → Promise<PhotoRecord?>` | Get by ID |
+| `getPhotosByInspection` | `(inspectionId: string) → Promise<PhotoRecord[]>` | All photos for inspection |
+| `deletePhoto` | `(id: string) → Promise<void>` | Delete single photo |
+| `getPendingPhotos` | `() → Promise<PhotoRecord[]>` | Photos needing AI analysis |
+| `updatePhotoAI` | `(id, aiData) → Promise<void>` | Update AI fields only |
+
+#### Settings
+
+| Function | Signature |
+|----------|-----------|
+| `getSetting` | `(key: string) → Promise<string?>` |
+| `setSetting` | `(key: string, value: string) → Promise<void>` |
+| `getRoomOrder` | `() → Promise<string[]>` |
+| `saveRoomOrder` | `(order: string[]) → Promise<void>` |
+
+#### Custom Rooms / Phrases / Issue Presets
+
+Standard CRUD: `save*`, `getAll*`, `delete*`, plus `getPhrasesByCategory` and `getPresetsByCategory`.
+
+---
+
+### Hooks
+
+#### `useInspection`
+
 ```typescript
-const { startInspection } = useInspection();
-
-await startInspection(
-  propertyAddress,    // Required
-  inspectorName,      // Optional
-  clientName,         // Optional
-  inspectionType      // Optional: InspectionType
-);
+const {
+  inspection,          // InspectionRecord | null
+  photos,              // PhotoRecord[]
+  isLoading,           // boolean
+  startInspection,     // (address, inspector?, client?, type?) → Promise
+  updateInspection,    // (updates) → Promise
+  capturePhoto,        // (blob, room?) → Promise<PhotoRecord>
+  updatePhoto,         // (id, updates) → Promise
+  deletePhoto,         // (id) → Promise
+  updatePhotoWithAI,   // (id, aiData) → Promise
+  finishInspection,    // () → Promise
+  refreshPhotos,       // () → Promise
+  updateRoomNotes,     // (room, notes) → Promise
+  appendRoomNotes,     // (room, text) → Promise
+  clearRoomNotes,      // (room) → Promise
+} = useInspection();
 ```
 
-**Updating Inspection**
+#### `useLicense`
+
 ```typescript
-const { updateInspection } = useInspection();
-await updateInspection({ clientName: 'New Client' });
+const {
+  licenseState,           // LicenseState
+  isLoading,              // boolean
+  isVerifying,            // boolean
+  licenseKey,             // string
+  deviceId,               // string
+  effectivePermissions,   // { allowCreateNew, allowAI, allowExport }
+  remainingGraceDays,     // number
+  isWithinGrace,          // boolean
+  setLicenseKey,          // (key: string) → void
+  verifyLicense,          // () → Promise<LicenseState>
+  resetDevices,           // () → Promise<LicenseState>
+} = useLicense();
 ```
 
-### 2. Photo Capture & Processing
+#### `useLanguage`
 
-**Image Processing Pipeline**
-```
-Original Image
-      │
-      ▼
-┌─────────────────┐
-│ browser-image-  │
-│ compression     │
-└─────────────────┘
-      │
-      ├──► Full Image (max 2048px, 85% quality)
-      │
-      └──► Thumbnail (320px, 80% quality)
-```
-
-**Capture Flow**
 ```typescript
-const { capturePhoto } = useInspection();
-
-// From camera or file input
-const newPhoto = await capturePhoto(imageBlob, selectedRoom);
-// Returns PhotoRecord with aiStatus: 'pending_offline'
+const { language, setLanguage, t } = useLanguage();
+// language: 'en' | 'es'
+// t: (key: string) → string
 ```
 
-### 3. Room/Area Management
+#### `useOnlineStatus`
 
-**Default Rooms**
-- Exterior, Interior, Kitchen, Bathroom
-- Dining Room, Main Bedroom, Bedroom 2, Bedroom 3
-- Living Room, Basement, Attic, Garage
-- Roof, Electrical Panel, AC, Water Heater, Other
-
-**Custom Rooms**
-- Users can add custom rooms/areas
-- Rooms can be reordered via drag-and-drop
-- Order persisted in settings store
-- Room selector is "sticky" and persists selection
-
-### 4. AI-Powered Analysis
-
-**Analysis Flow**
-```
-Photo Captured
-      │
-      ▼
-┌─────────────────┐     ┌─────────────────┐
-│ Check Online    │────►│ Queue Offline   │
-│ Status          │ No  │ (pending_       │
-└─────────────────┘     │  offline)       │
-      │ Yes             └─────────────────┘
-      ▼
-┌─────────────────┐
-│ Edge Function:  │
-│ analyze-photo   │
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ Gemini API      │
-│ Analysis        │
-└─────────────────┘
-      │
-      ▼
-┌─────────────────┐
-│ Update Photo    │
-│ with AI Results │
-└─────────────────┘
-```
-
-**AI Prompt Guidelines**
-- Professional, neutral, third-person tone
-- "Observation → Implication → Recommendation" flow
-- No AI/software references in output (appears human-authored)
-- Licensed specialist recommendations for uncertain findings
-- No speculation beyond visible evidence
-- Confidence levels stated implicitly
-
-**AI Response Structure**
 ```typescript
-interface AIAnalysisResult {
-  findingTitle: string;
-  findingTitleEs: string;
-  severity: Severity;
-  confidence: number;
-  description: string;
-  descriptionEs: string;
-  recommendation: string;
-  recommendationEs: string;
-  category: Category;
-}
+const isOnline: boolean = useOnlineStatus();
 ```
 
-### 5. Voice Dictation
+#### `useVoiceDictation`
 
-**Web Speech API Integration**
 ```typescript
-const { 
-  isListening,
-  isSupported,
-  startListening,
-  stopListening,
-  transcript
+const {
+  isListening, isSupported, transcript,
+  startListening, stopListening,
 } = useVoiceDictation();
-```
-
-**Live Notes Panel Features**
-- Room-based note organization
-- Real-time speech-to-text
-- Append/clear per room
-- Grouped transcripts by room
-
-### 6. Internationalization (i18n)
-
-**Supported Languages**
-- English (en) - Default
-- Spanish (es) - Formal professional tone
-
-**Implementation**
-```typescript
-// Hook usage
-const { t, language, setLanguage } = useLanguage();
-
-// Translation function
-t('keyName'); // Returns translated string
 ```
 
 ---
 
-## Offline-First Architecture
+## Edge Functions
 
-### Service Worker Strategy
+### `analyze-photo`
 
-**Caching Strategy** (via Workbox)
-```javascript
-// Static assets: CacheFirst
-globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"]
+**Location:** `supabase/functions/analyze-photo/index.ts`  
+**Method:** POST  
+**CORS:** Strict whitelist (production + preview + localhost)
 
-// Google Fonts: CacheFirst with expiration
+**Request:**
+```json
 {
-  urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-  handler: "CacheFirst",
-  options: {
-    cacheName: "google-fonts-cache",
-    expiration: { maxEntries: 10, maxAgeSeconds: 31536000 }
-  }
+  "imageBase64": "data:image/jpeg;base64,...",
+  "room": "kitchen",
+  "language": "en"
 }
 ```
 
-### Online Status Detection
+**Validation:**
+- `imageBase64`: required, string, max 10MB
+- `language`: must be `"en"` or `"es"`
+
+**Response (success):**
+```json
+{
+  "findings": [
+    {
+      "title": "Water Staining Observed",
+      "title_es": "Manchas de Agua Observadas",
+      "observation": "...",
+      "observation_es": "...",
+      "implication": "...",
+      "implication_es": "...",
+      "recommendation": "...",
+      "recommendation_es": "...",
+      "description": "...",
+      "description_es": "...",
+      "severity": "moderate",
+      "status": "repair",
+      "category": "plumbing",
+      "confidence": 85
+    }
+  ],
+  "overallCondition": "fair",
+  "summary": "...",
+  "summary_es": "..."
+}
+```
+
+**Error Codes:**
+| Status | Meaning |
+|--------|---------|
+| 400 | Missing/invalid input |
+| 402 | AI credits exhausted |
+| 413 | Image too large (>10MB) |
+| 429 | Rate limit exceeded |
+| 500 | AI service error |
+
+**AI Model:** `google/gemini-2.5-flash` via Lovable AI Gateway  
+**Secrets Required:** `LOVABLE_API_KEY`
+
+---
+
+### `verify-license`
+
+**Location:** `supabase/functions/verify-license/index.ts`  
+**Method:** POST  
+**CORS:** Strict whitelist
+
+**Request:**
+```json
+{
+  "licenseKey": "ABCD-1234-EFGH-5678",
+  "productIdOrPermalink": "",
+  "deviceId": "device_1234567890_abc123",
+  "action": "verify"
+}
+```
+
+**Actions:**
+- `verify` — Validate license, register/update device
+- `reset_devices` — Clear all registered devices (30-day cooldown)
+
+**Input Validation:**
+- `licenseKey`: max 100 chars, alphanumeric + `-_`
+- `deviceId`: max 64 chars, alphanumeric + `-_`
+- `productIdOrPermalink`: max 50 chars (optional)
+
+**Response:** Returns `LicenseState` object (see Data Models).
+
+**Security:**
+- License keys hashed with SHA-256 before device table lookup
+- Generic error messages prevent key enumeration
+- Sensitive fields redacted from all logs
+- RLS blocks all direct client access to tables
+
+**Secrets Required:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+
+---
+
+## Licensing System
+
+### Client-Side Flow
+
+1. **App Launch** → `useLicense` loads cached `LicenseState` from IndexedDB
+2. **Online** → Calls `verify-license` Edge Function → Updates cache
+3. **Offline** → Checks 7-day grace period → Grants/denies features
+4. **Expired Grace** → Locks `allowCreateNew` and `allowAI`, keeps `allowExport`
+
+### Grace Period Logic (`src/lib/license.ts`)
 
 ```typescript
-const isOnline = useOnlineStatus();
+const GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-// Returns boolean, updates on network change
-// Used to:
-// - Show online/offline indicator
-// - Trigger AI analysis queue processing
-// - Enable/disable cloud-dependent features
+function isWithinGracePeriod(state: LicenseState): boolean {
+  if (!state.lastVerifiedAt) return false;
+  return (Date.now() - state.lastVerifiedAt) <= GRACE_PERIOD_MS;
+}
+
+function getEffectivePermissions(state, isOnline): Permissions {
+  // Export always allowed
+  // Online: use server permissions
+  // Offline + grace: use cached permissions
+  // Offline + expired grace: lock create + AI
+}
 ```
 
-### Data Sync Strategy
+### Device ID Generation
 
+```typescript
+// Persistent per browser via localStorage
+`device_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
 ```
-┌─────────────────┐
-│ Photo Captured  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Save to         │
-│ IndexedDB       │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐     ┌─────────────────┐
-│ Online?         │────►│ Add to Pending  │
-└────────┬────────┘ No  │ Queue           │
-         │ Yes          └─────────────────┘
-         ▼
-┌─────────────────┐
-│ Send to AI      │
-│ Edge Function   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Update Local    │
-│ Record          │
-└─────────────────┘
-```
+
+### Cloud Database (RLS-protected)
+
+**`licenses` table:**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | serial PK | Auto-increment |
+| license_key | text | Unique, never hashed in DB |
+| product_id | text | Product identifier |
+| is_active | boolean | Default true |
+| expires_at | timestamptz | Nullable (null = perpetual) |
+| max_devices | integer | Default 2 |
+| customer_name | text | Nullable |
+| email | text | Nullable |
+| reset_count | integer | Default 0 |
+| last_reset_at | timestamptz | Nullable |
+| created_at | timestamptz | Default now() |
+| notes | text | Admin notes |
+
+**`license_devices` table:**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | serial PK | Auto-increment |
+| license_hash | text | SHA-256 of license_key |
+| device_id | text | Client-generated |
+| activated_at | timestamptz | Default now() |
+| last_seen_at | timestamptz | Updated on each verify |
+
+**RLS:** All policies deny all operations for `anon` and `authenticated` roles. Only `service_role` (used by Edge Functions) can access these tables.
 
 ---
 
 ## AI Integration
 
-### Edge Function: `analyze-photo`
+### Analysis Pipeline
 
-**Location**: `supabase/functions/analyze-photo/index.ts`
-
-**Request Format**:
-```typescript
-POST /functions/v1/analyze-photo
-Content-Type: application/json
-
-{
-  "imageBase64": string,  // Base64-encoded image
-  "room": string,         // Room/area context
-  "notes": string         // User-provided notes
-}
+```
+Photo (Blob)
+  → blobToDataUrl (base64)
+  → supabase.functions.invoke('analyze-photo')
+  → Edge Function validates input
+  → Gemini 2.5 Flash (via Lovable AI Gateway)
+  → Structured JSON via tool_choice (suggest_findings)
+  → Update PhotoRecord in IndexedDB
 ```
 
-**Response Format**:
-```typescript
-{
-  "success": boolean,
-  "analysis": {
-    "findingTitle": string,
-    "findingTitleEs": string,
-    "severity": "minor" | "moderate" | "severe",
-    "confidence": number,
-    "description": string,
-    "descriptionEs": string,
-    "recommendation": string,
-    "recommendationEs": string,
-    "category": Category
-  }
-}
-```
+### AI Prompt Architecture
 
-**System Prompt Key Points**:
-- Expert licensed property inspector persona
-- Best-of Hybrid Inspection Report format
-- Court-defensible professional language
-- Observation → Implication → Recommendation structure
-- No emojis, marketing language, or casual phrasing
+The system prompt establishes an expert licensed property inspector persona using the "Best-of Hybrid Inspection Report" format:
+
+- **Language**: Professional, neutral, third-person, court-defensible
+- **Structure**: Observation → Implication → Recommendation
+- **Status Labels**: safety, repair, maintenance, monitor
+- **Severity Mapping**: severe → safety/major, moderate → repair, minor → maintenance/monitor
+- **Restrictions**: No AI references, no emojis, no speculation, no absolutes
+
+### Offline Fallback
+
+When AI analysis fails or is unavailable, a mock analysis system provides realistic placeholder findings:
+- 6 bilingual finding templates
+- Randomized category and confidence
+- Follows identical Observation → Implication → Recommendation structure
+- Status-to-severity mapping
 
 ---
 
 ## PDF Report System
 
 ### Report Title
-All reports are titled: **"PROPERTY INSPECTION REPORT"**
 
-### Report Structure
+All reports: **"PROPERTY INSPECTION REPORT"**  
+All branding: **"365 InspectAI"**
 
-| Section | Description |
-|---------|-------------|
-| **1. Cover Page** | Property address, date/time, client name, inspector credentials, company branding, signature area |
-| **2. Agent-Friendly Summary** | Standalone 1-page quick-reference for real estate agents |
-| **3. Table of Contents** | Clickable navigation with page numbers |
-| **4. Inspection Summary** | Systems Overview table, Key Findings (Safety/Major/Monitor), Overall Assessment |
-| **5. Scope & Limitations** | Standards, custom scope, exclusions |
-| **6. Detailed Findings** | System-by-system with photos, status badges, Observation→Implication→Recommendation |
-| **7. Deferred Items** | Areas not inspected with reasons |
-| **8. Maintenance** | Non-urgent recommendations |
-| **9. Disclaimers** | Legal notices, liability statements |
-| **10. Credentials** | Inspector info, certifications, contact |
+### Module Structure
+
+```
+src/lib/pdf/
+├── index.ts                  # Main orchestration
+├── reportTypes.ts            # Types, status labels, condition mappings
+├── pdfUtils.ts               # Shared utilities (margins, fonts, colors)
+├── coverPage.ts              # Cover page with signature area
+├── agentSummarySection.ts    # Agent-Friendly Summary (1 page)
+├── agentSummaryPdf.ts        # Standalone agent summary export
+├── tableOfContents.ts        # Clickable ToC with page numbers
+├── summarySection.ts         # Inspection Summary + Systems Overview
+├── scopeSection.ts           # Standards, scope, exclusions
+├── findingsSection.ts        # System-by-system detailed findings
+├── conclusionSection.ts      # Disclaimers, legal notices
+└── upsellRecommendations.ts  # Maintenance recommendations
+```
+
+### Report Sections
+
+| # | Section | Key Content |
+|---|---------|-------------|
+| 1 | Cover Page | Property, date, client, inspector, company branding, signature |
+| 2 | Agent-Friendly Summary | 1-page standalone reference (Safety/Repair/Maintenance only) |
+| 3 | Table of Contents | Clickable with dotted leader lines |
+| 4 | Inspection Summary | Systems Overview table + Key Findings + Overall Assessment |
+| 5 | Scope & Limitations | Standards, custom scope, exclusions |
+| 6 | Detailed Findings | Per-system with photos, status badges, O→I→R flow |
+| 7 | Deferred Items | Uninspected areas with reasons |
+| 8 | Maintenance | Non-urgent recommendations |
+| 9 | Disclaimers | Legal, liability, walkthrough guide |
+| 10 | Credentials | Inspector info, certifications, contact |
+
+### Ancillary Sections (Optional)
+
+Render only when populated/enabled:
+- **Radon** — Inspection checklist, notes, photos
+- **WDI (Termite)** — Wood Destroying Insects inspection
+- **Mold** — Mold inspection findings
 
 ### Finding Status Labels
 
 | Status | English | Spanish | Use Case |
 |--------|---------|---------|----------|
-| Safety | Safety | Seguridad | Immediate safety concern |
-| Repair | Repair Recommended | Reparación Recomendada | Major defect requiring repair |
-| Maintenance | Maintenance | Mantenimiento | Routine maintenance item |
-| Monitor | Monitor | Monitorear | Item to watch over time |
+| safety | Safety | Seguridad | Immediate safety concerns |
+| repair | Repair Recommended | Reparación Recomendada | Major defects |
+| maintenance | Maintenance | Mantenimiento | Routine maintenance |
+| monitor | Monitor | Monitorear | Items to watch |
 
-### Inspection Summary Assessment Text
+---
 
-When defects are present, the following standardized text is used:
+## Offline-First Architecture
 
-**English**: *"Several conditions were observed that may require prompt attention. Further evaluation by qualified, licensed professionals is recommended."*
+### Service Worker
 
-**Spanish**: *"Se observaron varias condiciones que pueden requerir atención inmediata. Se recomienda una evaluación adicional por profesionales calificados y con licencia."*
+**Strategy:** Workbox via vite-plugin-pwa with `registerType: "autoUpdate"`
 
-### PDF Module Structure
+| Resource | Strategy | Details |
+|----------|----------|---------|
+| Static assets | CacheFirst | `**/*.{js,css,html,ico,png,svg,woff,woff2}` |
+| Google Fonts | CacheFirst | 1-year expiry, max 10 entries |
+| API calls | NetworkFirst | Fallback to cache/offline queue |
 
+### Data Sync Queue (`src/lib/offlineSyncQueue.ts`)
+
+```typescript
+interface SyncOperation {
+  id: string;
+  type: 'photo_analysis' | 'inspection_update';
+  payload: any;
+  attempts: number;
+  lastAttempt?: number;
+  status: 'pending' | 'in_progress' | 'failed';
+}
 ```
-src/lib/pdf/
-├── index.ts                  # Main export and orchestration
-├── reportTypes.ts            # Types, interfaces, status labels
-├── pdfUtils.ts               # Shared utility functions
-├── coverPage.ts              # Cover page generation
-├── agentSummarySection.ts    # Agent-friendly 1-pager
-├── tableOfContents.ts        # Clickable ToC
-├── summarySection.ts         # Inspection Summary with Systems Overview
-├── scopeSection.ts           # Scope, Standards & Limitations
-├── findingsSection.ts        # Detailed system-by-system findings
-├── conclusionSection.ts      # Disclaimers & conclusion
-└── upsellRecommendations.ts  # Maintenance recommendations
-```
 
-### Technical Notes
-- Emojis replaced with vector graphics for PDF viewer stability
-- All content sanitized with DOMPurify
-- Reports appear human-authored (no AI/software references)
-- Full bilingual support (English/Spanish)
+- IndexedDB-backed queue
+- Exponential backoff: 1s, 2s, 4s, 8s…
+- Max 5 retries
+- Persists across app restarts
+- Auto-processes when online status changes
+
+### Online Status Detection
+
+```typescript
+const isOnline = useOnlineStatus();
+// Listens to window 'online'/'offline' events
+// Used for: status indicator, AI queue processing, license verification
+```
 
 ---
 
 ## PWA Configuration
 
-### Manifest (`public/manifest.json`)
+### Manifest
+
 ```json
 {
   "name": "365 InspectAI - Home Inspection Software",
   "short_name": "365 InspectAI",
-  "description": "Professional home inspection software with AI-powered analysis",
-  "theme_color": "#2563eb",
+  "theme_color": "#0F172A",
   "background_color": "#0F172A",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "start_url": "/",
-  "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+  "start_url": "/"
 }
 ```
 
-### Vite PWA Plugin Config
-```typescript
-VitePWA({
-  registerType: "autoUpdate",
-  includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
-  manifest: {
-    name: "365 InspectAI",
-    short_name: "365 InspectAI",
-    description: "AI-powered property inspection app for field inspectors",
-    theme_color: "#1e3a5f",
-    background_color: "#f5f7fa",
-    display: "standalone",
-    orientation: "portrait-primary",
-    start_url: "/",
-    icons: [
-      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/icon-512.png", sizes: "512x512", type: "image/png" }
-    ]
-  },
-  workbox: {
-    globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-    runtimeCaching: [/* Google Fonts caching */]
-  }
-})
-```
+### Icons
 
-### iOS-Specific Meta Tags
+| Size | File | Purpose |
+|------|------|---------|
+| 192×192 | `/icon-192.png` | Standard |
+| 512×512 | `/icon-512.png` | Splash |
+| 512×512 | `/icon-512-maskable.png` | Adaptive |
+| 180×180 | `/apple-touch-icon.png` | iOS |
+
+### iOS Meta Tags
+
 ```html
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="365 InspectAI" />
-<link rel="apple-touch-icon" href="/logo.png" />
 ```
+
+---
+
+## Annotation System
+
+### Architecture
+
+- **Stroke-based** rendering (not ImageData snapshots)
+- **Dual-resolution**: 1024×768 for editing, full resolution for export
+- **DPR-aware** for retina displays
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `strokeTypes.ts` | Stroke interface, decimation, merging utilities |
+| `strokeRenderer.ts` | Scale-aware rendering engine |
+| `AnnotationCanvas.tsx` | Touch/mouse drawing canvas |
+| `ZoomableAnnotationCanvas.tsx` | Pinch-zoom wrapper |
+| `PhotoAnnotationEditor.tsx` | Main editor with undo/redo |
+
+### Tools
+
+Arrow, Circle, Rectangle, Freehand, Text
+
+### Guardrails
+
+| Guardrail | Value |
+|-----------|-------|
+| Max undo steps | 50 |
+| Max strokes | 500 |
+| Max memory | 50MB |
+| Point decimation | 2px tolerance (50–80% reduction) |
+| Micro-stroke merge | <5 points within 500ms |
+
+### Performance
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Per undo step | 12MB | 1KB |
+| Canvas lag (20 strokes) | 100ms | <5ms |
+| Frame rate | 10fps | 60fps |
+
+---
+
+## Internationalization
+
+### Supported Languages
+
+| Code | Language | Tone |
+|------|----------|------|
+| `en` | English | Professional |
+| `es` | Spanish | Formal professional |
+
+### Usage
+
+```typescript
+const { t, language, setLanguage } = useLanguage();
+t('saveReport'); // → "Save Report" or "Guardar Informe"
+```
+
+### Coverage
+
+- All UI labels and buttons
+- All PDF report sections
+- AI analysis output (bilingual findings)
+- Status labels, categories, severity levels
+- Error messages and notifications
+
+---
+
+## Security
+
+### Input Validation
+
+| Endpoint | Validation |
+|----------|-----------|
+| analyze-photo | imageBase64: required string ≤10MB; language: ["en","es"] |
+| verify-license | licenseKey: ≤100 chars, `/^[A-Za-z0-9\-_]+$/`; deviceId: ≤64 chars |
+
+### CORS
+
+Both Edge Functions enforce a strict origin whitelist:
+- `https://inspect-ai-anywhere.lovable.app` (production)
+- `https://id-preview--*.lovable.app` (preview)
+- `http://localhost:5173`, `http://localhost:8080` (development)
+
+### Database Security
+
+- RLS on `licenses` and `license_devices` denies all `anon`/`authenticated` access
+- Only `service_role` (Edge Functions) can read/write license data
+- No foreign keys to `auth.users` (standalone app, no auth)
+
+### Data Protection
+
+- License keys: SHA-256 hashed for device table lookups
+- Anti-enumeration: generic "License verification failed" for all invalid states
+- Log redaction: license keys, device IDs, emails, hashes never logged
+- DOMPurify: all user input and AI output sanitized before rendering
+- Local data: IndexedDB (browser-level encryption at rest)
 
 ---
 
@@ -714,300 +890,110 @@ VitePWA({
 ```
 365-inspectai/
 ├── public/
-│   ├── favicon.ico
-│   ├── icon-192.png
-│   ├── icon-512.png
-│   ├── logo.png
-│   ├── manifest.json
-│   ├── placeholder.svg
-│   └── robots.txt
+│   ├── favicon.ico, icon-192.png, icon-512.png, icon-512-maskable.png
+│   ├── apple-touch-icon.png, logo.png
+│   ├── manifest.json, robots.txt, placeholder.svg
 ├── src/
 │   ├── assets/
-│   │   ├── demo/
-│   │   │   ├── electrical-issue.jpg
-│   │   │   ├── foundation-crack.jpg
-│   │   │   ├── plumbing-leak.jpg
-│   │   │   └── roof-damage.jpg
+│   │   ├── demo/ (4 sample photos)
 │   │   └── logo.png
 │   ├── components/
-│   │   ├── ui/                    # shadcn/ui components (40+)
-│   │   ├── AnnotationCanvas.tsx
-│   │   ├── AnnotationControls.tsx
-│   │   ├── AnnotationToolbar.tsx
-│   │   ├── AppSidebar.tsx
-│   │   ├── CameraCapture.tsx
-│   │   ├── CompanyProfileSettings.tsx
-│   │   ├── DashboardHub.tsx
-│   │   ├── DropZone.tsx
-│   │   ├── ImageLightbox.tsx
-│   │   ├── InspectionHeader.tsx
-│   │   ├── IssuePresetSelector.tsx
-│   │   ├── LiveNotesPanel.tsx
-│   │   ├── NavLink.tsx
-│   │   ├── NewInspectionForm.tsx
-│   │   ├── PhotoAnnotationEditor.tsx
-│   │   ├── PhotoDetailPanel.tsx
-│   │   ├── PhotoGallery.tsx
-│   │   ├── PhraseLibrary.tsx
-│   │   ├── QuickCaptureMode.tsx
-│   │   ├── ReportBuilder.tsx
-│   │   ├── ReportDialog.tsx
-│   │   ├── ReportReviewScreen.tsx
-│   │   ├── RoomSelector.tsx
-│   │   ├── SideMenu.tsx
-│   │   ├── StatusBar.tsx
-│   │   └── VoiceDictationButton.tsx
+│   │   ├── ui/ (40+ shadcn/ui components)
+│   │   ├── AnnotationCanvas.tsx, AnnotationControls.tsx, AnnotationToolbar.tsx
+│   │   ├── AppSidebar.tsx, CameraCapture.tsx, CompanyProfileSettings.tsx
+│   │   ├── DashboardHub.tsx, DropZone.tsx, ExportImportButtons.tsx
+│   │   ├── ImageLightbox.tsx, InspectionHeader.tsx, IssuePresetSelector.tsx
+│   │   ├── LicenseSettings.tsx, LiveNotesPanel.tsx, NavLink.tsx
+│   │   ├── NewInspectionForm.tsx, PhotoAnnotationEditor.tsx
+│   │   ├── PhotoDetailPanel.tsx, PhotoGallery.tsx, PhraseLibrary.tsx
+│   │   ├── PrivacyPolicy.tsx, QuickCaptureMode.tsx
+│   │   ├── ReportBuilder.tsx, ReportDialog.tsx, ReportReviewScreen.tsx
+│   │   ├── RoomSelector.tsx, SideMenu.tsx, StatusBar.tsx
+│   │   ├── StorageMeter.tsx, TermsOfService.tsx
+│   │   ├── VoiceDictationButton.tsx, WelcomePage.tsx
+│   │   └── ZoomableAnnotationCanvas.tsx
 │   ├── hooks/
-│   │   ├── use-mobile.tsx
-│   │   ├── use-toast.ts
-│   │   ├── useInspection.ts
-│   │   ├── useLanguage.ts
-│   │   ├── useOnlineStatus.ts
-│   │   └── useVoiceDictation.ts
-│   ├── integrations/
-│   │   └── supabase/
-│   │       ├── client.ts          # Auto-generated
-│   │       └── types.ts           # Auto-generated
+│   │   ├── use-mobile.tsx, use-toast.ts
+│   │   ├── useInspection.ts, useLanguage.ts, useLicense.ts
+│   │   ├── useOnlineStatus.ts, useVoiceDictation.ts
 │   ├── lib/
-│   │   ├── pdf/
-│   │   │   ├── agentSummarySection.ts
-│   │   │   ├── conclusionSection.ts
-│   │   │   ├── coverPage.ts
-│   │   │   ├── findingsSection.ts
-│   │   │   ├── index.ts
-│   │   │   ├── pdfUtils.ts
-│   │   │   ├── reportTypes.ts
-│   │   │   ├── scopeSection.ts
-│   │   │   ├── summarySection.ts
-│   │   │   ├── tableOfContents.ts
-│   │   │   └── upsellRecommendations.ts
-│   │   ├── aiAnalysis.ts
-│   │   ├── annotationUtils.ts
-│   │   ├── bitmapUtils.ts
-│   │   ├── companyProfile.ts
-│   │   ├── db.ts
-│   │   ├── defaultData.ts
-│   │   ├── demoData.ts
-│   │   ├── exportAnnotation.ts
-│   │   ├── i18n.ts
-│   │   ├── imageUtils.ts
-│   │   ├── offlineSyncQueue.ts
-│   │   ├── pdfGenerator.ts
-│   │   ├── professionalReportPdf.ts
-│   │   ├── reportConfig.ts
-│   │   ├── reportPdfGenerator.ts
-│   │   ├── strokeRenderer.ts
-│   │   ├── strokeTypes.ts
+│   │   ├── pdf/ (11 modular PDF generation files)
+│   │   ├── db.ts, aiAnalysis.ts, license.ts, licenseCache.ts
+│   │   ├── i18n.ts, imageUtils.ts, companyProfile.ts
+│   │   ├── strokeTypes.ts, strokeRenderer.ts, bitmapUtils.ts
+│   │   ├── annotationUtils.ts, exportAnnotation.ts
+│   │   ├── offlineSyncQueue.ts, storageUtils.ts
+│   │   ├── defaultData.ts, demoData.ts
+│   │   ├── exportImport.ts, reportConfig.ts
+│   │   ├── pdfGenerator.ts, professionalReportPdf.ts, reportPdfGenerator.ts
 │   │   └── utils.ts
-│   ├── pages/
-│   │   ├── Index.tsx
-│   │   └── NotFound.tsx
-│   ├── test/
-│   │   ├── example.test.ts
-│   │   └── setup.ts
-│   ├── App.css
-│   ├── App.tsx
-│   ├── index.css
-│   ├── main.tsx
-│   └── vite-env.d.ts
+│   ├── integrations/supabase/ (auto-generated client.ts + types.ts)
+│   ├── pages/ (Index.tsx, NotFound.tsx)
+│   ├── test/ (setup.ts, example.test.ts)
+│   ├── App.tsx, App.css, index.css, main.tsx, vite-env.d.ts
 ├── supabase/
 │   ├── functions/
-│   │   └── analyze-photo/
-│   │       └── index.ts
+│   │   ├── analyze-photo/index.ts
+│   │   └── verify-license/index.ts
 │   └── config.toml
-├── .env
-├── ARCHITECTURE.md
-├── TECHNICAL_DOCUMENTATION.md
-├── components.json
-├── index.html
-├── package.json
-├── postcss.config.js
-├── tailwind.config.ts
-├── tsconfig.json
-├── tsconfig.app.json
-├── tsconfig.node.json
-├── vite.config.ts
+├── ARCHITECTURE.md, TECHNICAL_DOCUMENTATION.md, README.md
+├── PRODUCTION_READY_VERIFICATION.md
+├── index.html, vite.config.ts, tailwind.config.ts
+├── tsconfig.json, tsconfig.app.json, tsconfig.node.json
+├── eslint.config.js, postcss.config.js, components.json
 └── vitest.config.ts
-```
-
----
-
-## API Reference
-
-### Database Operations (`src/lib/db.ts`)
-
-#### Inspection Operations
-| Function | Parameters | Returns | Description |
-|----------|------------|---------|-------------|
-| `saveInspection` | `InspectionRecord` | `Promise<void>` | Create/update inspection |
-| `getInspection` | `id: string` | `Promise<InspectionRecord \| undefined>` | Get by ID |
-| `getCurrentInspection` | - | `Promise<InspectionRecord \| undefined>` | Get active inspection |
-| `deleteInspection` | `id: string` | `Promise<void>` | Delete with all photos |
-
-#### Photo Operations
-| Function | Parameters | Returns | Description |
-|----------|------------|---------|-------------|
-| `savePhoto` | `PhotoRecord` | `Promise<void>` | Create/update photo |
-| `getPhoto` | `id: string` | `Promise<PhotoRecord \| undefined>` | Get by ID |
-| `getPhotosByInspection` | `inspectionId: string` | `Promise<PhotoRecord[]>` | Get all photos for inspection |
-| `deletePhoto` | `id: string` | `Promise<void>` | Delete photo |
-| `getPendingPhotos` | - | `Promise<PhotoRecord[]>` | Get photos pending AI analysis |
-| `updatePhotoAI` | `id, aiData` | `Promise<void>` | Update AI analysis fields |
-
-#### Settings Operations
-| Function | Parameters | Returns | Description |
-|----------|------------|---------|-------------|
-| `getSetting` | `key: string` | `Promise<string \| undefined>` | Get setting value |
-| `setSetting` | `key, value` | `Promise<void>` | Set setting value |
-| `getRoomOrder` | - | `Promise<string[]>` | Get room order array |
-| `saveRoomOrder` | `order: string[]` | `Promise<void>` | Save room order |
-
-#### Custom Room Operations
-| Function | Parameters | Returns |
-|----------|------------|---------|
-| `saveCustomRoom` | `CustomRoom` | `Promise<void>` |
-| `getAllCustomRooms` | - | `Promise<CustomRoom[]>` |
-| `deleteCustomRoom` | `id: string` | `Promise<void>` |
-
-#### Phrase Operations
-| Function | Parameters | Returns |
-|----------|------------|---------|
-| `savePhrase` | `Phrase` | `Promise<void>` |
-| `getAllPhrases` | - | `Promise<Phrase[]>` |
-| `getPhrasesByCategory` | `category` | `Promise<Phrase[]>` |
-| `deletePhrase` | `id: string` | `Promise<void>` |
-
-#### Issue Preset Operations
-| Function | Parameters | Returns |
-|----------|------------|---------|
-| `saveIssuePreset` | `IssuePreset` | `Promise<void>` |
-| `getAllIssuePresets` | - | `Promise<IssuePreset[]>` |
-| `getPresetsByCategory` | `category` | `Promise<IssuePreset[]>` |
-| `deleteIssuePreset` | `id: string` | `Promise<void>` |
-
-#### Company Profile Operations
-| Function | Parameters | Returns |
-|----------|------------|---------|
-| `getCompanyProfile` | - | `Promise<CompanyProfile \| null>` |
-| `saveCompanyProfile` | `CompanyProfile` | `Promise<void>` |
-| `getCompanyLogo` | - | `Promise<string \| null>` |
-| `getDefaultCompanyProfile` | - | `CompanyProfile` |
-
-### Image Utilities (`src/lib/imageUtils.ts`)
-
-| Function | Parameters | Returns | Description |
-|----------|------------|---------|-------------|
-| `processImage` | `File \| Blob` | `Promise<{thumbnail, fullImage}>` | Compress and create thumbnail |
-| `blobToDataUrl` | `Blob` | `Promise<string>` | Convert blob to data URL |
-| `generateId` | - | `string` | Generate unique ID |
-
-### Hooks
-
-#### `useInspection`
-```typescript
-const {
-  inspection,          // Current InspectionRecord | null
-  photos,              // PhotoRecord[]
-  isLoading,           // boolean
-  startInspection,     // (address, inspector?, client?, type?) => Promise
-  updateInspection,    // (updates) => Promise
-  capturePhoto,        // (blob, room?) => Promise<PhotoRecord>
-  updatePhoto,         // (id, updates) => Promise
-  deletePhoto,         // (id) => Promise
-  updatePhotoWithAI,   // (id, aiData) => Promise
-  finishInspection,    // () => Promise
-  refreshPhotos,       // () => Promise
-  updateRoomNotes,     // (room, notes) => Promise
-  appendRoomNotes,     // (room, text) => Promise
-  clearRoomNotes,      // (room) => Promise
-} = useInspection();
-```
-
-#### `useLanguage`
-```typescript
-const {
-  language,     // 'en' | 'es'
-  setLanguage,  // (lang) => void
-  t,            // (key) => string
-} = useLanguage();
-```
-
-#### `useOnlineStatus`
-```typescript
-const isOnline = useOnlineStatus(); // boolean
-```
-
-#### `useVoiceDictation`
-```typescript
-const {
-  isListening,    // boolean
-  isSupported,    // boolean
-  transcript,     // string
-  startListening, // () => void
-  stopListening,  // () => void
-} = useVoiceDictation();
 ```
 
 ---
 
 ## Environment Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key | `eyJ...` |
-| `VITE_SUPABASE_PROJECT_ID` | Supabase project ID | `ziarptgdthwgiwbpowhj` |
+| Variable | Source | Purpose |
+|----------|--------|---------|
+| `VITE_SUPABASE_URL` | Auto-generated (.env) | Backend URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Auto-generated (.env) | Anon key |
+| `VITE_SUPABASE_PROJECT_ID` | Auto-generated (.env) | Project ID |
+
+**Edge Function Secrets (server-side only):**
+
+| Secret | Purpose |
+|--------|---------|
+| `LOVABLE_API_KEY` | Lovable AI Gateway access |
+| `SUPABASE_URL` | Backend URL (for service role client) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Full DB access for license ops |
 
 ---
 
 ## Deployment
 
-### Preview URL
-`https://id-preview--8cd0f791-ce4c-4a88-8c8b-73979d499fed.lovable.app`
+### URLs
 
-### Published URL
-`https://inspect-ai-anywhere.lovable.app`
+| Environment | URL |
+|-------------|-----|
+| Preview | `https://id-preview--8cd0f791-ce4c-4a88-8c8b-73979d499fed.lovable.app` |
+| Production | `https://inspect-ai-anywhere.lovable.app` |
 
-### Build Command
+### Build
+
 ```bash
-npm run build
-# or
-bun run build
+npm run build   # or: bun run build
+# Output: dist/ (static files)
 ```
-
-### Output
-Static files in `dist/` directory, ready for deployment to any static hosting service.
-
----
-
-## Security Considerations
-
-1. **No Authentication**: App operates without user accounts - all data is local
-2. **Local Data Only**: Sensitive inspection data never leaves the device (except for AI analysis)
-3. **Edge Function**: Publicly accessible for offline-first compatibility
-4. **No Server-Side Storage**: All photos and reports stored locally in IndexedDB
-5. **Data Sanitization**: All user input and AI content sanitized with DOMPurify
 
 ---
 
 ## Browser Support
 
-| Browser | Support Level |
-|---------|---------------|
-| Chrome/Edge | Full |
-| Safari (iOS) | Full (PWA with limitations) |
-| Firefox | Full |
-| Samsung Internet | Full |
+| Browser | Support |
+|---------|---------|
+| Chrome/Edge (Android) | ✅ Full (recommended) |
+| Safari (iOS 16.4+) | ✅ Full with PWA install |
+| Firefox | ✅ Core features (no PWA install) |
+| Desktop Chrome/Edge | ✅ Full |
+| Desktop Safari | ⚠️ Limited (no service worker persistence) |
 
-### Required APIs
-- IndexedDB
-- Service Workers
-- Web Speech API (for voice dictation)
-- MediaDevices (for camera access)
-- Blob/File API
+**Required APIs:** IndexedDB, Service Workers, MediaDevices (camera), Web Speech (dictation)
 
 ---
 
-*Last Updated: February 2026*
-*Version: 1.2.0*
-*Brand: 365 InspectAI*
+*This document is the primary technical reference for 365 InspectAI. See ARCHITECTURE.md for a higher-level feature overview.*

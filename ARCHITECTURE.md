@@ -1,84 +1,107 @@
-# 365 InspectAI - Architecture & Features Documentation
+# 365 InspectAI — Architecture & Features
 
 ## Overview
 
-365 InspectAI is an offline-first Progressive Web Application (PWA) designed for professional home inspectors. It enables field-based photo capture, AI-powered defect analysis, and professional PDF report generation—all while maintaining full functionality without internet connectivity.
+**365 InspectAI** is a mobile-first, offline-first Progressive Web Application (PWA) for professional property inspectors. It enables field-based photo capture, AI-powered defect analysis, photo annotation, voice dictation, and professional PDF report generation — all while maintaining full functionality without internet connectivity.
+
+**Production URL:** https://inspect-ai-anywhere.lovable.app  
+**Support:** support@365globalsolutions.com
 
 ---
 
 ## Technology Stack
 
-### Frontend
-| Technology | Purpose |
-|------------|---------|
-| **React 18** | UI framework with hooks-based architecture |
-| **TypeScript** | Type-safe development |
-| **Vite** | Build tool and dev server |
-| **Tailwind CSS** | Utility-first styling with custom design tokens |
-| **shadcn/ui** | Accessible component library |
-| **Framer Motion** | Animations and transitions |
-| **React Router** | Client-side routing |
-
-### Data & Storage
-| Technology | Purpose |
-|------------|---------|
-| **IndexedDB (via idb)** | Primary offline data storage |
-| **Lovable Cloud** | Backend services and AI processing |
-
-### PDF Generation
-| Technology | Purpose |
-|------------|---------|
-| **jsPDF** | PDF document construction |
-| **html2canvas** | DOM-to-image capture for PDF |
-| **DOMPurify** | HTML sanitization for security |
-
-### PWA Features
-| Technology | Purpose |
-|------------|---------|
-| **vite-plugin-pwa** | Service worker and manifest generation |
-| **Workbox** | Caching strategies |
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **UI Framework** | React 18 + TypeScript | Component-based UI with type safety |
+| **Build** | Vite | Fast HMR and production builds |
+| **Styling** | Tailwind CSS + shadcn/ui | Utility CSS with accessible components |
+| **Animation** | Framer Motion | Transitions and micro-interactions |
+| **Routing** | React Router DOM v6 | Client-side SPA routing |
+| **Data** | IndexedDB (via `idb` v8) | Primary offline-first storage |
+| **State** | React hooks + TanStack Query | Local + server state management |
+| **Forms** | React Hook Form + Zod | Validation and form management |
+| **Images** | browser-image-compression | Client-side image optimization |
+| **PDF** | jsPDF + html2canvas + DOMPurify | Report generation and sanitization |
+| **PWA** | vite-plugin-pwa (Workbox) | Service worker, caching, installability |
+| **Backend** | Lovable Cloud (Edge Functions) | AI analysis + license verification |
+| **AI Model** | Google Gemini 2.5 Flash | Photo defect analysis |
 
 ---
 
-## Application Architecture
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        PRESENTATION LAYER                        │
-├─────────────────────────────────────────────────────────────────┤
-│  Pages: Index.tsx (Dashboard, Inspection, Settings, Reports)    │
-│  Components: CameraCapture, PhotoGallery, ReportReviewScreen    │
-│  UI: shadcn/ui components with Tailwind styling                 │
+│                     PRESENTATION LAYER                          │
+│  Pages: Index.tsx (single-page with view switching)             │
+│  Views: Dashboard │ Inspection │ Report Builder │ Settings      │
+│  UI: shadcn/ui + Tailwind + "Deep Pro" dark theme              │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                       BUSINESS LOGIC                            │
+│  useInspection  │ useLicense │ useLanguage │ useVoiceDictation  │
+│  useOnlineStatus │ Photo processing │ AI orchestration          │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                     DATA PERSISTENCE                            │
+│  IndexedDB v2 (idb wrapper)                                     │
+│  ┌────────────┐ ┌────────┐ ┌──────────┐ ┌────────────┐         │
+│  │inspections │ │ photos │ │ settings │ │customRooms │         │
+│  └────────────┘ └────────┘ └──────────┘ └────────────┘         │
+│  ┌─────────┐ ┌──────────────┐                                   │
+│  │ phrases │ │ issuePresets │                                   │
+│  └─────────┘ └──────────────┘                                   │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                   CLOUD SERVICES (Optional)                     │
+│  Edge Function: analyze-photo    → Gemini AI photo analysis     │
+│  Edge Function: verify-license   → Self-hosted license system   │
+│  Database: licenses, license_devices (RLS-protected)            │
 └─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         STATE LAYER                              │
-├─────────────────────────────────────────────────────────────────┤
-│  Hooks: useInspection, useLanguage, useOnlineStatus             │
-│  Context: React state with IndexedDB persistence                │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         DATA LAYER                               │
-├─────────────────────────────────────────────────────────────────┤
-│  lib/db.ts: IndexedDB operations                                │
-│  lib/imageUtils.ts: Photo processing pipeline                   │
-│  lib/offlineSyncQueue.ts: Sync queue management                 │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       STORAGE LAYER                              │
-├─────────────────────────────────────────────────────────────────┤
-│  IndexedDB Stores:                                              │
-│  • inspections - Inspection records                             │
-│  • photos - Photo blobs and metadata                            │
-│  • companyProfile - Branding configuration                      │
-│  • phraseLibrary - Custom inspection phrases                    │
-│  • syncQueue - Offline sync operations                          │
-└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Component Architecture
+
+```
+App.tsx
+├── BrowserRouter
+│   ├── Index.tsx (Main Page — single route, view-switching)
+│   │   ├── AppSidebar / SideMenu
+│   │   ├── DashboardHub
+│   │   │   ├── WelcomePage
+│   │   │   ├── NewInspectionForm
+│   │   │   ├── InspectionHeader
+│   │   │   ├── RoomSelector (sticky, drag-and-drop reorder)
+│   │   │   ├── QuickCaptureMode
+│   │   │   │   ├── CameraCapture (device selection, front/back)
+│   │   │   │   ├── DropZone (file upload)
+│   │   │   │   └── LiveNotesPanel (voice → room-grouped notes)
+│   │   │   ├── PhotoGallery (thumbnail grid + AI status badges)
+│   │   │   │   ├── PhotoDetailPanel (full view + editing)
+│   │   │   │   ├── PhotoAnnotationEditor
+│   │   │   │   │   ├── ZoomableAnnotationCanvas
+│   │   │   │   │   ├── AnnotationToolbar
+│   │   │   │   │   └── AnnotationControls
+│   │   │   │   ├── IssuePresetSelector (manual defect tagging)
+│   │   │   │   └── ImageLightbox
+│   │   │   ├── ReportBuilder (Tabs: Photos/Deferred/Maintenance/Legal)
+│   │   │   ├── ReportReviewScreen
+│   │   │   ├── ReportDialog
+│   │   │   ├── CompanyProfileSettings (white-label branding)
+│   │   │   ├── LicenseSettings (activation + device management)
+│   │   │   ├── PhraseLibrary
+│   │   │   └── StorageMeter
+│   │   ├── StatusBar (online/offline, photo count)
+│   │   ├── PrivacyPolicy
+│   │   └── TermsOfService
+│   └── NotFound.tsx
+└── Providers (QueryClient, TooltipProvider, Toaster, Sonner)
 ```
 
 ---
@@ -87,12 +110,9 @@
 
 ### 1. Inspection Management
 
-**Purpose:** Create, manage, and complete property inspections.
+Create, manage, and complete property inspections with rich metadata.
 
-**Key Components:**
-- `NewInspectionForm.tsx` - Inspection creation with metadata
-- `useInspection.ts` - State management hook
-- `InspectionHeader.tsx` - Active inspection display
+**Inspection Types:** Pre-Purchase, Pre-Listing, Annual, Insurance, New Construction, Warranty
 
 **Data Model:**
 ```typescript
@@ -106,241 +126,109 @@ interface InspectionRecord {
   updatedAt: number;
   photoIds: string[];
   isComplete: boolean;
+  customRooms?: string[];
   roomNotes?: Record<string, string>;
 }
 ```
 
-**Inspection Types:**
-- Pre-Purchase Inspection
-- Pre-Listing Inspection
-- Annual Inspection
-- Insurance Inspection
-- New Construction Inspection
-- Warranty Inspection
-
 ---
 
-### 2. Photo Capture & Management
+### 2. Photo Capture & Processing
 
-**Purpose:** Capture, store, and organize inspection photos by room.
+Camera-first interface with multi-device support and client-side compression.
 
-**Key Components:**
-- `CameraCapture.tsx` - Camera interface with device selection
-- `QuickCaptureMode.tsx` - Rapid photo capture workflow
-- `PhotoGallery.tsx` - Thumbnail grid with AI status indicators
-- `PhotoDetailPanel.tsx` - Full photo view with editing
-
-**Photo Pipeline:**
+**Pipeline:**
 ```
-Camera/Upload → Blob → Compression → Thumbnail Generation → IndexedDB Storage
-                                         │
-                                         ▼
-                            Full Image: max 2048px, 0.85 quality
-                            Thumbnail: 320px, 0.80 quality
+Camera/Upload → browser-image-compression →
+  ├── Full Image: max 2048px, 85% JPEG quality
+  └── Thumbnail: 320px, 80% JPEG quality
+  → IndexedDB storage → Queue for AI analysis
 ```
 
-**Photo Data Model:**
-```typescript
-interface PhotoRecord {
-  id: string;
-  inspectionId: string;
-  room: string;
-  timestamp: number;
-  notes: string;
-  thumbnailBlob: Blob;
-  fullImageBlob: Blob;
-  annotatedBlob?: Blob;
-  aiStatus: 'pending_offline' | 'analyzing' | 'complete' | 'failed';
-  aiAnalysis?: AIAnalysisResult;
-}
-```
-
-**Room Categories:**
-- Exterior, Interior, Kitchen, Bathroom
-- Dining Room, Main Bedroom, Bedroom 2, Bedroom 3
-- Living Room, Garage, Attic, Basement
-- Roof, Electrical Panel, AC, Water Heater, Other
+**Capacity:** Up to 200 photos per inspection.
 
 ---
 
 ### 3. Photo Annotation System
 
-**Purpose:** Mark defects and areas of interest directly on photos.
+Mark defects directly on photos with touch-optimized drawing tools.
 
-**Key Components:**
-- `PhotoAnnotationEditor.tsx` - Main annotation interface
-- `AnnotationCanvas.tsx` - Drawing canvas with touch support
-- `AnnotationToolbar.tsx` - Tool selection and controls
-- `AnnotationControls.tsx` - Undo/redo and save actions
+**Tools:** Arrow, Circle, Rectangle, Freehand, Text
 
-**Annotation Tools:**
-- **Arrow** - Point to specific areas
-- **Circle** - Highlight round areas
-- **Rectangle** - Box selection
-- **Freehand** - Custom drawing
-- **Text** - Add labels
-
-**Technical Implementation:**
-- Uses ImageBitmap for performance optimization
-- DPR (Device Pixel Ratio) aware for retina displays
-- Coordinates stored relative to original image resolution
-- Exports merged annotation as new Blob
+**Technical Highlights:**
+- Stroke-based rendering (1KB/stroke vs 12MB/ImageData snapshot)
+- Dual-resolution canvas: 1024×768 editing, full-res export
+- Point decimation (50–80% reduction, <2px visual loss)
+- Micro-stroke merging (<5 points within 500ms)
+- Guardrails: max 50 undo steps, 500 strokes, 50MB memory cap
+- DPR-aware for retina displays
 
 ---
 
 ### 4. AI-Powered Defect Analysis
 
-**Purpose:** Automatically analyze photos to identify defects and generate professional observations.
+Automated photo analysis using Google Gemini 2.5 Flash via Edge Function.
 
-**Key Components:**
-- `lib/aiAnalysis.ts` - Analysis orchestration
-- `supabase/functions/analyze-photo/index.ts` - Edge function
-- `IssuePresetSelector.tsx` - Manual defect categorization
-
-**AI Analysis Flow:**
+**Analysis Flow:**
 ```
-Photo Blob → Base64 Encoding → Edge Function → Gemini API → Structured Analysis
-                                                    │
-                                                    ▼
-                                        AIAnalysisResult {
-                                          summary: string;
-                                          severity: 'low' | 'medium' | 'high';
-                                          defects: Defect[];
-                                          recommendations: string[];
-                                        }
+Photo → Base64 → Edge Function (analyze-photo) → Gemini API → Structured JSON
 ```
 
-**AI Prompt Guidelines:**
-- Professional, neutral, third-person tone
+**Prompt Architecture:**
+- Professional licensed inspector persona
 - "Observation → Implication → Recommendation" structure
-- No AI/software references in output
-- Licensed specialist recommendations for uncertain findings
-- No speculation beyond visible evidence
-- Confidence levels stated implicitly
+- Court-defensible language (no AI/software references)
+- Status labels: Safety, Repair, Maintenance, Monitor
+- Severity: severe, moderate, minor
+- Bilingual output (English + Spanish)
+
+**Input Validation:**
+- Max payload: 10MB base64 string
+- Language whitelist: `["en", "es"]`
+- Type checking on `imageBase64`
 
 **Offline Behavior:**
-- Photos queued with `pending_offline` status
-- Automatic analysis when connectivity restored
-- Batch processing with progress indicators
+- Photos queued as `pending_offline`
+- Auto-analyzed when connectivity restored
+- Falls back to mock analysis on error
 
 ---
 
 ### 5. Voice Dictation
 
-**Purpose:** Hands-free note-taking during inspections.
-
-**Key Components:**
-- `VoiceDictationButton.tsx` - Mic interface
-- `useVoiceDictation.ts` - Web Speech API hook
-- `LiveNotesPanel.tsx` - Room-organized transcript display
+Hands-free note-taking via Web Speech API.
 
 **Features:**
 - Real-time speech-to-text
-- Room-based note organization
+- Room-based note organization (LiveNotesPanel)
 - Append/clear per room
 - Works offline (browser-dependent)
 
 ---
 
-### 6. Professional Report Generation
+### 6. Professional Report Generation (PDF)
 
-**Purpose:** Generate publication-ready PDF inspection reports titled "PROPERTY INSPECTION REPORT" that are lender-safe and legally robust.
-
-**Key Components:**
-- `ReportReviewScreen.tsx` - Report preview and editing
-- `ReportBuilder.tsx` - Report configuration UI (Photos, Deferred, Maintenance, Legal tabs)
-- `lib/pdf/` - Modular PDF generation system:
-  - `reportTypes.ts` - Types, interfaces, and status labels
-  - `pdfUtils.ts` - Shared utility functions
-  - `coverPage.ts` - Cover page with signature area
-  - `agentSummarySection.ts` - Standalone 1-page Agent-Friendly Summary
-  - `tableOfContents.ts` - Clickable ToC with page numbers
-  - `summarySection.ts` - Inspection Summary with Systems Overview
-  - `scopeSection.ts` - Standards & limitations
-  - `findingsSection.ts` - System-by-system findings
-  - `conclusionSection.ts` - Disclaimers & credentials
-  - `upsellRecommendations.ts` - Maintenance recommendations
-- `lib/reportConfig.ts` - Report structure configuration
+Publication-ready inspection reports titled **"PROPERTY INSPECTION REPORT"**.
 
 **Report Structure:**
-```
-1. Cover Page (Authority + Professionalism)
-   - Property address
-   - Inspection date & time
-   - Client name (PREPARED FOR section)
-   - Inspector name, license #, certifications
-   - Company branding, tagline, contact info
-   - Digital signature area
-   - "Confidential and Proprietary" notice
 
-2. Agent-Friendly Summary (Standalone 1-page)
-   - Quick-reference summary for real estate agents
-   - Designed for easy forwarding to clients
-   - Key findings at a glance
+| # | Section | Description |
+|---|---------|-------------|
+| 1 | **Cover Page** | Property address, date, client, inspector credentials, company branding, signature area, "Confidential" notice |
+| 2 | **Agent-Friendly Summary** | Standalone 1-page quick-reference for real estate agents (key selling feature) |
+| 3 | **Table of Contents** | Clickable navigation with page numbers |
+| 4 | **Inspection Summary** | Inspected Systems Overview table, Key Findings by category, Overall Assessment |
+| 5 | **Scope & Limitations** | Standards of practice, custom scope, exclusions |
+| 6 | **Detailed Findings** | System-by-system with photos, status badges, Observation→Implication→Recommendation |
+| 7 | **Deferred Items** | Areas not inspected with reasons |
+| 8 | **Maintenance Recommendations** | Non-urgent items, clearly labeled optional |
+| 9 | **Disclaimers** | Pre-closing walkthrough, liability, legal notices |
+| 10 | **Credentials** | Inspector info, certifications, contact, thank you |
 
-3. Table of Contents
-   - Clickable section navigation
-   - Page numbers with dotted leader lines
+**Ancillary Sections (optional):** Radon, WDI (Wood Destroying Insects/Termite), Mold — render only when populated.
 
-4. Inspection Summary (Page 4 - Overview)
-   - Header: "This summary highlights the most significant 
-     conditions observed during the inspection. Please refer 
-     to the full report for additional details."
-   - Inspected Systems Overview Table:
-     * System/Area name
-     * Condition status (Satisfactory/Maintenance/Marginal/Needs Attention)
-     * Items recorded count
-   - Key Findings Categories:
-     * 🔴 Safety Concerns (immediate attention)
-     * 🟠 Major Defects (repair recommended)
-     * 🟡 Items to Monitor / Maintenance
-   - Overall Assessment Commentary:
-     * "Several conditions were observed that may require 
-       prompt attention. Further evaluation by qualified, 
-       licensed professionals is recommended."
+**Finding Status Labels:**
 
-5. Scope, Standards & Limitations
-   - Inspection type description
-   - Standards of practice
-   - Custom scope (from company profile)
-   - Inspector limitations list
-   - Key exclusions box
-
-6. Detailed Inspection Findings (System-by-System)
-   - System overview with condition status
-   - Per-system disclaimer
-   - Observations with:
-     - Photo with annotation
-     - Status badge (Safety/Repair Recommended/Maintenance/Monitor)
-     - Observation → Implication → Recommendation flow
-     - Category and comments
-
-7. Deferred / Not Inspected Items
-   - Areas that couldn't be inspected
-   - Reasons (obstructed, weather, inaccessible, etc.)
-   - Re-inspection recommendations
-
-8. Maintenance Recommendations
-   - Non-urgent items
-   - Non-defect maintenance tips
-   - Clearly labeled as optional
-
-9. End-of-Report Disclaimers
-   - Pre-closing walkthrough guide
-   - Custom disclaimers (from company profile)
-   - Liability statement
-   - Scope and limitations text
-   - Standard legal notices
-
-10. Inspector Credentials & Contact
-    - Company logo and name
-    - Inspector name and license
-    - Certifications and affiliations
-    - Full contact information
-    - Thank you message
-```
-
-**Finding Status Labels (Standardized):**
 | Status | English | Spanish | Color |
 |--------|---------|---------|-------|
 | Safety | Safety | Seguridad | 🔴 Red |
@@ -348,198 +236,231 @@ Photo Blob → Base64 Encoding → Edge Function → Gemini API → Structured A
 | Maintenance | Maintenance | Mantenimiento | 🟡 Yellow |
 | Monitor | Monitor | Monitorear | 🔵 Blue |
 
-**Condition Statuses (mapped from severity):**
-- Satisfactory - No issues found
-- Needs Maintenance - Minor attention needed
-- Professional Consultation - Expert evaluation recommended
-- Not Satisfactory - Significant issue
-
 **Technical Notes:**
-- Emojis replaced with vector graphics for cross-viewer stability
-- Reports appear human-authored (no AI/software references)
+- Vector graphics instead of emojis for cross-viewer stability
+- All content sanitized with DOMPurify
+- Reports appear human-authored (no AI references)
+- Full bilingual support
+
+**PDF Module Structure:**
+```
+src/lib/pdf/
+├── index.ts                  # Orchestration
+├── reportTypes.ts            # Types, interfaces, status labels
+├── pdfUtils.ts               # Shared utilities
+├── coverPage.ts              # Cover page generation
+├── agentSummarySection.ts    # Agent-friendly 1-pager
+├── tableOfContents.ts        # Clickable ToC
+├── summarySection.ts         # Inspection Summary + Systems Overview
+├── scopeSection.ts           # Scope, Standards & Limitations
+├── findingsSection.ts        # System-by-system findings
+├── conclusionSection.ts      # Disclaimers & conclusion
+├── upsellRecommendations.ts  # Maintenance recommendations
+└── agentSummaryPdf.ts        # Standalone agent summary export
+```
 
 ---
 
-### 7. Company Branding System (White-Label)
+### 7. Company Branding (White-Label)
 
-**Purpose:** Full white-labeling of reports with company identity and legal templates.
+Full white-labeling of reports with company identity, legal templates, and logo.
 
-**Key Components:**
-- `CompanyProfileSettings.tsx` - Configuration UI
-- `lib/companyProfile.ts` - Profile storage and retrieval
-
-**Customizable Elements:**
-```typescript
-interface CompanyProfile {
-  id: string;
-  companyName: string;
-  companyNameEs?: string;
-  inspectorName?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  logoUrl?: string;
-  logoBlob?: Blob;
-  certifications?: string[];
-  licenseNumber?: string;
-  tagline?: string;
-  taglineEs?: string;
-  // Custom legalese fields
-  customDisclaimer?: string;
-  customDisclaimerEs?: string;
-  scopeAndLimitations?: string;
-  scopeAndLimitationsEs?: string;
-  liabilityStatement?: string;
-  liabilityStatementEs?: string;
-  // Deferred items templates
-  deferredItemsTemplates?: Array<{ area: string; reason: string }>;
-  // Maintenance recommendations templates
-  maintenanceTemplates?: string[];
-}
-```
-
-**Storage:** IndexedDB with separate logo blob storage
+**Customizable Fields:**
+- Company name, tagline, logo (blob storage)
+- Inspector name, license number, certifications
+- Contact info (phone, email, website, address)
+- Custom disclaimer, scope & limitations, liability statement (bilingual)
+- Deferred items templates, maintenance templates
 
 ---
 
 ### 8. Bilingual Support (English/Spanish)
 
-**Purpose:** Full application localization for bilingual inspectors with formal professional Spanish tone.
+Full localization with formal professional Spanish tone.
 
-**Key Components:**
-- `lib/i18n.ts` - Translation dictionary
-- `useLanguage.ts` - Language state hook
+**Coverage:** All UI elements, PDF reports, AI analysis output, status labels, categories.
 
-**Coverage:**
-- All UI elements
-- PDF report generation (all sections)
-- Professional terminology
-- Formal Spanish tone throughout
-- Status labels and categories
+**Implementation:** `lib/i18n.ts` dictionary + `useLanguage` hook with `t()` function.
 
 ---
 
 ### 9. Offline-First Architecture
 
-**Purpose:** Full functionality without internet connectivity.
+Full functionality without internet connectivity.
 
-**Implementation:**
-
-**Service Worker:**
-- Precaches all application assets
-- Runtime caching for API responses
-- Background sync support
+**Service Worker (Workbox):**
+- CacheFirst for static assets (JS, CSS, HTML, fonts, images)
+- Runtime caching for Google Fonts (1-year expiry)
+- Automatic service worker updates
 
 **IndexedDB Storage:**
-- All inspection data persisted locally
-- Photo blobs stored directly in DB
-- Up to 200 photos per inspection
+- All inspection data, photos, settings persisted locally
+- Photo blobs stored directly (no external dependencies)
+- License state cached with 7-day offline grace period
 
 **Sync Queue:**
-```typescript
-interface SyncOperation {
-  id: string;
-  type: 'photo_analysis' | 'inspection_update';
-  payload: any;
-  attempts: number;
-  lastAttempt?: number;
-  status: 'pending' | 'in_progress' | 'failed';
-}
-```
-
-**Retry Strategy:**
-- Exponential backoff (1s, 2s, 4s, 8s...)
-- Maximum 5 retry attempts
-- Revision gating to prevent overwrites
+- Offline operations queued in IndexedDB
+- Exponential backoff retry (1s, 2s, 4s, 8s…)
+- Max 5 retry attempts
+- Auto-syncs when connectivity restored
 
 ---
 
-### 10. Demo Mode
+### 10. Self-Hosted Licensing System
 
-**Purpose:** Showcase application capabilities without field data.
+Server-side license validation with device management.
 
-**Key Components:**
-- `lib/demoData.ts` - Demo inspection seeding
-- `src/assets/demo/` - Sample photos with pre-analyzed defects
+**Architecture:**
+```
+Client (useLicense hook)
+  → Edge Function (verify-license)
+    → Supabase DB (licenses + license_devices tables)
+    → SHA-256 hash verification
+    → Device registration/limit check
+  → IndexedDB cache (7-day grace period)
+```
 
-**Demo Content:**
-- Foundation crack (high severity)
-- Roof damage (high severity)
-- Plumbing leak (medium severity)
-- Electrical issue (medium severity)
+**Security Hardening:**
+- SHA-256 hashing for license keys (never stored in plain text on device)
+- Strict CORS whitelist on all endpoints
+- RLS denies all direct client access to license tables
+- Anti-enumeration: generic failure messages for all invalid states
+- Sensitive data redacted from server logs
+- Input validation: length limits + alphanumeric pattern enforcement
+
+**Device Management:**
+- 2-device limit per license
+- 30-day cooldown between device resets
+- Reset counter tracking
+- `last_seen_at` tracking for registered devices
+
+**Feature Gating:**
+| Feature | Unlicensed | Licensed | Offline (grace) |
+|---------|------------|----------|------------------|
+| Create Inspection | ❌ | ✅ | ✅ (7 days) |
+| AI Analysis | ❌ | ✅ | ✅ (7 days) |
+| Export/PDF | ✅ Always | ✅ | ✅ Always |
+
+**Database Schema (Cloud):**
+- `licenses` — license_key, product_id, is_active, expires_at, max_devices, reset tracking
+- `license_devices` — license_hash, device_id, activated_at, last_seen_at
 
 ---
 
 ### 11. Inspection Workflow Features
 
-**Quick Capture Mode:**
-- Rapid photo capture workflow
-- Room-context filtering
+**Quick Capture Mode:** Rapid photo capture with room-context filtering.
 
 **Room Selector:**
-- Persistent 'sticky' room selector
-- Manual drag-and-drop reordering
+- 25+ standard rooms (Exterior, Interior, Kitchen, Bathroom, Dining Room, Main Bedroom, Bedroom 2/3, Living Room, Basement, Attic, Garage, Roof, Electrical Panel, AC, Water Heater, Crawl Space, Furnace, Laundry, etc.)
 - Custom room creation
+- Drag-and-drop reordering (persisted in settings)
+- Sticky selection across views
 
 **Phrase Library:**
 - Searchable phrase database
-- Categories: Disclaimer, Note, Recommendation
+- Categories: Disclaimer, Note, Recommendation, General
+- Favorites system
 - Bilingual support
 
-**Live Notes Panel:**
-- Voice dictation organized by room
-- Real-time transcript display
-- Room-based grouping
+**Issue Preset Selector:**
+- Predefined defect templates by category
+- Manual severity/category assignment
+- Quick application to photos
+
+**Demo Mode:**
+- Pre-loaded inspection with 4 sample photos (foundation crack, roof damage, plumbing leak, electrical issue)
+- Demonstrates full workflow without field data
+
+---
+
+### 12. Data Export/Import
+
+**Export:** Full inspection data as JSON (via JSZip)
+**Import:** Restore from exported JSON backup
 
 ---
 
 ## Data Flow Diagrams
 
-### Photo Capture Flow
+### Photo Lifecycle
 ```
-┌──────────┐    ┌──────────┐    ┌───────────┐    ┌──────────┐
-│  Camera  │───▶│ Compress │───▶│ Generate  │───▶│  Store   │
-│  Capture │    │  Image   │    │ Thumbnail │    │ IndexedDB│
-└──────────┘    └──────────┘    └───────────┘    └──────────┘
-                                                       │
-                                                       ▼
-                                                 ┌──────────┐
-                                                 │  Queue   │
-                                                 │   for    │
-                                                 │ Analysis │
-                                                 └──────────┘
+Camera/File → Compress → Thumbnail → IndexedDB → Queue AI
+                                          │
+                                    ┌─────▼─────┐
+                                    │ Annotate?  │
+                                    └─────┬─────┘
+                                          │
+                            ┌─────────────▼──────────────┐
+                            │ Stroke-based annotation     │
+                            │ → Export at full resolution  │
+                            │ → Save annotatedImageBlob   │
+                            └─────────────┬──────────────┘
+                                          │
+                                    ┌─────▼─────┐
+                                    │  Include   │
+                                    │ in Report? │
+                                    └─────┬─────┘
+                                          │
+                                    ┌─────▼─────┐
+                                    │ PDF uses   │
+                                    │ annotated  │
+                                    │ version    │
+                                    └────────────┘
 ```
 
-### AI Analysis Flow
+### License Verification Flow
 ```
-┌──────────┐    ┌──────────┐    ┌───────────┐    ┌──────────┐
-│  Photo   │───▶│  Edge    │───▶│  Gemini   │───▶│  Update  │
-│   Blob   │    │ Function │    │    API    │    │  Photo   │
-└──────────┘    └──────────┘    └───────────┘    └──────────┘
-     │                                                 │
-     │              ┌───────────────┐                  │
-     └─────────────▶│ Offline Queue │◀─────────────────┘
-                    └───────────────┘
+App Launch → Load cached state from IndexedDB
+  │
+  ├── Online? → Call verify-license Edge Function
+  │               → SHA-256 hash license key
+  │               → Check licenses table
+  │               → Check/register device
+  │               → Return LicenseState
+  │               → Cache in IndexedDB
+  │
+  └── Offline? → Check grace period (7 days)
+                  → Grant/deny features accordingly
 ```
 
-### Report Generation Flow
-```
-┌──────────┐    ┌──────────┐    ┌───────────┐    ┌──────────┐
-│ Collect  │───▶│  Build   │───▶│  Render   │───▶│ Download │
-│   Data   │    │   PDF    │    │  Sections │    │   File   │
-└──────────┘    └──────────┘    └───────────┘    └──────────┘
-     │
-     ├── Inspection metadata
-     ├── Photos + annotations
-     ├── AI analysis results
-     ├── Room notes
-     ├── Company profile
-     └── Legal templates
-```
+---
+
+## Security Summary
+
+| Area | Implementation |
+|------|---------------|
+| **Data Sanitization** | DOMPurify on all user input and AI output |
+| **License Keys** | SHA-256 hashed, never stored plaintext on client |
+| **CORS** | Strict origin whitelist on all Edge Functions |
+| **RLS** | All license tables deny direct client access |
+| **Anti-Enumeration** | Generic failure messages for all invalid states |
+| **Log Redaction** | License keys, device IDs, emails, hashes redacted |
+| **Input Validation** | Length limits, format patterns, type checks |
+| **Offline Data** | All data local in IndexedDB (browser-encrypted at rest) |
+
+---
+
+## Performance Optimizations
+
+| Area | Optimization |
+|------|-------------|
+| **Images** | Lazy loading, thumbnail-first, compression before storage |
+| **Annotations** | Stroke-based (1KB vs 12MB), dual-resolution canvas |
+| **State** | useCallback, optimistic updates, debounced auto-save |
+| **PWA** | Aggressive caching, asset preloading, background sync |
+| **Memory** | 50MB cap on annotations, point decimation, micro-stroke merging |
+
+---
+
+## PWA Configuration
+
+- **Theme:** `#0F172A` (dark)
+- **Display:** Standalone
+- **Orientation:** Portrait-primary
+- **Icons:** 192px, 512px, 512px-maskable
+- **iOS:** `apple-mobile-web-app-capable`, `black-translucent` status bar
+- **Service Worker:** Auto-update with Workbox
 
 ---
 
@@ -547,156 +468,32 @@ interface SyncOperation {
 
 ```
 src/
-├── components/
-│   ├── ui/                    # shadcn/ui components
-│   ├── AnnotationCanvas.tsx   # Photo markup
-│   ├── AnnotationControls.tsx
-│   ├── AnnotationToolbar.tsx
-│   ├── AppSidebar.tsx
-│   ├── CameraCapture.tsx      # Camera interface
-│   ├── CompanyProfileSettings.tsx
-│   ├── DashboardHub.tsx       # Main dashboard
-│   ├── DropZone.tsx
-│   ├── ImageLightbox.tsx
-│   ├── InspectionHeader.tsx
-│   ├── IssuePresetSelector.tsx
-│   ├── LiveNotesPanel.tsx
-│   ├── NewInspectionForm.tsx
-│   ├── PhotoAnnotationEditor.tsx
-│   ├── PhotoDetailPanel.tsx
-│   ├── PhotoGallery.tsx
-│   ├── PhraseLibrary.tsx
-│   ├── QuickCaptureMode.tsx
-│   ├── ReportBuilder.tsx
-│   ├── ReportDialog.tsx
-│   ├── ReportReviewScreen.tsx
-│   ├── RoomSelector.tsx
-│   ├── SideMenu.tsx
-│   ├── StatusBar.tsx
-│   └── VoiceDictationButton.tsx
-│
-├── hooks/
-│   ├── use-mobile.tsx
-│   ├── use-toast.ts
-│   ├── useInspection.ts       # Inspection state
-│   ├── useLanguage.ts         # i18n hook
-│   ├── useOnlineStatus.ts     # Connectivity
-│   └── useVoiceDictation.ts   # Speech API
-│
-├── lib/
-│   ├── pdf/                   # Modular PDF generation
-│   │   ├── agentSummarySection.ts
-│   │   ├── conclusionSection.ts
-│   │   ├── coverPage.ts
-│   │   ├── findingsSection.ts
-│   │   ├── index.ts
-│   │   ├── pdfUtils.ts
-│   │   ├── reportTypes.ts
-│   │   ├── scopeSection.ts
-│   │   ├── summarySection.ts
-│   │   ├── tableOfContents.ts
-│   │   └── upsellRecommendations.ts
-│   ├── aiAnalysis.ts          # AI orchestration
-│   ├── annotationUtils.ts     # Drawing utilities
-│   ├── bitmapUtils.ts
-│   ├── companyProfile.ts      # Branding storage
-│   ├── db.ts                  # IndexedDB operations
-│   ├── defaultData.ts
-│   ├── demoData.ts            # Demo mode
-│   ├── exportAnnotation.ts
-│   ├── i18n.ts                # Translations
-│   ├── imageUtils.ts          # Photo processing
-│   ├── offlineSyncQueue.ts    # Sync management
-│   ├── pdfGenerator.ts
-│   ├── professionalReportPdf.ts
-│   ├── reportConfig.ts        # Report structure
-│   ├── reportPdfGenerator.ts
-│   ├── strokeRenderer.ts
-│   ├── strokeTypes.ts
-│   └── utils.ts               # General utilities
-│
-├── pages/
-│   ├── Index.tsx              # Main application
-│   └── NotFound.tsx
-│
-└── assets/
-    ├── demo/                  # Demo inspection photos
-    │   ├── electrical-issue.jpg
-    │   ├── foundation-crack.jpg
-    │   ├── plumbing-leak.jpg
-    │   └── roof-damage.jpg
-    └── logo.png
+├── components/           # UI components (30+)
+│   ├── ui/               # shadcn/ui primitives (40+)
+│   └── *.tsx             # Feature components
+├── hooks/                # Custom React hooks (7)
+├── lib/                  # Business logic
+│   ├── pdf/              # Modular PDF generation (11 files)
+│   ├── db.ts             # IndexedDB operations
+│   ├── aiAnalysis.ts     # AI orchestration + mock fallback
+│   ├── license.ts        # License types + grace period logic
+│   ├── licenseCache.ts   # IndexedDB license caching
+│   ├── i18n.ts           # Translation dictionary
+│   ├── imageUtils.ts     # Photo processing pipeline
+│   ├── companyProfile.ts # Branding storage
+│   ├── strokeTypes.ts    # Annotation stroke types
+│   ├── strokeRenderer.ts # Annotation rendering engine
+│   └── offlineSyncQueue.ts # Offline sync queue
+├── pages/                # Route pages (2)
+├── assets/demo/          # Demo inspection photos (4)
+└── integrations/supabase/ # Auto-generated client + types
 
 supabase/
 ├── functions/
-│   └── analyze-photo/
-│       └── index.ts           # AI analysis edge function
+│   ├── analyze-photo/    # AI photo analysis
+│   └── verify-license/   # License verification
 └── config.toml
 ```
-
----
-
-## Security Considerations
-
-### Data Sanitization
-- All user input sanitized with DOMPurify
-- AI-generated content sanitized before rendering
-- No direct HTML injection in reports
-
-### Offline Security
-- All data encrypted at rest (browser IndexedDB)
-- No sensitive data transmitted without user action
-- Session-based authentication when online
-
-### Report Integrity
-- Reports appear human-authored (no AI references)
-- Professional disclaimers protect liability
-- Timestamps and inspection IDs for audit trail
-
----
-
-## Performance Optimizations
-
-### Image Handling
-- Lazy loading of full-resolution images
-- Thumbnail-first display strategy
-- ImageBitmap for annotation performance
-- Compression before storage
-
-### State Management
-- Minimal re-renders with useCallback
-- Optimistic UI updates
-- Debounced auto-save
-
-### PWA
-- Aggressive caching strategies
-- Preloading of critical assets
-- Background sync for deferred operations
-
----
-
-## UX Design Philosophy
-
-### Camera-First Interface
-- Optimized for one-handed thumb operation
-- "Deep Pro" dark theme with glassmorphism
-- Strict room-context filtering
-
-### Visual Design
-- Camera gallery shows only active room content
-- Live notes filtered by selected room
-- Persistent sticky room selector
-
----
-
-## Future Considerations
-
-1. **Multi-Inspector Support** - Team inspections with role-based access
-2. **Cloud Backup** - Optional cloud sync for data redundancy
-3. **Custom Report Templates** - User-defined report structures
-4. **Integration APIs** - Connect with inspection scheduling software
-5. **Advanced AI** - Thermal imaging analysis, moisture detection
-6. **Client Portal** - Secure report delivery to clients
 
 ---
 
@@ -704,10 +501,12 @@ supabase/
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0.0 | 2026-02 | Initial release with core features |
-| 1.1.0 | 2026-02 | Added Agent-Friendly Summary, Inspected Systems Overview |
-| 1.2.0 | 2026-02 | Rebranded to 365 InspectAI, updated status labels |
+| 1.0.0 | 2026-02 | Core inspection, photo, AI, PDF features |
+| 1.1.0 | 2026-02 | Agent-Friendly Summary, Inspected Systems Overview |
+| 1.2.0 | 2026-02 | Rebranded to 365 InspectAI, standardized status labels |
+| 1.3.0 | 2026-02 | Self-hosted licensing system, security hardening |
+| 1.4.0 | 2026-02 | Ancillary sections (Radon/WDI/Mold), annotation v2 |
 
 ---
 
-*This document is maintained as the technical source of truth for 365 InspectAI architecture and features.*
+*This document is the primary architectural reference for 365 InspectAI.*
