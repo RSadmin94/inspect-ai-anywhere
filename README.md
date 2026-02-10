@@ -1,73 +1,117 @@
-# Welcome to your Lovable project
+# 365 InspectAI
 
-## Project info
+**AI-powered property inspection software for field professionals.**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+A mobile-first, offline-first Progressive Web Application (PWA) that enables inspectors to capture photos, receive AI-powered defect analysis, annotate findings, and generate professional PDF reports — all without requiring internet connectivity.
 
-## How can I edit this code?
+🌐 **Live App:** https://inspect-ai-anywhere.lovable.app  
+📧 **Support:** support@365globalsolutions.com
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+| Feature | Description |
+|---------|-------------|
+| 📸 **Photo Capture** | Camera-first interface with compression, thumbnails, and up to 200 photos per inspection |
+| 🤖 **AI Analysis** | Gemini-powered defect detection with Observation → Implication → Recommendation format |
+| ✏️ **Annotations** | Mark defects directly on photos (arrow, circle, rectangle, freehand, text) |
+| 📄 **PDF Reports** | Professional "Property Inspection Report" with 10 sections, agent-friendly summary |
+| 🎤 **Voice Dictation** | Hands-free note-taking organized by room |
+| 🌐 **Bilingual** | Full English/Spanish support with formal professional tone |
+| 🏢 **White-Label** | Complete company branding, custom disclaimers, legal templates |
+| 📱 **Offline-First** | Full functionality without internet via IndexedDB + service workers |
+| 🔑 **Licensing** | Self-hosted license system with device management |
+| 🏠 **25+ Rooms** | Pre-built room library with custom rooms and drag-and-drop reorder |
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Data:** IndexedDB (idb), TanStack Query, React Hook Form, Zod
+- **PDF:** jsPDF, html2canvas, DOMPurify
+- **AI:** Google Gemini 2.5 Flash (via Lovable AI Gateway)
+- **Backend:** Lovable Cloud (Edge Functions + Database)
+- **PWA:** vite-plugin-pwa, Workbox
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Quick Start
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# Clone the repository
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start dev server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open http://localhost:5173 in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## Project Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+src/
+├── components/     # UI components (30+ feature, 40+ shadcn/ui)
+├── hooks/          # React hooks (inspection, license, language, voice, online)
+├── lib/            # Business logic (DB, AI, PDF, licensing, i18n)
+│   └── pdf/        # Modular PDF generation (11 files)
+├── pages/          # Route pages
+└── assets/         # Demo photos, logo
 
-## What technologies are used for this project?
+supabase/
+└── functions/      # Edge Functions (analyze-photo, verify-license)
+```
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Documentation
 
-## How can I deploy this project?
+| Document | Purpose |
+|----------|---------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture, features, data flows |
+| [TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md) | Full API reference, data models, security |
+| [PRODUCTION_READY_VERIFICATION.md](./PRODUCTION_READY_VERIFICATION.md) | Annotation system verification report |
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## Key Workflows
 
-Yes, you can!
+### Inspection Flow
+1. Create inspection (address, client, type)
+2. Select room → Capture photos or upload
+3. AI analyzes each photo automatically
+4. Annotate photos, add manual findings
+5. Voice-dictate room notes
+6. Build report (select photos, add deferred items, maintenance)
+7. Generate PDF → Download
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Licensing Flow
+1. Enter license key in Settings
+2. Verify against backend (Edge Function)
+3. Device registered (2-device limit)
+4. 7-day offline grace period
+5. Export always available, even unlicensed
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## Build & Deploy
+
+```bash
+npm run build      # Production build → dist/
+```
+
+The app is hosted on Lovable Cloud and published via the Lovable editor.
+
+---
+
+## License
+
+Proprietary — 365 Global Solutions
