@@ -14,16 +14,16 @@ export interface SectionTab {
 
 // Navigation tabs matching the reference report layout
 export const SECTION_TABS: SectionTab[] = [
-  { id: 'summary', labelEn: 'SUMMARY', labelEs: 'RESUMEN', color: [60, 60, 60] },        // Dark gray
-  { id: 'roofing', labelEn: 'ROOFING', labelEs: 'TECHO', color: [76, 140, 43] },         // Green
-  { id: 'exterior', labelEn: 'EXTERIOR', labelEs: 'EXTERIOR', color: [76, 140, 43] },    // Green
+  { id: 'summary', labelEn: 'SUMMARY', labelEs: 'RESUMEN', color: [60, 60, 60] },          // Dark gray
+  { id: 'exterior', labelEn: 'EXTERIOR', labelEs: 'EXTERIOR', color: [76, 140, 43] },      // Green
+  { id: 'roofing', labelEn: 'ROOFING', labelEs: 'TECHO', color: [76, 140, 43] },           // Green
   { id: 'structure', labelEn: 'STRUCTURE', labelEs: 'ESTRUCTURA', color: [128, 128, 128] }, // Gray
+  { id: 'plumbing', labelEn: 'PLUMBING', labelEs: 'PLOMERÍA', color: [70, 130, 180] },     // Steel blue
   { id: 'electrical', labelEn: 'ELECTRICAL', labelEs: 'ELÉCTRICO', color: [212, 175, 55] }, // Gold/Yellow
-  { id: 'heating', labelEn: 'HEATING', labelEs: 'CALEFACCIÓN', color: [180, 60, 60] },   // Red
-  { id: 'cooling', labelEn: 'COOLING', labelEs: 'ENFRIAMIENTO', color: [70, 130, 180] }, // Steel blue
+  { id: 'heating', labelEn: 'HEATING', labelEs: 'CALEFACCIÓN', color: [180, 60, 60] },     // Red
+  { id: 'cooling', labelEn: 'COOLING', labelEs: 'ENFRIAMIENTO', color: [70, 130, 180] },   // Steel blue
   { id: 'insulation', labelEn: 'INSULATION', labelEs: 'AISLAMIENTO', color: [128, 128, 128] }, // Gray
-  { id: 'plumbing', labelEn: 'PLUMBING', labelEs: 'PLOMERÍA', color: [70, 130, 180] },   // Steel blue
-  { id: 'interior', labelEn: 'INTERIOR', labelEs: 'INTERIOR', color: [76, 140, 43] },    // Green
+  { id: 'interior', labelEn: 'INTERIOR', labelEs: 'INTERIOR', color: [76, 140, 43] },      // Green
 ];
 
 // Reference tab that appears below main tabs
