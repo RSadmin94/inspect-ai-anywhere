@@ -41,19 +41,35 @@ export function roomToTabId(room: string): string {
   const roomLower = room.toLowerCase();
   
   // Roofing
-  if (roomLower.includes('roof') || roomLower === 'attic') return 'roofing';
+  if (roomLower === 'roof' || roomLower.includes('roof')) return 'roofing';
   
-  // Exterior
-  if (roomLower.includes('exterior') || roomLower === 'garage' || roomLower === 'driveway' ||
+  // Exterior & outdoor areas
+  if (roomLower === 'exterior' || roomLower === 'driveway' ||
       roomLower.includes('porch') || roomLower.includes('deck') || roomLower.includes('patio') ||
-      roomLower === 'yard' || roomLower.includes('landscaping')) return 'exterior';
+      roomLower === 'yard' || roomLower.includes('landscaping') || roomLower === 'pool' ||
+      roomLower === 'garage') return 'exterior';
   
-  // Structure
-  if (roomLower.includes('foundation') || roomLower === 'crawlSpace' || roomLower.includes('basement') ||
-      roomLower.includes('structural')) return 'structure';
+  // Structure / Foundation
+  if (roomLower.includes('foundation') || roomLower === 'crawlspace' || roomLower === 'crawl space' ||
+      roomLower.includes('basement') || roomLower.includes('structural')) return 'structure';
+  
+  // Interior - all livable rooms
+  if (roomLower === 'interior' || roomLower.includes('bedroom') || roomLower === 'mainbedroom' ||
+      roomLower.includes('living') || roomLower === 'livingroom' || 
+      roomLower.includes('dining') || roomLower === 'diningroom' ||
+      roomLower.includes('kitchen') || 
+      roomLower.includes('bath') || roomLower === 'masterbath' || roomLower === 'halfbath' ||
+      roomLower.includes('hallway') || roomLower.includes('stairs') || roomLower.includes('closet') ||
+      roomLower.includes('office') || roomLower.includes('laundry') || roomLower === 'laundryroom' ||
+      roomLower.includes('utility') || roomLower === 'utilityroom' ||
+      roomLower.includes('fireplace') || roomLower === 'other') return 'interior';
   
   // Electrical
-  if (roomLower.includes('electrical') || roomLower === 'electricalPanel') return 'electrical';
+  if (roomLower.includes('electrical') || roomLower === 'electricalpanel') return 'electrical';
+  
+  // Plumbing
+  if (roomLower.includes('plumbing') || roomLower === 'waterheater' || roomLower.includes('water heater') ||
+      roomLower.includes('sewer')) return 'plumbing';
   
   // Heating
   if (roomLower.includes('furnace') || roomLower.includes('heating') || roomLower === 'hvac') return 'heating';
@@ -62,13 +78,10 @@ export function roomToTabId(room: string): string {
   if (roomLower.includes('cooling') || roomLower === 'ac' || roomLower.includes('air condition')) return 'cooling';
   
   // Insulation
-  if (roomLower.includes('insulation') || roomLower.includes('ventilation')) return 'insulation';
+  if (roomLower.includes('insulation') || roomLower.includes('ventilation') || 
+      roomLower === 'attic') return 'insulation';
   
-  // Plumbing
-  if (roomLower.includes('plumbing') || roomLower === 'waterHeater' || roomLower.includes('water heater') ||
-      roomLower.includes('sewer')) return 'plumbing';
-  
-  // Interior (default for rooms inside the house)
+  // Default fallback
   return 'interior';
 }
 
