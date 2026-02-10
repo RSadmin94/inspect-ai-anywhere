@@ -4,16 +4,24 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Allowed origins for CORS - restricts API access to known domains
 const ALLOWED_ORIGINS = [
   'https://inspect-ai-anywhere.lovable.app',
-  'https://id-preview--8cd0f791-ce4c-4a88-8c8b-73979d499fed.lovable.app',
   'http://localhost:5173',
   'http://localhost:8080',
+  'https://365-inspect-ai.netlify.app',
+  // add your custom domain when ready:
+  // 'https://app.365inspectai.com',
 ];
+
+function isAllowedOrigin(origin: string | null) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (origin.endsWith('.lovable.app')) return true;
+  if (origin.endsWith('.netlify.app')) return true;
+  return false;
+}
 
 function getCorsHeaders(origin: string | null): Record<string, string> {
   // Check if origin is in allowed list
-  const allowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => 
-    origin === allowed || origin.endsWith('.lovable.app')
-  ) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = isAllowedOrigin(origin) ? origin! : ALLOWED_ORIGINS[0];
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
