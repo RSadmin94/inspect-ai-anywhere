@@ -171,7 +171,7 @@ export async function addCoverPage(
   // ── Bottom Section (anchored to page bottom) ──
 
   // Signature line
-  let bottomY = pageHeight - 75;
+  let bottomY = pageHeight - 55;
   const sigW = 65;
   pdf.setDrawColor(160);
   pdf.setLineWidth(0.3);
@@ -183,14 +183,14 @@ export async function addCoverPage(
   pdf.setTextColor(100);
   const signatureLabel = lang === 'es' ? 'Firma del Inspector' : 'Inspector Signature';
   pdf.text(signatureLabel, centerX, bottomY, { align: 'center' });
-  bottomY += 14;
+  bottomY += 10;
 
   // Confidential notice
   pdf.setFontSize(8);
   pdf.setTextColor(120);
   const confidentialText = lang === 'es' ? 'Confidencial y Propietario' : 'Confidential and Proprietary';
   pdf.text(confidentialText, centerX, bottomY, { align: 'center' });
-  bottomY += 6;
+  bottomY += 5;
 
   // Company contact info
   const contactLines: string[] = [];
