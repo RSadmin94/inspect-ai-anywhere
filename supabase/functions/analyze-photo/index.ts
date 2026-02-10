@@ -31,10 +31,26 @@ serve(async (req) => {
 
   try {
     const { imageBase64, room, language = "en" } = await req.json();
-    
-    if (!imageBase64) {
+
+    if (!imageBase64 || typeof imageBase64 !== "string") {
       return new Response(
         JSON.stringify({ error: "No image provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Limit base64 payload to ~10MB to prevent memory exhaustion and excessive API costs
+    const MAX_BASE64_SIZE = 10 * 1024 * 1024;
+    if (imageBase64.length > MAX_BASE64_SIZE) {
+      return new Response(
+        JSON.stringify({ error: "Image too large. Maximum size is 10MB." }),
+        { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!["en", "es"].includes(language)) {
+      return new Response(
+        JSON.stringify({ error: "Unsupported language" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
