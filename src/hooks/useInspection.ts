@@ -42,28 +42,55 @@
      clientName?: string,
      inspectionType?: InspectionType
    ) => {
-     const newInspection: InspectionRecord = {
-       id: generateId(),
-       propertyAddress,
-       inspectorName,
-       clientName,
-       inspectionType,
-       createdAt: Date.now(),
-       updatedAt: Date.now(),
-       photoIds: [],
-       isComplete: false,
-     };
-     await saveInspection(newInspection);
-     setInspection(newInspection);
-     setPhotos([]);
-     return newInspection;
+     try {
+       const newInspection: InspectionRecord = {
+         id: generateId(),
+         propertyAddress,
+         inspectorName,
+         clientName,
+         inspectionType,
+         createdAt: Date.now(),
+         updatedAt: Date.now(),
+         photoIds: [],
+         isComplete: false,
+       };
+       await saveInspection(newInspection);
+       setInspection(newInspection);
+       setPhotos([]);
+       console.log('Inspection started:', newInspection);
+       return newInspection;
+     } catch (e) {
+       console.error('Failed to start inspection:', e);
+       // Create in-memory inspection if DB fails
+       const memoryInspection: InspectionRecord = {
+         id: generateId(),
+         propertyAddress,
+         inspectorName,
+         clientName,
+         inspectionType,
+         createdAt: Date.now(),
+         updatedAt: Date.now(),
+         photoIds: [],
+         isComplete: false,
+       };
+       setInspection(memoryInspection);
+       setPhotos([]);
+       return memoryInspection;
+     }
    }, []);
  
    const updateInspection = useCallback(async (updates: Partial<InspectionRecord>) => {
-     if (!inspection) return;
-     const updated = { ...inspection, ...updates, updatedAt: Date.now() };
-     await saveInspection(updated);
-     setInspection(updated);
+     if (!inspection) {
+       console.warn('No inspection to update');
+       return;
+     }
+     try {
+       const updated = { ...inspection, ...updates, updatedAt: Date.now() };
+       await saveInspection(updated);
+       setInspection(updated);
+     } catch (e) {
+       console.error('Failed to update inspection:', e);
+     }
    }, [inspection]);
  
   const updateRoomNotes = useCallback(async (room: string, notes: string) => {
@@ -93,9 +120,13 @@
   }, [inspection]);
 
    const capturePhoto = useCallback(async (imageBlob: Blob, room: string = 'other') => {
-     if (!inspection) return;
+     if (!inspection) {
+       console.error('No inspection in progress for photo capture');
+       return null;
+     }
  
-     const { thumbnail, fullImage } = await processImage(imageBlob);
+     try {
+       const { thumbnail, fullImage } = await processImage(imageBlob);
      
      const newPhoto: PhotoRecord = {
        id: generateId(),
@@ -108,19 +139,22 @@
        aiStatus: 'pending_offline',
      };
  
-     await savePhoto(newPhoto);
-     
-     const updatedInspection = {
-       ...inspection,
-       photoIds: [...inspection.photoIds, newPhoto.id],
-       updatedAt: Date.now(),
-     };
-     await saveInspection(updatedInspection);
-     setInspection(updatedInspection);
-     
-     setPhotos(prev => [newPhoto, ...prev]);
-     
-     return newPhoto;
+       await savePhoto(newPhoto);
+       
+       const updatedInspection = {
+         ...inspection,
+         photoIds: [...inspection.photoIds, newPhoto.id],
+         updatedAt: Date.now(),
+       };
+       await saveInspection(updatedInspection);
+       setInspection(updatedInspection);
+       setPhotos(prev => [newPhoto, ...prev]);
+       console.log('Photo captured:', newPhoto.id);
+       return newPhoto;
+     } catch (e) {
+       console.error('Failed to capture photo:', e);
+       return null;
+     }
    }, [inspection]);
  
    const updatePhoto = useCallback(async (photoId: string, updates: Partial<PhotoRecord>) => {
