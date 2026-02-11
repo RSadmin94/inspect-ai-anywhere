@@ -18,23 +18,27 @@
    const [photos, setPhotos] = useState<PhotoRecord[]>([]);
    const [isLoading, setIsLoading] = useState(true);
  
-   // Load current inspection on mount
-   useEffect(() => {
-     async function load() {
-       try {
-         const current = await getCurrentInspection();
-         if (current) {
-           setInspection(current);
-           const loadedPhotos = await getPhotosByInspection(current.id);
-           setPhotos(loadedPhotos.sort((a, b) => b.timestamp - a.timestamp));
-         }
-       } catch (e) {
-         console.error('Failed to load inspection:', e);
-       }
-       setIsLoading(false);
-     }
-     load();
-   }, []);
+  // Load current inspection on mount
+  useEffect(() => {
+    async function load() {
+      try {
+        const current = await getCurrentInspection();
+        if (current) {
+          setInspection(current);
+          const loadedPhotos = await getPhotosByInspection(current.id);
+          setPhotos(loadedPhotos.sort((a, b) => b.timestamp - a.timestamp));
+        }
+      } catch (e) {
+        console.error('Failed to load inspection:', e);
+        // Continue anyway - app can work without persisted data
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    // Delay to ensure DOM is ready
+    const timer = setTimeout(load, 100);
+    return () => clearTimeout(timer);
+  }, []);
  
    const startInspection = useCallback(async (
      propertyAddress: string, 
