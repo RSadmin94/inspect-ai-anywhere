@@ -4,6 +4,7 @@
 
 [build.environment]
   VITE_SUPABASE_URL = "https://mgrmurivoysmwqhmmpfj.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YwcRdqip-lh6pHADPawflw_qx8xGagL"
 
 [[headers]]
   for = "/service-worker.js"
