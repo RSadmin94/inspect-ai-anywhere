@@ -129,7 +129,8 @@
  export async function getDB(): Promise<IDBPDatabase<InspectAIDB>> {
    if (dbInstance) return dbInstance;
    
-   dbInstance = await openDB<InspectAIDB>('inspectai-db', 2, {
+   try {
+     dbInstance = await openDB<InspectAIDB>('inspectai-db', 2, {
      upgrade(db) {
        // Photos store
        if (!db.objectStoreNames.contains('photos')) {
@@ -168,7 +169,19 @@
      },
    });
    
-   return dbInstance;
+     return dbInstance;
+   } catch (error) {
+     console.error('Failed to initialize IndexedDB:', error);
+     // Fallback: try to clear and reinitialize
+     try {
+       await indexedDB.deleteDatabase('inspectai-db');
+       dbInstance = null;
+       return await getDB();
+     } catch (retryError) {
+       console.error('Failed to recover from IndexedDB error:', retryError);
+       throw new Error('IndexedDB initialization failed: ' + String(error));
+     }
+   }
  }
  
  // Photo operations
