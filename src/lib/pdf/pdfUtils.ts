@@ -18,6 +18,7 @@ export function createPDFContext(pdf: jsPDF): Partial<PDFContext> {
     sectionNumber: 0,
     tocEntries: [],
     sectionPageNumbers: new Map<string, number>(),
+    tabbedPages: [],
   };
 }
 

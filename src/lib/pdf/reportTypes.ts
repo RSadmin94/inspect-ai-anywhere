@@ -94,6 +94,8 @@ export interface PDFContext {
   language: Language;
   // Section page numbers for navigation tab links
   sectionPageNumbers: Map<string, number>;
+  // Track pages that have tab headers so we can re-draw them at the end
+  tabbedPages: Array<{ pageNumber: number; activeSection: string }>;
 }
 
 export interface TOCEntry {
