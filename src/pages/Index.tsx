@@ -228,6 +228,7 @@ export default function Index() {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
+          <p className="text-xs text-muted-foreground mt-4">isLoaded: {String(isLoaded)}, isLoading: {String(isLoading)}</p>
         </div>
       </div>
     );
