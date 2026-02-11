@@ -1,6 +1,6 @@
  import { useState, useEffect, useCallback } from 'react';
  import { Language, translations, TranslationKey } from '@/lib/i18n';
- import { getSetting, setSetting } from '@/lib/db';
+ import { getSetting, setSetting } from '@/lib/db-native';
  
  const LANGUAGE_KEY = 'app-language';
  

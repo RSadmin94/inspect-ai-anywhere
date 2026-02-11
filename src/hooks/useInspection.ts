@@ -10,13 +10,13 @@
    getPhotosByInspection,
    deletePhoto as deletePhotoFromDB,
    updatePhotoAI
- } from '@/lib/db';
+ } from '@/lib/db-native';
  import { processImage, generateId } from '@/lib/imageUtils';
  
  export function useInspection() {
    const [inspection, setInspection] = useState<InspectionRecord | null>(null);
    const [photos, setPhotos] = useState<PhotoRecord[]>([]);
-   const [isLoading, setIsLoading] = useState(true);
+   const [isLoading, setIsLoading] = useState(false);
  
   // Load current inspection on mount
   useEffect(() => {
@@ -31,13 +31,9 @@
       } catch (e) {
         console.error('Failed to load inspection:', e);
         // Continue anyway - app can work without persisted data
-      } finally {
-        setIsLoading(false);
       }
     }
-    // Delay to ensure DOM is ready
-    const timer = setTimeout(load, 100);
-    return () => clearTimeout(timer);
+    load();
   }, []);
  
    const startInspection = useCallback(async (
