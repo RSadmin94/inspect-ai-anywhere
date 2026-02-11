@@ -89,23 +89,16 @@ export function useLicense(): UseLicenseReturn {
         action,
       };
 
-      console.log('[DEBUG] Calling verify-license with request:', request);
       const { data, error } = await supabase.functions.invoke('verify-license', {
         body: request,
       });
-      console.log('[DEBUG] Response - data:', data, 'error:', error);
 
       if (error) {
-        console.error('[DEBUG] Error object:', error);
-        console.error('[DEBUG] Error keys:', Object.keys(error));
-        console.error('[DEBUG] Error context:', (error as any)?.context);
-        
         // If the function returned JSON with a non-2xx status, Supabase invoke puts it in error.context.response
         const resp = (error as any)?.context?.response;
         if (resp) {
           try {
             const body = await resp.json();
-            console.log('[DEBUG] Response body:', body);
             return {
               ...licenseState,
               status: body?.valid ? 'active' : (body?.status || 'invalid'),
@@ -121,7 +114,6 @@ export function useLicense(): UseLicenseReturn {
               device: body?.device || { allowed: 2, used: 0 },
             };
           } catch (parseError) {
-            console.error('[DEBUG] Failed to parse response:', parseError);
             // fallthrough to default
           }
         }
