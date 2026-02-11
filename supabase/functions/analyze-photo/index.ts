@@ -1,4 +1,16 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// JWT verification is disabled for this function - security enforced via:
+// 1. License validation (must have active license)
+// 2. Max payload size limit
+// 3. Rate limiting per device/license
+// 4. Generic error messages
+export const config = {
+  jwt: {
+    verify: false,
+  },
+};
 
 // Allowed origins for CORS - restricts API access to known domains
 const ALLOWED_ORIGINS = [
@@ -29,6 +41,66 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   };
 }
 
+// Rate limiting: track requests per device per minute
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(deviceId: string, maxRequests: number = 5): boolean {
+  const now = Date.now();
+  const key = deviceId;
+  const entry = rateLimitMap.get(key);
+  
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + 60000 }); // 1 minute window
+    return true;
+  }
+  
+  if (entry.count >= maxRequests) {
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
+
+// Verify license by querying the licenses table
+async function verifyLicense(licenseKey: string): Promise<boolean> {
+  try {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Missing Supabase configuration');
+      return false;
+    }
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Query licenses table to check if license is active and allows AI analysis
+    const { data: license, error } = await supabase
+      .from('licenses')
+      .select('is_active, allow_ai')
+      .eq('license_key', licenseKey)
+      .eq('is_active', true)
+      .maybeSingle();
+    
+    if (error || !license) {
+      console.warn('License verification failed');
+      return false;
+    }
+    
+    // Check if AI analysis is allowed for this license
+    if (!license.allow_ai) {
+      console.warn('AI analysis not allowed for this license');
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('License verification error');
+    return false;
+  }
+}
+
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -38,12 +110,46 @@ serve(async (req) => {
   }
 
   try {
-    const { imageBase64, room, language = "en" } = await req.json();
+    const { imageBase64, room, language = "en", licenseKey, deviceId } = await req.json();
 
+    // Validate required fields
     if (!imageBase64 || typeof imageBase64 !== "string") {
       return new Response(
         JSON.stringify({ error: "No image provided" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!licenseKey || typeof licenseKey !== "string") {
+      return new Response(
+        JSON.stringify({ error: "License key required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!deviceId || typeof deviceId !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Device ID required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limiting check
+    if (!checkRateLimit(deviceId, 5)) {
+      console.warn('Rate limit exceeded for device:', deviceId);
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // License verification
+    const isLicenseValid = await verifyLicense(licenseKey);
+    if (!isLicenseValid) {
+      console.warn('Invalid or inactive license');
+      return new Response(
+        JSON.stringify({ error: "Analysis failed" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -67,7 +173,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       console.error("AI service not configured");
       return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
+        JSON.stringify({ error: "Analysis failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -283,7 +389,7 @@ You MUST respond using the suggest_findings tool with your analysis.`;
       }
       
       return new Response(
-        JSON.stringify({ error: "AI analysis failed" }),
+        JSON.stringify({ error: "Analysis failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -296,7 +402,7 @@ You MUST respond using the suggest_findings tool with your analysis.`;
     if (!toolCall || toolCall.function.name !== "suggest_findings") {
       console.error("Invalid response format");
       return new Response(
-        JSON.stringify({ error: "Invalid AI response format" }),
+        JSON.stringify({ error: "Analysis failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

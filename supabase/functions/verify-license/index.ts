@@ -1,5 +1,16 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// JWT verification is disabled for this function - security enforced via:
+// 1. License format validation
+// 2. Device limit logic
+// 3. Rate limiting per device
+// 4. Generic error messages to prevent enumeration
+export const config = {
+  jwt: {
+    verify: false,
+  },
+};
 
 // Allowed origins for CORS - restricts API access to known domains
 const ALLOWED_ORIGINS = [
@@ -49,6 +60,27 @@ interface VerifyRequest {
   productIdOrPermalink: string;
   deviceId: string;
   action: 'verify' | 'reset_devices';
+}
+
+// Rate limiting: track requests per device per minute
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(deviceId: string, maxRequests: number = 10): boolean {
+  const now = Date.now();
+  const key = deviceId;
+  const entry = rateLimitMap.get(key);
+  
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + 60000 }); // 1 minute window
+    return true;
+  }
+  
+  if (entry.count >= maxRequests) {
+    return false;
+  }
+  
+  entry.count++;
+  return true;
 }
 
 // Cryptographically secure hash using SHA-256
@@ -112,6 +144,27 @@ serve(async (req) => {
 
     const body: VerifyRequest = await req.json();
     const { licenseKey, productIdOrPermalink, deviceId, action } = body;
+
+    // Rate limiting: check if device has exceeded request limit
+    if (!checkRateLimit(deviceId)) {
+      console.warn('Rate limit exceeded for device:', deviceId);
+      return new Response(JSON.stringify({
+        status: 'error',
+        valid: false,
+        message: 'License verification failed',
+        productIdOrPermalink: '',
+        lastVerifiedAt: Date.now(),
+        nextCheckAt: Date.now() + 3600000,
+        graceDays: 7,
+        allowCreateNew: false,
+        allowAI: false,
+        allowExport: true,
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      } as LicenseState), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Input validation: check presence, length, and format
     const MAX_LICENSE_KEY_LENGTH = 100;
