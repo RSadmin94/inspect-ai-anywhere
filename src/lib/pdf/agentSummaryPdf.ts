@@ -370,6 +370,7 @@ export async function generateAgentSummaryPDF(
       tocEntries: [],
       language: lang,
       sectionPageNumbers: baseContext.sectionPageNumbers || new Map<string, number>(),
+      tabbedPages: baseContext.tabbedPages || [],
     };
 
     renderAgentSummaryPage(ctx, inspection, photos, lang);

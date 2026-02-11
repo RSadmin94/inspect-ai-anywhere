@@ -16,6 +16,7 @@ import { addTableOfContentsPlaceholder, fillTableOfContents } from '@/lib/pdf/ta
 import { addSummarySection } from '@/lib/pdf/summarySection';
 import { addScopeSection, addDeferredItemsSection } from '@/lib/pdf/scopeSection';
 import { addFindingsSection } from '@/lib/pdf/findingsSection';
+import { finalizeTabLinks } from '@/lib/pdf/pageHeader';
 import { addMaintenanceSection, addDisclaimersSection, addCredentialsSection, addAncillarySection } from '@/lib/pdf/conclusionSection';
 import { addAgentSummarySection } from '@/lib/pdf/agentSummarySection';
 
@@ -69,6 +70,7 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
       tocEntries: [],
       language: lang,
       sectionPageNumbers: baseContext.sectionPageNumbers || new Map<string, number>(),
+      tabbedPages: baseContext.tabbedPages || [],
     };
 
     // 1. Cover Page
@@ -123,6 +125,9 @@ export async function generateProfessionalReportPDF(options: ReportOptions): Pro
     if (includeTableOfContents && tocPageNumber > 0) {
       fillTableOfContents(ctx, tocPageNumber, ctx.tocEntries, lang);
     }
+    
+    // Re-draw all tab bars with complete section page numbers so all tabs are clickable
+    finalizeTabLinks(ctx, inspection, lang);
     
     // Update base context page number for next language
     baseContext.pageNumber = ctx.pageNumber;

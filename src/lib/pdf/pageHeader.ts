@@ -198,7 +198,8 @@ export function drawNavigationTabs(
 }
 
 /**
- * Add page header with navigation tabs for a new page
+ * Add page header with navigation tabs for a new page.
+ * Also records this page for later re-drawing with complete links.
  */
 export function addPageHeaderWithTabs(
   ctx: PDFContext,
@@ -206,7 +207,37 @@ export function addPageHeaderWithTabs(
   activeSection: string,
   lang: Language
 ): void {
+  // Record this page so we can re-draw tabs with all links later
+  if (ctx.tabbedPages) {
+    ctx.tabbedPages.push({ pageNumber: ctx.pageNumber, activeSection });
+  }
   drawNavigationTabs(ctx, inspection, activeSection, lang);
+}
+
+/**
+ * After all sections are rendered and sectionPageNumbers is complete,
+ * re-draw the tab bars on every tabbed page so all links are active.
+ */
+export function finalizeTabLinks(
+  ctx: PDFContext,
+  inspection: InspectionRecord,
+  lang: Language
+): void {
+  if (!ctx.tabbedPages || ctx.tabbedPages.length === 0) return;
+  
+  const savedPage = ctx.pageNumber;
+  const savedYPos = ctx.yPos;
+  
+  for (const { pageNumber, activeSection } of ctx.tabbedPages) {
+    ctx.pdf.setPage(pageNumber);
+    ctx.yPos = ctx.margin;
+    drawNavigationTabs(ctx, inspection, activeSection, lang);
+  }
+  
+  // Restore position
+  ctx.pdf.setPage(savedPage);
+  ctx.pageNumber = savedPage;
+  ctx.yPos = savedYPos;
 }
 
 /**
