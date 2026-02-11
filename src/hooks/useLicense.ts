@@ -94,6 +94,30 @@ export function useLicense(): UseLicenseReturn {
       });
 
       if (error) {
+        // If the function returned JSON with a non-2xx status, Supabase invoke puts it in error.context.response
+        const resp = (error as any)?.context?.response;
+        if (resp) {
+          try {
+            const body = await resp.json();
+            return {
+              ...licenseState,
+              status: body?.valid ? 'active' : (body?.status || 'invalid'),
+              valid: !!body?.valid,
+              message: body?.message || error.message || 'Verification failed',
+              productIdOrPermalink: body?.productIdOrPermalink || '',
+              lastVerifiedAt: body?.lastVerifiedAt || Date.now(),
+              nextCheckAt: body?.nextCheckAt || Date.now() + 3600000,
+              graceDays: body?.graceDays || 7,
+              allowCreateNew: body?.allowCreateNew || false,
+              allowAI: body?.allowAI || false,
+              allowExport: body?.allowExport !== undefined ? body.allowExport : true,
+              device: body?.device || { allowed: 2, used: 0 },
+            };
+          } catch {
+            // fallthrough to default
+          }
+        }
+
         console.error('License verification error:', error);
         return {
           ...licenseState,

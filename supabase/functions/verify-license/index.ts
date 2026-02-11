@@ -191,7 +191,7 @@ serve(async (req) => {
         allowExport: true,
         device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
       } as LicenseState), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -212,7 +212,7 @@ serve(async (req) => {
         allowExport: true,
         device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
       } as LicenseState), {
-        status: 400,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
