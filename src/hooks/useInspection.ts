@@ -184,7 +184,7 @@
  
    const updatePhotoWithAI = useCallback(async (photoId: string, aiData: Parameters<typeof updatePhotoAI>[1]) => {
      await updatePhotoAI(photoId, aiData);
-     setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, ...aiData } : p));
+     setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, ...(aiData as Partial<PhotoRecord>) } : p));
    }, []);
  
   const finishInspection = useCallback(async () => {
