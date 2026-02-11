@@ -62,6 +62,7 @@ export interface InspectionRecord {
   updatedAt: number;
   photoIds: string[];
   isComplete: boolean;
+  roomNotes?: Record<string, string>;
 }
 
 let dbInstance: IDBDatabase | null = null;
