@@ -1189,11 +1189,15 @@ Edge Functions are deployed automatically by Lovable Cloud. No manual deployment
 
 ### Creating a Test License
 
-Insert a test license via the database:
+A dedicated QA test license is seeded by migration:
+
+- `TEST-365INSPECTAI-2026` (2 devices)
+
+To create additional test licenses manually, insert via SQL:
 
 ```sql
 INSERT INTO licenses (license_key, product_id, is_active, max_devices, customer_name, email, notes)
-VALUES ('TEST-KEY-2026', 'inspectai-pro', true, 2, 'QA Tester', 'qa@test.com', 'QA testing only');
+VALUES ('TEST-ANOTHER-KEY-2026', 'inspectai_pro', true, 2, 'QA Tester', 'qa@test.com', 'QA testing only');
 ```
 
 > ⚠️ **Deactivate or delete test licenses before production deployment.**
