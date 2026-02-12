@@ -62,6 +62,22 @@ interface VerifyRequest {
   action: 'verify' | 'reset_devices';
 }
 
+interface DbLicenseRecord {
+  key?: string | null;
+  status?: string | null;
+  device_limit?: number | null;
+  expires_at?: string | null;
+  created_at?: string | null;
+  product_id?: string | null;
+  last_reset_at?: string | null;
+  reset_count?: number | null;
+  license_key?: string | null;
+  is_active?: boolean | null;
+  max_devices?: number | null;
+}
+
+type LookupMode = 'canonical' | 'legacy';
+
 // Rate limiting: track requests per device per minute
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
@@ -108,6 +124,90 @@ function sanitizeForLog(data: Record<string, unknown>): Record<string, unknown> 
   return sanitized;
 }
 
+function extractJwtRole(token: string): string | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  try {
+    const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const normalized = padded + '='.repeat((4 - (padded.length % 4)) % 4);
+    const payload = JSON.parse(atob(normalized));
+    return typeof payload?.role === 'string' ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+
+function isAnonOrPublishableKey(token: string): boolean {
+  if (token.startsWith('sb_publishable_')) {
+    return true;
+  }
+
+  const role = extractJwtRole(token);
+  return role === 'anon';
+}
+
+function isMissingColumnError(error: { code?: string } | null): boolean {
+  return error?.code === '42703';
+}
+
+async function fetchActiveLicenseRecord(
+  supabase: any,
+  licenseKey: string,
+  includeResetFields = false,
+): Promise<{
+  data: DbLicenseRecord | null;
+  error: { code?: string; message?: string } | null;
+  lookupMode: LookupMode;
+}> {
+  const canonicalSelect = includeResetFields
+    ? 'key, status, device_limit, expires_at, created_at, product_id, last_reset_at, reset_count'
+    : 'key, status, device_limit, expires_at, created_at, product_id';
+
+  const canonicalLookup = await supabase
+    .from('licenses')
+    .select(canonicalSelect)
+    .eq('key', licenseKey)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (!canonicalLookup.error) {
+    return { data: canonicalLookup.data, error: null, lookupMode: 'canonical' };
+  }
+
+  if (!isMissingColumnError(canonicalLookup.error)) {
+    return {
+      data: null,
+      error: { code: canonicalLookup.error.code, message: canonicalLookup.error.message },
+      lookupMode: 'canonical',
+    };
+  }
+
+  const legacySelect = includeResetFields
+    ? 'license_key, is_active, max_devices, expires_at, created_at, product_id, last_reset_at, reset_count'
+    : 'license_key, is_active, max_devices, expires_at, created_at, product_id';
+
+  const legacyLookup = await supabase
+    .from('licenses')
+    .select(legacySelect)
+    .eq('license_key', licenseKey)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  return {
+    data: legacyLookup.data,
+    error: legacyLookup.error ? { code: legacyLookup.error.code, message: legacyLookup.error.message } : null,
+    lookupMode: 'legacy',
+  };
+}
+
+function getAllowedDevices(license: DbLicenseRecord | null, defaultAllowed: number): number {
+  const fromCanonical = license?.device_limit;
+  const fromLegacy = license?.max_devices;
+  const resolved = fromCanonical ?? fromLegacy ?? defaultAllowed;
+  return Number.isFinite(Number(resolved)) ? Number(resolved) : defaultAllowed;
+}
+
 serve(async (req) => {
   const origin = req.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
@@ -142,8 +242,30 @@ serve(async (req) => {
       });
     }
 
+    if (isAnonOrPublishableKey(SUPABASE_SERVICE_ROLE_KEY)) {
+      console.error('Invalid service role key configuration: anon/publishable key detected');
+      return new Response(JSON.stringify({
+        status: 'error',
+        valid: false,
+        message: 'License service not configured',
+        productIdOrPermalink: '',
+        lastVerifiedAt: Date.now(),
+        nextCheckAt: Date.now() + 3600000,
+        graceDays: 7,
+        allowCreateNew: false,
+        allowAI: false,
+        allowExport: true,
+        device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      } as LicenseState), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const body: VerifyRequest = await req.json();
     const { licenseKey, productIdOrPermalink, deviceId, action } = body;
+    console.log('[verify-license] incoming key:', licenseKey);
+    console.log('[verify-license] incoming request:', sanitizeForLog({ licenseKey, productIdOrPermalink, deviceId, action }));
 
     // Rate limiting: check if device has exceeded request limit
     if (!checkRateLimit(deviceId)) {
@@ -227,12 +349,23 @@ serve(async (req) => {
       console.log('Processing device reset request');
       
       // First, fetch license to check cooldown
-      const { data: licenseForReset, error: resetLookupError } = await supabase
-        .from('licenses')
-        .select('last_reset_at, reset_count, max_devices')
-        .eq('license_key', licenseKey)
-        .eq('is_active', true)
-        .maybeSingle();
+      const resetLookup = await fetchActiveLicenseRecord(supabase, licenseKey, true);
+      const licenseForReset = resetLookup.data;
+      const resetLookupError = resetLookup.error;
+
+      console.log('[verify-license] DB lookup result (reset):', sanitizeForLog({
+        lookupMode: resetLookup.lookupMode,
+        found: !!licenseForReset,
+        error: resetLookupError ?? null,
+        license: licenseForReset
+          ? {
+              key: licenseForReset.key ?? licenseForReset.license_key ?? null,
+              status: licenseForReset.status ?? (licenseForReset.is_active ? 'active' : 'inactive'),
+              device_limit: licenseForReset.device_limit ?? licenseForReset.max_devices ?? DEFAULT_ALLOWED_DEVICES,
+              expires_at: licenseForReset.expires_at ?? null,
+            }
+          : null,
+      }));
 
       if (resetLookupError || !licenseForReset) {
         return new Response(JSON.stringify({
@@ -261,7 +394,7 @@ serve(async (req) => {
         
         if (Date.now() < nextAvailable) {
           const nextDate = new Date(nextAvailable).toISOString().split('T')[0];
-          return new Response(JSON.stringify({
+          const cooldownResponse: LicenseState = {
             status: 'error',
             valid: true, // License is still valid, just can't reset yet
             message: `Device reset is available once every 30 days. Next reset available on ${nextDate}.`,
@@ -272,7 +405,11 @@ serve(async (req) => {
             allowCreateNew: true,
             allowAI: true,
             allowExport: true,
-            device: { allowed: licenseForReset.max_devices || DEFAULT_ALLOWED_DEVICES, used: 0 },
+            device: { allowed: getAllowedDevices(licenseForReset, DEFAULT_ALLOWED_DEVICES), used: 0 },
+          };
+          console.log('[verify-license] final validation response:', sanitizeForLog(cooldownResponse as unknown as Record<string, unknown>));
+          return new Response(JSON.stringify({
+            ...cooldownResponse,
           } as LicenseState), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -313,7 +450,7 @@ serve(async (req) => {
           last_reset_at: new Date().toISOString(),
           reset_count: (licenseForReset.reset_count || 0) + 1
         })
-        .eq('license_key', licenseKey);
+        .eq(resetLookup.lookupMode === 'canonical' ? 'key' : 'license_key', licenseKey);
 
       if (updateError) {
         console.error('Reset tracking update failed');
@@ -325,17 +462,27 @@ serve(async (req) => {
 
     // Verify license against local database
     console.log('Verifying license');
-    
-    const { data: licenseData, error: licenseError } = await supabase
-      .from('licenses')
-      .select('*')
-      .eq('license_key', licenseKey)
-      .eq('is_active', true)
-      .maybeSingle();
+    const licenseLookup = await fetchActiveLicenseRecord(supabase, licenseKey);
+    const licenseData = licenseLookup.data;
+    const licenseError = licenseLookup.error;
+
+    console.log('[verify-license] DB lookup result (verify):', sanitizeForLog({
+      lookupMode: licenseLookup.lookupMode,
+      found: !!licenseData,
+      error: licenseError ?? null,
+      license: licenseData
+        ? {
+            key: licenseData.key ?? licenseData.license_key ?? null,
+            status: licenseData.status ?? (licenseData.is_active ? 'active' : 'inactive'),
+            device_limit: licenseData.device_limit ?? licenseData.max_devices ?? DEFAULT_ALLOWED_DEVICES,
+            expires_at: licenseData.expires_at ?? null,
+          }
+        : null,
+    }));
 
     if (licenseError) {
       console.error('License lookup failed');
-      return new Response(JSON.stringify({
+      const lookupErrorResponse: LicenseState = {
         status: 'invalid',
         valid: false,
         message: 'License verification failed',
@@ -347,6 +494,10 @@ serve(async (req) => {
         allowAI: false,
         allowExport: true,
         device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      };
+      console.log('[verify-license] final validation response:', sanitizeForLog(lookupErrorResponse as unknown as Record<string, unknown>));
+      return new Response(JSON.stringify({
+        ...lookupErrorResponse,
       } as LicenseState), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -356,7 +507,7 @@ serve(async (req) => {
     // License not found or inactive - use generic message to prevent enumeration
     if (!licenseData) {
       console.log('License not found');
-      return new Response(JSON.stringify({
+      const notFoundResponse: LicenseState = {
         status: 'invalid',
         valid: false,
         message: 'License verification failed',
@@ -368,6 +519,10 @@ serve(async (req) => {
         allowAI: false,
         allowExport: true,
         device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      };
+      console.log('[verify-license] final validation response:', sanitizeForLog(notFoundResponse as unknown as Record<string, unknown>));
+      return new Response(JSON.stringify({
+        ...notFoundResponse,
       } as LicenseState), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -377,7 +532,7 @@ serve(async (req) => {
     // Check if license has expired - use generic message to prevent enumeration
     if (licenseData.expires_at && new Date(licenseData.expires_at) < new Date()) {
       console.log('License expired');
-      return new Response(JSON.stringify({
+      const expiredResponse: LicenseState = {
         status: 'invalid',
         valid: false,
         message: 'License verification failed',
@@ -389,13 +544,17 @@ serve(async (req) => {
         allowAI: false,
         allowExport: true,
         device: { allowed: DEFAULT_ALLOWED_DEVICES, used: 0 },
+      };
+      console.log('[verify-license] final validation response:', sanitizeForLog(expiredResponse as unknown as Record<string, unknown>));
+      return new Response(JSON.stringify({
+        ...expiredResponse,
       } as LicenseState), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const ALLOWED_DEVICES = licenseData.max_devices || DEFAULT_ALLOWED_DEVICES;
+    const ALLOWED_DEVICES = getAllowedDevices(licenseData, DEFAULT_ALLOWED_DEVICES);
 
     // License is valid, now check device limit
     const { data: devices, error: devicesError } = await supabase
@@ -415,11 +574,11 @@ serve(async (req) => {
 
     // Check if device limit exceeded
     if (!deviceExists && deviceCount >= ALLOWED_DEVICES) {
-      return new Response(JSON.stringify({
+      const deviceLimitResponse: LicenseState = {
         status: 'device_limit',
         valid: false,
         message: `Device limit reached (${ALLOWED_DEVICES} devices). Reset activations to use on a new device.`,
-        productIdOrPermalink: licenseData.product_id,
+        productIdOrPermalink: licenseData.product_id ?? productIdOrPermalink,
         lastVerifiedAt: Date.now(),
         nextCheckAt: Date.now() + 3600000,
         graceDays: 7,
@@ -427,6 +586,10 @@ serve(async (req) => {
         allowAI: false,
         allowExport: true,
         device: { allowed: ALLOWED_DEVICES, used: deviceCount },
+      };
+      console.log('[verify-license] final validation response:', sanitizeForLog(deviceLimitResponse as unknown as Record<string, unknown>));
+      return new Response(JSON.stringify({
+        ...deviceLimitResponse,
       } as LicenseState), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -468,7 +631,7 @@ serve(async (req) => {
       status: 'active',
       valid: true,
       message: 'License verified successfully',
-      productIdOrPermalink: licenseData.product_id,
+      productIdOrPermalink: licenseData.product_id ?? productIdOrPermalink,
       lastVerifiedAt: Date.now(),
       nextCheckAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
       graceDays: 7,
@@ -479,6 +642,7 @@ serve(async (req) => {
     };
 
     console.log('License verified successfully');
+    console.log('[verify-license] final validation response:', sanitizeForLog(activeState as unknown as Record<string, unknown>));
     
     return new Response(JSON.stringify(activeState), {
       status: 200,
@@ -487,8 +651,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Verification error');
-    
-    return new Response(JSON.stringify({
+    const errorResponse: LicenseState = {
       status: 'error',
       valid: false,
       message: 'Verification failed',
@@ -500,6 +663,11 @@ serve(async (req) => {
       allowAI: false,
       allowExport: true,
       device: { allowed: 2, used: 0 },
+    };
+    console.log('[verify-license] final validation response:', sanitizeForLog(errorResponse as unknown as Record<string, unknown>));
+
+    return new Response(JSON.stringify({
+      ...errorResponse,
     } as LicenseState), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
