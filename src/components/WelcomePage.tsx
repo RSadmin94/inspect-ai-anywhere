@@ -65,7 +65,7 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
           />
           <div>
             <h1 className="text-3xl font-bold text-foreground">365 InspectAI</h1>
-            <p className="text-sm text-muted-foreground mt-1">Professional Home Inspection Assistant</p>
+            <p className="text-sm text-muted-foreground mt-1">Inspect First. Deliver Fast.</p>
           </div>
         </div>
       </div>
@@ -80,8 +80,7 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
               <div>
                 <h2 className="font-semibold text-foreground">Welcome, Inspector</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  365 InspectAI is a professional-grade inspection tool designed for licensed home inspectors. 
-                  Your data is stored locally on your device for maximum privacy and offline capability.
+                  AI helps you deliver reports in as little as 45 minutes — not hours. Capture offline. AI analyzes when connected. Reports ready fast — often same-day.
                 </p>
               </div>
             </div>
