@@ -17,7 +17,7 @@ interface ReportBuilderProps {
   isOpen: boolean;
   onClose: () => void;
   inspection: InspectionRecord;
-  photos: PhotoRecord[];
+  photos?: PhotoRecord[] | null;
   language: Language;
   t: (key: string) => string;
 }
@@ -78,7 +78,8 @@ const DEFAULT_MOLD_SECTION: AncillarySection = {
   recommendationEs: 'Si se observan o sospechan sustancias similares al moho, se recomienda realizar pruebas por un inspector de moho certificado.',
 };
 
-export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t }: ReportBuilderProps) {
+export function ReportBuilder({ isOpen, onClose, inspection, photos = [], language, t }: ReportBuilderProps) {
+  const safePhotos = photos ?? [];
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>('en');
   const [photoGroups, setPhotoGroups] = useState<PhotoGroup[]>([]);
   const [disclaimers, setDisclaimers] = useState<string[]>([]);
@@ -96,7 +97,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
  
    // Group photos by room
    useEffect(() => {
-     const grouped = photos.reduce((acc, photo) => {
+     const grouped = safePhotos.reduce((acc, photo) => {
        const existing = acc.find(g => g.room === photo.room);
        if (existing) {
          existing.photos.push({ ...photo, included: photo.includeInReport !== false });
@@ -122,7 +123,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
      });
  
      setPhotoGroups(grouped);
-   }, [photos]);
+   }, [safePhotos]);
  
    const togglePhotoInclusion = useCallback((photoId: string) => {
      setPhotoGroups(prev => prev.map(group => ({
@@ -266,7 +267,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
                <div>
                  <h2 className="text-lg font-semibold">{t('reportBuilder')}</h2>
                  <p className="text-xs text-muted-foreground">
-                   {includedPhotos.length} / {photos.length} {t('photos')}
+                   {includedPhotos.length} / {safePhotos.length} {t('photos')}
                  </p>
                </div>
              </div>

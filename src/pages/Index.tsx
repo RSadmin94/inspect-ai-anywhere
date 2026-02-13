@@ -74,7 +74,7 @@ export default function Index() {
     seedDefaultData().catch(console.error);
   }, []);
 
-  const pendingCount = photos.filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed').length;
+  const pendingCount = (photos ?? []).filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed').length;
 
   const handleCapture = useCallback(async (blob: Blob) => {
      const newPhoto = await capturePhoto(blob, selectedRoom);
@@ -282,7 +282,7 @@ export default function Index() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <StatusBar 
           isOnline={isOnline}
-          photoCount={photos.length}
+          photoCount={(photos?.length ?? 0)}
           language={language}
           onToggleLanguage={toggleLanguage}
           onGoToDashboard={() => setCurrentPage('dashboard')}
@@ -293,7 +293,7 @@ export default function Index() {
         <div className="flex-1 overflow-auto">
           {currentPage === 'dashboard' && (
             <DashboardHub
-              photoCount={photos.length}
+              photoCount={(photos?.length ?? 0)}
               inspection={inspection}
               onCreateInspection={() => setCurrentPage('inspection')}
               onFilesSelected={handleFilesSelected}
@@ -344,7 +344,7 @@ export default function Index() {
               <div className="bg-card border-t border-border">
                 <div className="flex items-center justify-between px-4 py-2 border-b border-border">
                   <span className="text-sm font-medium text-muted-foreground">
-                    {photos.filter(p => p.room === selectedRoom).length} {t('photos')}
+                    {(photos ?? []).filter(p => p.room === selectedRoom).length} {t('photos')}
                   </span>
                   <button
                     onClick={() => setShowQuickCapture(true)}
@@ -354,7 +354,7 @@ export default function Index() {
                   </button>
                 </div>
                 <PhotoGallery 
-                  photos={photos.filter(p => p.room === selectedRoom)}
+                  photos={(photos ?? []).filter(p => p.room === selectedRoom)}
                   selectedPhotoId={selectedPhoto?.id || null}
                   onSelectPhoto={handleSelectPhoto}
                   t={t}
