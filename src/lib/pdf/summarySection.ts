@@ -173,7 +173,8 @@ export async function addSummarySection(
   for (const photo of photos) {
     const finding = categorizeFinding(photo, lang);
     if (finding) {
-      categorized[finding.status].push(finding);
+      const status = finding.status ?? 'monitor';
+      categorized[status]?.push(finding);
     }
   }
   
