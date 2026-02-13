@@ -1,17 +1,8 @@
 [build]
-  command = "npm ci && npm run build"
-  publish = "dist"
+command = "npm ci && npm run build"
+publish = "dist"
 
-[build.environment]
-  VITE_SUPABASE_URL = "https://mgrmurivoysmwqhmmpfj.supabase.co"
-  VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YwcRdqip-lh6pHADPawflw_qx8xGagL"
-
-[[headers]]
-  for = "/service-worker.js"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/manifest.webmanifest"
-  [headers.values]
-    Cache-Control = "no-cache"
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
