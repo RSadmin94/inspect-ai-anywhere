@@ -27,7 +27,7 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isActivating, setIsActivating] = useState(false);
 
-  const canProceed = termsAccepted && privacyAccepted && licenseKey.trim().length > 0;
+  const canProceed = termsAccepted && privacyAccepted && (licenseKey ?? '').trim().length > 0;
 
   const handleActivate = async () => {
     if (!canProceed) return;
@@ -117,7 +117,7 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
             </label>
             <Input
               type="text"
-              value={licenseKey}
+              value={licenseKey ?? ''}
               onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
               placeholder="Enter your license key"
               className="h-12 text-base font-mono"

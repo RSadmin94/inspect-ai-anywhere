@@ -53,6 +53,7 @@ export class OfflineSyncQueue {
    */
   async enqueue(item: Omit<SyncQueueItem, 'id' | 'retries' | 'createdAt'>): Promise<string> {
     if (!this.db) await this.init();
+    if (!this.db) throw new Error('Sync queue init failed');
 
     const id = `${item.photoId}_${item.timestamp}`;
     const queueItem: SyncQueueItem = {
@@ -77,6 +78,7 @@ export class OfflineSyncQueue {
    */
   async getQueue(): Promise<SyncQueueItem[]> {
     if (!this.db) await this.init();
+    if (!this.db) return [];
 
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction([QUEUE_STORE_NAME], 'readonly');
@@ -84,7 +86,7 @@ export class OfflineSyncQueue {
       const request = store.getAll();
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => resolve(request.result ?? []);
     });
   }
 
@@ -93,6 +95,7 @@ export class OfflineSyncQueue {
    */
   async dequeue(id: string): Promise<void> {
     if (!this.db) await this.init();
+    if (!this.db) return;
 
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction([QUEUE_STORE_NAME], 'readwrite');
@@ -109,6 +112,7 @@ export class OfflineSyncQueue {
    */
   async updateRetry(id: string, retries: number): Promise<void> {
     if (!this.db) await this.init();
+    if (!this.db) return;
 
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction([QUEUE_STORE_NAME], 'readwrite');
@@ -146,7 +150,8 @@ export class OfflineSyncQueue {
     try {
       const queue = await this.getQueue();
 
-      for (const item of queue) {
+      for (const item of queue ?? []) {
+        if (!item?.payload) continue;
         // Check if should retry
         const shouldRetry = this.shouldRetry(item);
         if (!shouldRetry) {
@@ -214,7 +219,7 @@ export class OfflineSyncQueue {
    */
   async getQueueSize(): Promise<number> {
     const queue = await this.getQueue();
-    return queue.length;
+    return (queue ?? []).length;
   }
 
   /**
@@ -222,6 +227,7 @@ export class OfflineSyncQueue {
    */
   async clearQueue(): Promise<void> {
     if (!this.db) await this.init();
+    if (!this.db) return;
 
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction([QUEUE_STORE_NAME], 'readwrite');

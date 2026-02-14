@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 interface ReportDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  inspection: InspectionRecord;
-  photos: PhotoRecord[];
+  inspection: InspectionRecord | null;
+  photos: PhotoRecord[] | null | undefined;
   t: (key: string) => string;
 }
 
@@ -22,6 +22,7 @@ export function ReportDialog({ isOpen, onClose, inspection, photos, t }: ReportD
   const [isGenerating, setIsGenerating] = useState(false);
 
   if (!isOpen) return null;
+  if (!inspection) return null;
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -29,12 +30,13 @@ export function ReportDialog({ isOpen, onClose, inspection, photos, t }: ReportD
       let pdfBlob: Blob;
       let filename: string;
       
+      const safePhotos = photos ?? [];
       if (reportType === 'agent') {
-        pdfBlob = await generateAgentSummaryPDF(inspection, photos, selectedLanguage);
-        filename = `agent-summary-${inspection.propertyAddress.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`;
+        pdfBlob = await generateAgentSummaryPDF(inspection, safePhotos, selectedLanguage);
+        filename = `agent-summary-${(inspection?.propertyAddress ?? 'report').replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`;
       } else {
-        pdfBlob = await generateInspectionPDF(inspection, photos, selectedLanguage);
-        filename = `inspection-${inspection.propertyAddress.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`;
+        pdfBlob = await generateInspectionPDF(inspection, safePhotos, selectedLanguage);
+        filename = `inspection-${(inspection?.propertyAddress ?? 'report').replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`;
       }
       
       // Create download link
@@ -199,10 +201,10 @@ export function ReportDialog({ isOpen, onClose, inspection, photos, t }: ReportD
           {/* Summary */}
           <div className="bg-muted/50 rounded-xl p-4 mb-5">
             <p className="text-sm text-muted-foreground">
-              {photos.length} {t('photos')} • {inspection.propertyAddress}
+              {(photos ?? []).length} {t('photos')} • {inspection?.propertyAddress ?? ''}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {photos.filter(p => p.aiStatus === 'complete').length} AI {t('aiComplete').toLowerCase()}
+              {(photos ?? []).filter(p => p.aiStatus === 'complete').length} AI {t('aiComplete').toLowerCase()}
             </p>
           </div>
 

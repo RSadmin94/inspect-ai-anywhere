@@ -324,8 +324,14 @@
 
 // Room order operations
 export async function getRoomOrder(): Promise<string[]> {
-  const order = await getSetting('roomOrder');
-  return order ? JSON.parse(order) : [];
+  try {
+    const order = await getSetting('roomOrder');
+    if (!order) return [];
+    const parsed = JSON.parse(order);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function saveRoomOrder(order: string[]): Promise<void> {

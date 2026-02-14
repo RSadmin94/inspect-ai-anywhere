@@ -143,7 +143,7 @@
        
        const updatedInspection = {
          ...inspection,
-         photoIds: [...inspection.photoIds, newPhoto.id],
+         photoIds: [...(inspection.photoIds ?? []), newPhoto.id],
          updatedAt: Date.now(),
        };
        await saveInspection(updatedInspection);
@@ -158,12 +158,12 @@
    }, [inspection]);
  
    const updatePhoto = useCallback(async (photoId: string, updates: Partial<PhotoRecord>) => {
-     const photo = photos.find(p => p.id === photoId);
+     const photo = (photos ?? []).find(p => p.id === photoId);
      if (!photo) return;
  
      const updatedPhoto = { ...photo, ...updates };
      await savePhoto(updatedPhoto);
-     setPhotos(prev => prev.map(p => p.id === photoId ? updatedPhoto : p));
+     setPhotos(prev => (prev ?? []).map(p => p.id === photoId ? updatedPhoto : p));
    }, [photos]);
  
    const deletePhoto = useCallback(async (photoId: string) => {
@@ -173,18 +173,18 @@
      
      const updatedInspection = {
        ...inspection,
-       photoIds: inspection.photoIds.filter(id => id !== photoId),
+       photoIds: (inspection.photoIds ?? []).filter(id => id !== photoId),
        updatedAt: Date.now(),
      };
      await saveInspection(updatedInspection);
      setInspection(updatedInspection);
      
-     setPhotos(prev => prev.filter(p => p.id !== photoId));
+     setPhotos(prev => (prev ?? []).filter(p => p.id !== photoId));
    }, [inspection]);
  
    const updatePhotoWithAI = useCallback(async (photoId: string, aiData: Parameters<typeof updatePhotoAI>[1]) => {
      await updatePhotoAI(photoId, aiData);
-     setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, ...(aiData as Partial<PhotoRecord>) } : p));
+     setPhotos(prev => (prev ?? []).map(p => p.id === photoId ? { ...p, ...(aiData as Partial<PhotoRecord>) } : p));
    }, []);
  
   const finishInspection = useCallback(async () => {

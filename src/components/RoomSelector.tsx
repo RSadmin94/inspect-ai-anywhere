@@ -45,16 +45,17 @@ const DEFAULT_ROOMS = [
  
   // Get ordered list of all rooms (default + custom)
   const getAllRooms = useCallback(() => {
-    const allRoomIds = [...DEFAULT_ROOMS, ...customRooms.map(r => r.id)];
+    const order = roomOrder ?? [];
+    const allRoomIds = [...DEFAULT_ROOMS, ...(customRooms ?? []).map(r => r.id)];
     
-    if (roomOrder.length === 0) {
+    if (order.length === 0) {
       return allRoomIds;
     }
     
     // Sort by saved order, put unordered items at the end
     const orderedRooms = [...allRoomIds].sort((a, b) => {
-      const aIndex = roomOrder.indexOf(a);
-      const bIndex = roomOrder.indexOf(b);
+      const aIndex = order.indexOf(a);
+      const bIndex = order.indexOf(b);
       if (aIndex === -1 && bIndex === -1) return 0;
       if (aIndex === -1) return 1;
       if (bIndex === -1) return -1;
@@ -100,13 +101,13 @@ const DEFAULT_ROOMS = [
        id: generateId(),
        name: newRoomName.trim(),
        isDefault: false,
-       order: customRooms.length + DEFAULT_ROOMS.length,
+       order: (customRooms ?? []).length + DEFAULT_ROOMS.length,
      };
      
      await saveCustomRoom(room);
      setCustomRooms(prev => [...prev, room]);
       // Add to room order
-      const newOrder = [...roomOrder, room.id];
+      const newOrder = [...(roomOrder ?? []), room.id];
       setRoomOrder(newOrder);
       await saveRoomOrder(newOrder);
      onChange(room.id);
@@ -119,7 +120,7 @@ const DEFAULT_ROOMS = [
      await deleteCustomRoom(id);
      setCustomRooms(prev => prev.filter(r => r.id !== id));
     // Remove from room order
-    const newOrder = roomOrder.filter(roomId => roomId !== id);
+    const newOrder = (roomOrder ?? []).filter(roomId => roomId !== id);
     setRoomOrder(newOrder);
     await saveRoomOrder(newOrder);
      if (value === id) onChange('other');
@@ -129,7 +130,7 @@ const DEFAULT_ROOMS = [
      if (DEFAULT_ROOMS.includes(roomValue as typeof DEFAULT_ROOMS[number])) {
        return t(roomValue);
      }
-     const custom = customRooms.find(r => r.id === roomValue);
+     const custom = (customRooms ?? []).find(r => r.id === roomValue);
      return custom?.name || roomValue;
    };
  
@@ -165,7 +166,7 @@ const DEFAULT_ROOMS = [
                
                {getAllRooms().map(roomId => {
                  const isDefault = DEFAULT_ROOMS.includes(roomId as typeof DEFAULT_ROOMS[number]);
-                 const customRoom = customRooms.find(r => r.id === roomId);
+                 const customRoom = (customRooms ?? []).find(r => r.id === roomId);
                  const displayName = isDefault ? t(roomId) : customRoom?.name || roomId;
                  const isDragging = draggedItem === roomId;
                  const isDragOver = dragOverItem === roomId;
@@ -286,7 +287,7 @@ const DEFAULT_ROOMS = [
                
                {getAllRooms().map(roomId => {
                  const isDefault = DEFAULT_ROOMS.includes(roomId as typeof DEFAULT_ROOMS[number]);
-                 const customRoom = customRooms.find(r => r.id === roomId);
+                 const customRoom = (customRooms ?? []).find(r => r.id === roomId);
                  const displayName = isDefault ? t(roomId) : customRoom?.name || roomId;
                  const isDragging = draggedItem === roomId;
                  const isDragOver = dragOverItem === roomId;

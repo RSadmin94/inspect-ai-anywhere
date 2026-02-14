@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
 import { 
   LicenseState, 
   LicenseVerifyRequest, 
@@ -76,6 +76,15 @@ export function useLicense(): UseLicenseReturn {
       return {
         ...DEFAULT_LICENSE_STATE,
         message: 'License key is required',
+      };
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      return {
+        ...DEFAULT_LICENSE_STATE,
+        status: 'error',
+        valid: false,
+        message: 'Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.',
       };
     }
 

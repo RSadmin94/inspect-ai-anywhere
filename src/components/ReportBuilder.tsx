@@ -16,8 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface ReportBuilderProps {
   isOpen: boolean;
   onClose: () => void;
-  inspection: InspectionRecord;
-  photos: PhotoRecord[];
+  inspection: InspectionRecord | null;
+  photos: PhotoRecord[] | null | undefined;
   language: Language;
   t: (key: string) => string;
 }
@@ -96,7 +96,8 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
  
    // Group photos by room
    useEffect(() => {
-     const grouped = photos.reduce((acc, photo) => {
+     const list = photos ?? [];
+     const grouped = list.reduce((acc, photo) => {
        const existing = acc.find(g => g.room === photo.room);
        if (existing) {
          existing.photos.push({ ...photo, included: photo.includeInReport !== false });
@@ -210,6 +211,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
       // Collect enabled ancillary sections
       const ancillarySections = [radonSection, wdiSection, moldSection].filter(s => s.enabled);
 
+      if (!inspection) return;
       const pdfBlob = await generateProfessionalReportPDF({
         inspection,
         photos: orderedPhotos,
@@ -227,7 +229,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
       const url = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `inspection-${inspection.propertyAddress.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`;
+      a.download = `inspection-${(inspection?.propertyAddress ?? 'report').replace(/[^a-z0-9]/gi, '-')}-${Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -241,6 +243,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
   };
  
    if (!isOpen) return null;
+   if (!inspection) return null;
  
    const languageOptions: { value: ReportLanguage; label: string }[] = [
      { value: 'en', label: t('english') },
@@ -266,7 +269,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
                <div>
                  <h2 className="text-lg font-semibold">{t('reportBuilder')}</h2>
                  <p className="text-xs text-muted-foreground">
-                   {includedPhotos.length} / {photos.length} {t('photos')}
+                   {includedPhotos.length} / {(photos ?? []).length} {t('photos')}
                  </p>
                </div>
              </div>

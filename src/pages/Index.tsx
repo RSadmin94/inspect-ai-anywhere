@@ -22,6 +22,7 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { DashboardHub } from '@/components/DashboardHub';
 import { RoomSelector } from '@/components/RoomSelector';
 import { CompanyProfileSettings } from '@/components/CompanyProfileSettings';
+import { ConfigWarningBanner } from '@/components/ConfigWarningBanner';
 import { toast } from 'sonner';
 import { seedDefaultData } from '@/lib/defaultData';
 import { X } from 'lucide-react';
@@ -74,7 +75,7 @@ export default function Index() {
     seedDefaultData().catch(console.error);
   }, []);
 
-  const pendingCount = photos.filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed').length;
+  const pendingCount = (photos ?? []).filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed').length;
 
   const handleCapture = useCallback(async (blob: Blob) => {
      const newPhoto = await capturePhoto(blob, selectedRoom);
@@ -115,7 +116,7 @@ export default function Index() {
 
   const handleUpdatePhoto = useCallback(async (photoId: string, updates: Partial<PhotoRecord>) => {
     await updatePhoto(photoId, updates);
-    const updated = photos.find(p => p.id === photoId);
+    const updated = (photos ?? []).find(p => p.id === photoId);
     if (updated) {
       setSelectedPhoto({ ...updated, ...updates });
     }
@@ -133,11 +134,11 @@ export default function Index() {
     try {
       await analyzePhoto(photoId);
       await refreshPhotos();
-      const updated = photos.find(p => p.id === photoId);
+      const updated = (photos ?? []).find(p => p.id === photoId);
       if (updated) {
         setSelectedPhoto(null);
         setTimeout(() => {
-          const refreshed = photos.find(p => p.id === photoId);
+          const refreshed = (photos ?? []).find(p => p.id === photoId);
           if (refreshed) setSelectedPhoto(refreshed);
         }, 100);
       }
@@ -224,11 +225,14 @@ export default function Index() {
   // Loading state
   if (!isLoaded || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col bg-background">
+        <ConfigWarningBanner />
+        <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
           <p className="text-xs text-muted-foreground mt-4">isLoaded: {String(isLoaded)}, isLoading: {String(isLoading)}</p>
+        </div>
         </div>
       </div>
     );
@@ -237,10 +241,15 @@ export default function Index() {
   // Welcome/License activation screen for first-time users
   if (showWelcome) {
     return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <ConfigWarningBanner />
+        <div className="flex-1">
       <WelcomePage 
         onComplete={() => setShowWelcome(false)} 
         t={t} 
       />
+        </div>
+      </div>
     );
   }
 
@@ -267,7 +276,9 @@ export default function Index() {
 
   // Main inspection view
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <ConfigWarningBanner />
+      <div className="flex-1 flex overflow-hidden">
       {/* Sidebar */}
       <AppSidebar
         currentPage={currentPage}
@@ -293,7 +304,7 @@ export default function Index() {
         <div className="flex-1 overflow-auto">
           {currentPage === 'dashboard' && (
             <DashboardHub
-              photoCount={photos.length}
+              photoCount={(photos ?? []).length}
               inspection={inspection}
               onCreateInspection={() => setCurrentPage('inspection')}
               onFilesSelected={handleFilesSelected}
@@ -344,7 +355,7 @@ export default function Index() {
               <div className="bg-card border-t border-border">
                 <div className="flex items-center justify-between px-4 py-2 border-b border-border">
                   <span className="text-sm font-medium text-muted-foreground">
-                    {photos.filter(p => p.room === selectedRoom).length} {t('photos')}
+                    {(photos ?? []).filter(p => p.room === selectedRoom).length} {t('photos')}
                   </span>
                   <button
                     onClick={() => setShowQuickCapture(true)}
@@ -354,7 +365,7 @@ export default function Index() {
                   </button>
                 </div>
                 <PhotoGallery 
-                  photos={photos.filter(p => p.room === selectedRoom)}
+                  photos={(photos ?? []).filter(p => p.room === selectedRoom)}
                   selectedPhotoId={selectedPhoto?.id || null}
                   onSelectPhoto={handleSelectPhoto}
                   t={t}
@@ -452,6 +463,7 @@ export default function Index() {
 
         {/* New Inspection Modal */}
         {renderNewInspectionModal()}
+      </div>
       </div>
     </div>
   );
