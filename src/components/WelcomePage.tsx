@@ -38,13 +38,13 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
     try {
       const result = await verifyLicense();
       
-      if (result?.valid && result?.status === 'active') {
+      if (result.valid && result.status === 'active') {
         // Store acceptance
         localStorage.setItem(TERMS_KEY, new Date().toISOString());
         localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
         onComplete();
       } else {
-        setError(result?.message || 'License verification failed. Please check your license key.');
+        setError(result.message || 'License verification failed. Please check your license key.');
       }
     } catch (e) {
       setError('Unable to verify license. Please check your internet connection and try again.');
