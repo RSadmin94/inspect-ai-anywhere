@@ -19,7 +19,7 @@ import { ImageLightbox } from './ImageLightbox';
  interface ReportReviewScreenProps {
    isOpen: boolean;
    onClose: () => void;
-   inspection: InspectionRecord;
+   inspection: InspectionRecord | null;
    photos: PhotoRecord[];
    language: Language;
    t: (key: string) => string;
@@ -84,14 +84,13 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
 
   // Handle voice dictation completion
   useEffect(() => {
-    if (!isListening && transcript && dictatingRoom) {
-      const currentNote = inspection.roomNotes?.[dictatingRoom] || '';
-      const newNote = currentNote ? `${currentNote} ${transcript}` : transcript;
-      onUpdateRoomNotes?.(dictatingRoom, newNote);
-      resetTranscript();
-      setDictatingRoom(null);
-    }
-  }, [isListening, transcript, dictatingRoom, inspection.roomNotes, onUpdateRoomNotes, resetTranscript]);
+    if (!inspection || !isListening || !transcript || !dictatingRoom) return;
+    const currentNote = inspection.roomNotes?.[dictatingRoom] || '';
+    const newNote = currentNote ? `${currentNote} ${transcript}` : transcript;
+    onUpdateRoomNotes?.(dictatingRoom, newNote);
+    resetTranscript();
+    setDictatingRoom(null);
+  }, [inspection, isListening, transcript, dictatingRoom, onUpdateRoomNotes, resetTranscript]);
  
    // Load photo thumbnails
    useEffect(() => {
@@ -129,9 +128,11 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos, langua
        return acc;
      }, {} as Record<string, PhotoRecord[]>);
    }, [photos]);
- 
+
+  if (!inspection) return null;
+
    // Room notes
-   const roomNotes = inspection.roomNotes || {};
+   const roomNotes = inspection?.roomNotes || {};
    const roomsWithNotes = Object.entries(roomNotes).filter(([_, notes]) => notes?.trim());
  
   const handleGenerate = async () => {
