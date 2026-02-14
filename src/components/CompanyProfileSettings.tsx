@@ -434,8 +434,8 @@ export function CompanyProfileSettings() {
       </CardContent>
 
       {/* Legal Modals */}
-      <TermsOfService isOpen={showTerms} onClose={() => setShowTerms(false)} />
-      <PrivacyPolicy isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} />
+      <TermsOfService isOpen={showTerms} onClose={() => setShowTerms(false)} language={language} />
+      <PrivacyPolicy isOpen={showPrivacy} onClose={() => setShowPrivacy(false)} language={language} />
     </Card>
   );
 }

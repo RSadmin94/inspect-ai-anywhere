@@ -128,7 +128,7 @@ interface AIAnalysisResult {
   summary_es?: string;
 }
 
-export async function analyzePhoto(photoId: string, useRealAI: boolean = true): Promise<void> {
+export async function analyzePhoto(photoId: string, useRealAI: boolean = true, language: 'en' | 'es' = 'en'): Promise<void> {
   const photo = await getPhoto(photoId);
   if (!photo) return;
 
@@ -144,7 +144,7 @@ export async function analyzePhoto(photoId: string, useRealAI: boolean = true): 
         body: { 
           imageBase64,
           room: photo.room,
-          language: 'en'
+          language
         }
       });
 
@@ -200,16 +200,16 @@ export async function analyzePhoto(photoId: string, useRealAI: boolean = true): 
       }
     } else {
       // Fallback to mock analysis
-      await mockAnalyzePhoto(photoId);
+      await mockAnalyzePhoto(photoId, language);
     }
   } catch (error) {
     console.error('Analysis failed:', error);
     // Fallback to mock on error
-    await mockAnalyzePhoto(photoId);
+    await mockAnalyzePhoto(photoId, language);
   }
 }
 
-async function mockAnalyzePhoto(photoId: string): Promise<void> {
+async function mockAnalyzePhoto(photoId: string, language: 'en' | 'es' = 'en'): Promise<void> {
   // Simulate AI processing time
   await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
 
@@ -268,11 +268,11 @@ async function mockAnalyzePhoto(photoId: string): Promise<void> {
   });
 }
 
-export async function analyzeAllPending(photos: PhotoRecord[], onProgress?: (completed: number, total: number) => void): Promise<void> {
+export async function analyzeAllPending(photos: PhotoRecord[], onProgress?: (completed: number, total: number) => void, language: 'en' | 'es' = 'en'): Promise<void> {
   const pending = photos.filter(p => p.aiStatus === 'pending_offline' || p.aiStatus === 'failed');
   
   for (let i = 0; i < pending.length; i++) {
-    await analyzePhoto(pending[i].id);
+    await analyzePhoto(pending[i].id, true, language);
     onProgress?.(i + 1, pending.length);
   }
 }

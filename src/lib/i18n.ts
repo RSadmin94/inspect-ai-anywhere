@@ -348,6 +348,7 @@
         invalid: 'Invalid',
         deviceLimit: 'Device Limit',
         inactive: 'Inactive',
+        licenseTierBlocked: 'Your license tier does not include this feature',
 
         // ReportBuilder tabs
         deferred: 'Deferred',
@@ -701,6 +702,7 @@
         invalid: 'Inválido',
         deviceLimit: 'Límite de Dispositivos',
         inactive: 'Inactivo',
+        licenseTierBlocked: 'Su nivel de licencia no incluye esta función',
 
         // ReportBuilder tabs
         deferred: 'Diferidos',

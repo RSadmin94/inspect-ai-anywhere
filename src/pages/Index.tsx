@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useEffect } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useLicense } from '@/hooks/useLicense';
 import { useInspection } from '@/hooks/useInspection';
 import { PhotoRecord, InspectionType } from '@/lib/db';
 import { analyzePhoto, analyzeAllPending } from '@/lib/aiAnalysis';
@@ -32,6 +33,7 @@ type Page = 'dashboard' | 'inspection' | 'reports' | 'settings';
 export default function Index() {
   const { language, toggleLanguage, t, isLoaded } = useLanguage();
   const isOnline = useOnlineStatus();
+  const { effectivePermissions } = useLicense();
   const {
     inspection,
     photos,
@@ -82,33 +84,33 @@ export default function Index() {
     if (newPhoto) {
       toast.success(t('photoSaved'));
       
-      // Auto-analyze if online
-      if (isOnline && newPhoto) {
+      // Auto-analyze if online and licensed for AI
+      if (isOnline && newPhoto && effectivePermissions.allowAI) {
         try {
-          await analyzePhoto(newPhoto.id);
+          await analyzePhoto(newPhoto.id, true, language);
           await refreshPhotos();
         } catch (e) {
           console.error('Auto-analysis failed:', e);
         }
       }
     }
-  }, [capturePhoto, isOnline, t, refreshPhotos, selectedRoom]);
+  }, [capturePhoto, isOnline, effectivePermissions.allowAI, language, t, refreshPhotos, selectedRoom]);
 
    const handleQuickCapture = useCallback(async (blob: Blob, room: string) => {
      const newPhoto = await capturePhoto(blob, room);
      if (newPhoto) {
        toast.success(t('photoSaved'));
        
-       if (isOnline && newPhoto) {
+       if (isOnline && newPhoto && effectivePermissions.allowAI) {
          try {
-           await analyzePhoto(newPhoto.id);
+           await analyzePhoto(newPhoto.id, true, language);
            await refreshPhotos();
          } catch (e) {
            console.error('Auto-analysis failed:', e);
          }
        }
      }
-   }, [capturePhoto, isOnline, t, refreshPhotos]);
+   }, [capturePhoto, isOnline, effectivePermissions.allowAI, language, t, refreshPhotos]);
 
   const handleSelectPhoto = useCallback((photo: PhotoRecord) => {
     setSelectedPhoto(photo);
@@ -130,9 +132,13 @@ export default function Index() {
 
   const handleAnalyzePhoto = useCallback(async (photoId: string) => {
     if (!isOnline) return;
+    if (!effectivePermissions.allowAI) {
+      toast.error(t('licenseTierBlocked'));
+      return;
+    }
     
     try {
-      await analyzePhoto(photoId);
+      await analyzePhoto(photoId, true, language);
       await refreshPhotos();
       const updated = (photos ?? []).find(p => p.id === photoId);
       if (updated) {
@@ -145,10 +151,14 @@ export default function Index() {
     } catch (e) {
       toast.error(t('analysisFailed'));
     }
-  }, [isOnline, refreshPhotos, photos, t]);
+  }, [isOnline, effectivePermissions.allowAI, language, refreshPhotos, photos, t]);
 
   const handleAnalyzeAllPending = useCallback(async () => {
     if (!isOnline || isAnalyzingAll) return;
+    if (!effectivePermissions.allowAI) {
+      toast.error(t('licenseTierBlocked'));
+      return;
+    }
     
     setIsAnalyzingAll(true);
     setShowMenu(false);
@@ -156,7 +166,7 @@ export default function Index() {
     try {
       await analyzeAllPending(photos, (completed, total) => {
         toast.info(`${t('aiAnalyzing')} ${completed}/${total}...`);
-      });
+      }, language);
       await refreshPhotos();
       toast.success(t('allPhotosAnalyzed'));
     } catch (e) {
@@ -164,12 +174,16 @@ export default function Index() {
     }
     
     setIsAnalyzingAll(false);
-  }, [isOnline, isAnalyzingAll, photos, refreshPhotos, t]);
+  }, [isOnline, isAnalyzingAll, effectivePermissions.allowAI, language, photos, refreshPhotos, t]);
 
   const handleNewInspection = useCallback(() => {
+    if (!effectivePermissions.allowCreateNew) {
+      toast.error(t('licenseTierBlocked'));
+      return;
+    }
     setShowMenu(false);
     setShowNewInspectionForm(true);
-  }, []);
+  }, [effectivePermissions.allowCreateNew, t]);
 
   const handleFinish = useCallback(async () => {
     await finishInspection();
@@ -388,7 +402,7 @@ export default function Index() {
           onClose={() => setSelectedPhoto(null)}
           onUpdate={handleUpdatePhoto}
           onDelete={handleDeletePhoto}
-          onAnalyze={isOnline ? handleAnalyzePhoto : undefined}
+          onAnalyze={isOnline && effectivePermissions.allowAI ? handleAnalyzePhoto : undefined}
           language={language}
           t={t}
           isOnline={isOnline}
@@ -418,7 +432,7 @@ export default function Index() {
           isOpen={showMenu}
           onClose={() => setShowMenu(false)}
           inspection={inspection}
-          pendingCount={pendingCount}
+          pendingCount={effectivePermissions.allowAI ? pendingCount : 0}
           onNewInspection={handleNewInspection}
           onAnalyzePending={handleAnalyzeAllPending}
           onFinish={handleFinish}
