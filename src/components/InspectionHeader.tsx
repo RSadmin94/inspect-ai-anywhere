@@ -3,7 +3,7 @@ import { InspectionRecord } from '@/lib/db';
 import { ExportImportButtons } from './ExportImportButtons';
 
 interface InspectionHeaderProps {
-  inspection: InspectionRecord;
+  inspection: InspectionRecord | null;
   onGenerateReport: () => void;
   onMenu: () => void;
   onImportComplete?: (inspectionId: string) => void;
@@ -11,6 +11,8 @@ interface InspectionHeaderProps {
 }
 
 export function InspectionHeader({ inspection, onGenerateReport, onMenu, onImportComplete, t }: InspectionHeaderProps) {
+  if (!inspection) return null;
+
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border">
       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -23,9 +25,9 @@ export function InspectionHeader({ inspection, onGenerateReport, onMenu, onImpor
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <p className="font-medium truncate">{inspection.propertyAddress}</p>
+            <p className="font-medium truncate">{inspection?.propertyAddress ?? ''}</p>
           </div>
-          {inspection.inspectorName && (
+          {inspection?.inspectorName && (
             <p className="text-sm text-muted-foreground truncate">{inspection.inspectorName}</p>
           )}
         </div>
