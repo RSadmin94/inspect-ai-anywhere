@@ -43,7 +43,7 @@
      }
    };
  
-   if ((photos?.length ?? 0) === 0) {
+   if (photos.length === 0) {
      return (
        <div className="h-20 flex items-center justify-center text-muted-foreground text-sm">
          {t('noPhotos')}
@@ -56,7 +56,7 @@
        ref={scrollRef}
        className="scroll-smooth-x flex gap-2 px-4 py-2"
      >
-       {(photos ?? []).map((photo) => (
+       {photos.map((photo) => (
          <button
            key={photo.id}
            onClick={() => onSelectPhoto(photo)}

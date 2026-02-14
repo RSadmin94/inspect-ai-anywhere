@@ -17,7 +17,7 @@ interface ReportBuilderProps {
   isOpen: boolean;
   onClose: () => void;
   inspection: InspectionRecord;
-  photos?: PhotoRecord[] | null;
+  photos: PhotoRecord[];
   language: Language;
   t: (key: string) => string;
 }
@@ -78,8 +78,7 @@ const DEFAULT_MOLD_SECTION: AncillarySection = {
   recommendationEs: 'Si se observan o sospechan sustancias similares al moho, se recomienda realizar pruebas por un inspector de moho certificado.',
 };
 
-export function ReportBuilder({ isOpen, onClose, inspection, photos = [], language, t }: ReportBuilderProps) {
-  const safePhotos = photos ?? [];
+export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t }: ReportBuilderProps) {
   const [reportLanguage, setReportLanguage] = useState<ReportLanguage>('en');
   const [photoGroups, setPhotoGroups] = useState<PhotoGroup[]>([]);
   const [disclaimers, setDisclaimers] = useState<string[]>([]);
@@ -97,7 +96,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos = [], langua
  
    // Group photos by room
    useEffect(() => {
-     const grouped = safePhotos.reduce((acc, photo) => {
+     const grouped = photos.reduce((acc, photo) => {
        const existing = acc.find(g => g.room === photo.room);
        if (existing) {
          existing.photos.push({ ...photo, included: photo.includeInReport !== false });
@@ -123,7 +122,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos = [], langua
      });
  
      setPhotoGroups(grouped);
-   }, [safePhotos]);
+   }, [photos]);
  
    const togglePhotoInclusion = useCallback((photoId: string) => {
      setPhotoGroups(prev => prev.map(group => ({
@@ -267,7 +266,7 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos = [], langua
                <div>
                  <h2 className="text-lg font-semibold">{t('reportBuilder')}</h2>
                  <p className="text-xs text-muted-foreground">
-                   {includedPhotos.length} / {safePhotos.length} {t('photos')}
+                   {includedPhotos.length} / {photos.length} {t('photos')}
                  </p>
                </div>
              </div>

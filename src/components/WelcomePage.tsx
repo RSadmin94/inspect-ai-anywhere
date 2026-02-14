@@ -27,7 +27,7 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isActivating, setIsActivating] = useState(false);
 
-  const canProceed = termsAccepted && privacyAccepted && ((licenseKey ?? '').trim().length) > 0;
+  const canProceed = termsAccepted && privacyAccepted && licenseKey.trim().length > 0;
 
   const handleActivate = async () => {
     if (!canProceed) return;

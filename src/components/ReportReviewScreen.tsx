@@ -20,7 +20,7 @@ import { ImageLightbox } from './ImageLightbox';
    isOpen: boolean;
    onClose: () => void;
    inspection: InspectionRecord;
-   photos?: PhotoRecord[] | null;
+   photos: PhotoRecord[];
    language: Language;
    t: (key: string) => string;
   onUpdateRoomNotes?: (room: string, notes: string) => Promise<void>;
@@ -37,15 +37,14 @@ type TabType = 'overview' | 'findings' | 'photos';
    minor: 'text-muted-foreground',
  };
  
-export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], language, t, onUpdateRoomNotes, onUpdatePhoto }: ReportReviewScreenProps) {
-   const safePhotos = photos ?? [];
+export function ReportReviewScreen({ isOpen, onClose, inspection, photos, language, t, onUpdateRoomNotes, onUpdatePhoto }: ReportReviewScreenProps) {
    const [activeTab, setActiveTab] = useState<TabType>('overview');
    const [reportLanguage, setReportLanguage] = useState<ReportLanguage>('en');
    const [isGenerating, setIsGenerating] = useState(false);
    const [disclaimers, setDisclaimers] = useState<string[]>([]);
    const [showPhraseLibrary, setShowPhraseLibrary] = useState(false);
    const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
-   const [includedPhotos, setIncludedPhotos] = useState<Set<string>>(new Set(safePhotos.map(p => p.id)));
+   const [includedPhotos, setIncludedPhotos] = useState<Set<string>>(new Set(photos.map(p => p.id)));
   const [editingRoom, setEditingRoom] = useState<string | null>(null);
   const [editNoteText, setEditNoteText] = useState('');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
@@ -60,8 +59,8 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], l
 
   // Sync includedPhotos when photos change
   useEffect(() => {
-    setIncludedPhotos(new Set(safePhotos.map(p => p.id)));
-  }, [safePhotos]);
+    setIncludedPhotos(new Set(photos.map(p => p.id)));
+  }, [photos]);
 
   // Load full resolution image for lightbox
   useEffect(() => {
@@ -96,40 +95,40 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], l
  
    // Load photo thumbnails
    useEffect(() => {
-     safePhotos.forEach(async (photo) => {
+     photos.forEach(async (photo) => {
        if (!photoUrls[photo.id]) {
          const url = await blobToDataUrl(photo.thumbnailBlob);
          setPhotoUrls(prev => ({ ...prev, [photo.id]: url }));
        }
      });
-   }, [safePhotos]);
+   }, [photos]);
  
    // Statistics
    const stats = useMemo(() => {
-     const analyzed = safePhotos.filter(p => p.aiStatus === 'complete');
-     const findings = safePhotos.filter(p => p.aiFindingTitle || p.manualTitle);
+     const analyzed = photos.filter(p => p.aiStatus === 'complete');
+     const findings = photos.filter(p => p.aiFindingTitle || p.manualTitle);
      const bySeverity = {
        severe: findings.filter(p => (p.aiSeverity || p.manualSeverity) === 'severe').length,
        moderate: findings.filter(p => (p.aiSeverity || p.manualSeverity) === 'moderate').length,
        minor: findings.filter(p => (p.aiSeverity || p.manualSeverity) === 'minor').length,
      };
-     const byCategory = safePhotos.reduce((acc, p) => {
+     const byCategory = photos.reduce((acc, p) => {
        const cat = p.aiCategory || p.manualCategory || 'general';
        acc[cat] = (acc[cat] || 0) + 1;
        return acc;
      }, {} as Record<string, number>);
      
      return { analyzed: analyzed.length, findings: findings.length, bySeverity, byCategory };
-   }, [safePhotos]);
+   }, [photos]);
  
    // Group photos by room
    const photosByRoom = useMemo(() => {
-     return safePhotos.reduce((acc, photo) => {
+     return photos.reduce((acc, photo) => {
        if (!acc[photo.room]) acc[photo.room] = [];
        acc[photo.room].push(photo);
        return acc;
      }, {} as Record<string, PhotoRecord[]>);
-   }, [safePhotos]);
+   }, [photos]);
  
    // Room notes
    const roomNotes = inspection.roomNotes || {};
@@ -138,7 +137,7 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], l
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      const selectedPhotos = safePhotos
+      const selectedPhotos = photos
         .filter(p => includedPhotos.has(p.id))
         .map((p, idx) => ({ ...p, reportOrder: idx, includeInReport: true }));
 
@@ -266,7 +265,7 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], l
                <h2 className="font-semibold mb-4">{t('summary')}</h2>
                <div className="grid grid-cols-2 gap-4">
                  <div className="bg-muted/50 rounded-lg p-3 text-center">
-                   <div className="text-2xl font-bold text-primary">{safePhotos.length}</div>
+                   <div className="text-2xl font-bold text-primary">{photos.length}</div>
                    <div className="text-xs text-muted-foreground">{t('totalPhotos')}</div>
                  </div>
                  <div className="bg-muted/50 rounded-lg p-3 text-center">

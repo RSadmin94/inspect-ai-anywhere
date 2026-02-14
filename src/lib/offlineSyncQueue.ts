@@ -214,7 +214,7 @@ export class OfflineSyncQueue {
    */
   async getQueueSize(): Promise<number> {
     const queue = await this.getQueue();
-    return (queue?.length ?? 0);
+    return queue.length;
   }
 
   /**

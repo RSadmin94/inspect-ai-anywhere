@@ -143,7 +143,7 @@
        
        const updatedInspection = {
          ...inspection,
-         photoIds: [...(inspection.photoIds ?? []), newPhoto.id],
+         photoIds: [...inspection.photoIds, newPhoto.id],
          updatedAt: Date.now(),
        };
        await saveInspection(updatedInspection);
@@ -173,7 +173,7 @@
      
      const updatedInspection = {
        ...inspection,
-       photoIds: (inspection.photoIds ?? []).filter(id => id !== photoId),
+       photoIds: inspection.photoIds.filter(id => id !== photoId),
        updatedAt: Date.now(),
      };
      await saveInspection(updatedInspection);

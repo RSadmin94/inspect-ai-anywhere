@@ -199,10 +199,10 @@ export function ReportDialog({ isOpen, onClose, inspection, photos, t }: ReportD
           {/* Summary */}
           <div className="bg-muted/50 rounded-xl p-4 mb-5">
             <p className="text-sm text-muted-foreground">
-              {(photos?.length ?? 0)} {t('photos')} • {inspection.propertyAddress}
+              {photos.length} {t('photos')} • {inspection.propertyAddress}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {(photos ?? []).filter(p => p.aiStatus === 'complete').length} AI {t('aiComplete').toLowerCase()}
+              {photos.filter(p => p.aiStatus === 'complete').length} AI {t('aiComplete').toLowerCase()}
             </p>
           </div>
 
