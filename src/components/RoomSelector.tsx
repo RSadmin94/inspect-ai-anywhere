@@ -46,16 +46,15 @@ const DEFAULT_ROOMS = [
   // Get ordered list of all rooms (default + custom)
   const getAllRooms = useCallback(() => {
     const allRoomIds = [...DEFAULT_ROOMS, ...customRooms.map(r => r.id)];
-    const order = roomOrder ?? [];
     
-    if (order.length === 0) {
+    if (roomOrder.length === 0) {
       return allRoomIds;
     }
     
     // Sort by saved order, put unordered items at the end
     const orderedRooms = [...allRoomIds].sort((a, b) => {
-      const aIndex = order.indexOf(a);
-      const bIndex = order.indexOf(b);
+      const aIndex = roomOrder.indexOf(a);
+      const bIndex = roomOrder.indexOf(b);
       if (aIndex === -1 && bIndex === -1) return 0;
       if (aIndex === -1) return 1;
       if (bIndex === -1) return -1;
@@ -107,7 +106,7 @@ const DEFAULT_ROOMS = [
      await saveCustomRoom(room);
      setCustomRooms(prev => [...prev, room]);
       // Add to room order
-      const newOrder = [...(roomOrder ?? []), room.id];
+      const newOrder = [...roomOrder, room.id];
       setRoomOrder(newOrder);
       await saveRoomOrder(newOrder);
      onChange(room.id);
@@ -120,7 +119,7 @@ const DEFAULT_ROOMS = [
      await deleteCustomRoom(id);
      setCustomRooms(prev => prev.filter(r => r.id !== id));
     // Remove from room order
-    const newOrder = (roomOrder ?? []).filter(roomId => roomId !== id);
+    const newOrder = roomOrder.filter(roomId => roomId !== id);
     setRoomOrder(newOrder);
     await saveRoomOrder(newOrder);
      if (value === id) onChange('other');
