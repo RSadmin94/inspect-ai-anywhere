@@ -22,6 +22,7 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { DashboardHub } from '@/components/DashboardHub';
 import { RoomSelector } from '@/components/RoomSelector';
 import { CompanyProfileSettings } from '@/components/CompanyProfileSettings';
+import { ConfigWarningBanner } from '@/components/ConfigWarningBanner';
 import { toast } from 'sonner';
 import { seedDefaultData } from '@/lib/defaultData';
 import { X } from 'lucide-react';
@@ -224,11 +225,14 @@ export default function Index() {
   // Loading state
   if (!isLoaded || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col bg-background">
+        <ConfigWarningBanner />
+        <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
           <p className="text-xs text-muted-foreground mt-4">isLoaded: {String(isLoaded)}, isLoading: {String(isLoading)}</p>
+        </div>
         </div>
       </div>
     );
@@ -237,10 +241,15 @@ export default function Index() {
   // Welcome/License activation screen for first-time users
   if (showWelcome) {
     return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <ConfigWarningBanner />
+        <div className="flex-1">
       <WelcomePage 
         onComplete={() => setShowWelcome(false)} 
         t={t} 
       />
+        </div>
+      </div>
     );
   }
 
@@ -267,7 +276,9 @@ export default function Index() {
 
   // Main inspection view
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <ConfigWarningBanner />
+      <div className="flex-1 flex overflow-hidden">
       {/* Sidebar */}
       <AppSidebar
         currentPage={currentPage}
@@ -452,6 +463,7 @@ export default function Index() {
 
         {/* New Inspection Modal */}
         {renderNewInspectionModal()}
+      </div>
       </div>
     </div>
   );

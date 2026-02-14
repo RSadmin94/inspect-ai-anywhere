@@ -322,11 +322,16 @@
    await db.delete('issuePresets', id);
  }
 
-// Room order operations
+// Room order operations - never return null; safe against malformed JSON
 export async function getRoomOrder(): Promise<string[]> {
-  const order = await getSetting('roomOrder');
-  const parsed = order ? JSON.parse(order) : null;
-  return Array.isArray(parsed) ? parsed : [];
+  try {
+    const order = await getSetting('roomOrder');
+    if (!order) return [];
+    const parsed = JSON.parse(order);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function saveRoomOrder(order: string[]): Promise<void> {

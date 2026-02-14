@@ -1,25 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL;
+// Safe read - never throw; no side effects beyond constants
+const url = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+const key =
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string) ||
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string) ||
+  '';
 
-const SUPABASE_KEY =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY;
+export const isSupabaseConfigured = Boolean(url && key);
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('[Supabase] Missing env vars:', {
-    VITE_SUPABASE_URL: !!SUPABASE_URL,
-    VITE_SUPABASE_PUBLISHABLE_KEY: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    VITE_SUPABASE_ANON_KEY: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
-  });
+let _supabase: SupabaseClient<Database> | null = null;
+try {
+  if (isSupabaseConfigured) {
+    _supabase = createClient<Database>(url, key, {
+      auth: {
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+  }
+} catch {
+  // Defensive: createClient should not throw with valid url/key, but never crash
+  _supabase = null;
 }
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+export const supabase = _supabase;
