@@ -161,7 +161,7 @@ const DEFAULT_ROOMS = [
                  )}
                >
                  <GripVertical className="w-3 h-3" />
-                 {isReordering ? 'Done reordering' : 'Reorder rooms'}
+                 {isReordering ? t('doneReordering') : t('reorderRooms')}
                </button>
                
                {getAllRooms().map(roomId => {
@@ -282,7 +282,7 @@ const DEFAULT_ROOMS = [
                  )}
                >
                  <GripVertical className="w-3 h-3" />
-                 {isReordering ? 'Done reordering' : 'Reorder rooms'}
+                 {isReordering ? t('doneReordering') : t('reorderRooms')}
                </button>
                
                {getAllRooms().map(roomId => {

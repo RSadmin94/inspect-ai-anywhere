@@ -65,7 +65,7 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
           />
           <div>
             <h1 className="text-3xl font-bold text-foreground">365 InspectAI</h1>
-            <p className="text-sm text-muted-foreground mt-1">Professional Home Inspection Assistant</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('professionalAssistant')}</p>
           </div>
         </div>
       </div>
@@ -78,10 +78,9 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
             <div className="flex items-start gap-3">
               <Shield className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
               <div>
-                <h2 className="font-semibold text-foreground">Welcome, Inspector</h2>
+                <h2 className="font-semibold text-foreground">{t('welcomeInspector')}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  365 InspectAI is a professional-grade inspection tool designed for licensed home inspectors. 
-                  Your data is stored locally on your device for maximum privacy and offline capability.
+                  {t('welcomeMessage')}
                 </p>
               </div>
             </div>
@@ -92,19 +91,19 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
             <div className="flex items-start gap-3">
               <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground">Terms of Service Summary</h3>
+                <h3 className="font-semibold text-foreground">{t('termsSummary')}</h3>
                 <ul className="text-sm text-muted-foreground mt-2 space-y-1.5">
-                  <li>• This app is a tool for licensed professionals</li>
-                  <li>• You retain ownership of all inspection data</li>
-                  <li>• Photos are only transmitted when using AI analysis</li>
-                  <li>• Data is stored locally on your device</li>
-                  <li>• License allows use on up to 2 devices</li>
+                  <li>• {t('termsItem1')}</li>
+                  <li>• {t('termsItem2')}</li>
+                  <li>• {t('termsItem3')}</li>
+                  <li>• {t('termsItem4')}</li>
+                  <li>• {t('termsItem5')}</li>
                 </ul>
                 <button 
                   onClick={() => setShowTerms(true)}
                   className="text-primary text-sm font-medium mt-2 flex items-center gap-1 hover:underline"
                 >
-                  Read full Terms of Service <ExternalLink className="w-3 h-3" />
+                  {t('readFullTerms')} <ExternalLink className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -113,22 +112,18 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
           {/* License Key Input */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-foreground block">
-              License Key
+              {t('licenseKeyLabel')}
             </label>
             <Input
               type="text"
               value={licenseKey ?? ''}
               onChange={(e) => setLicenseKey(e.target.value.toUpperCase())}
-              placeholder="Enter your license key"
+              placeholder={t('enterLicenseKey')}
               className="h-12 text-base font-mono"
               disabled={isActivating}
             />
             <p className="text-xs text-muted-foreground">
-              Enter the license key you received after purchase. Contact{' '}
-              <a href="mailto:support@365globalsolutions.com" className="text-primary hover:underline">
-                support@365globalsolutions.com
-              </a>
-              {' '}if you need assistance.
+              {t('licenseKeyHelp')} <a href="mailto:support@365globalsolutions.com" className="text-primary hover:underline">support@365globalsolutions.com</a>
             </p>
           </div>
 
@@ -142,12 +137,12 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
                 disabled={isActivating}
               />
               <label htmlFor="terms" className="text-sm text-foreground cursor-pointer">
-                I have read and accept the{' '}
+                {t('iAcceptTermsPrefix')}
                 <button 
                   onClick={() => setShowTerms(true)}
                   className="text-primary hover:underline"
                 >
-                  Terms of Service
+                  {t('termsOfService')}
                 </button>
               </label>
             </div>
@@ -160,12 +155,12 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
                 disabled={isActivating}
               />
               <label htmlFor="privacy" className="text-sm text-foreground cursor-pointer">
-                I have read and accept the{' '}
+                {t('iAcceptPrivacyPrefix')}
                 <button 
                   onClick={() => setShowPrivacy(true)}
                   className="text-primary hover:underline"
                 >
-                  Privacy Policy
+                  {t('privacyPolicy')}
                 </button>
               </label>
             </div>
@@ -189,19 +184,19 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
             {isActivating ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Verifying License...
+                {t('verifyingLicense')}
               </>
             ) : (
               <>
                 <CheckCircle className="w-5 h-5 mr-2" />
-                I Accept & Activate
+                {t('iAcceptActivate')}
               </>
             )}
           </Button>
 
           {/* Footer */}
           <p className="text-xs text-center text-muted-foreground pb-6">
-            By activating, you agree to use this application in accordance with all applicable laws and regulations governing home inspections in your jurisdiction.
+            {t('activateFooter')}
           </p>
         </div>
       </div>
@@ -210,9 +205,9 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
       {showTerms && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-            <h1 className="font-semibold">Terms of Service</h1>
+            <h1 className="font-semibold">{t('termsOfService')}</h1>
             <Button variant="ghost" size="sm" onClick={() => setShowTerms(false)}>
-              Close
+              {t('close')}
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
@@ -225,9 +220,9 @@ export function WelcomePage({ onComplete, t }: WelcomePageProps) {
       {showPrivacy && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-            <h1 className="font-semibold">Privacy Policy</h1>
+            <h1 className="font-semibold">{t('privacyPolicy')}</h1>
             <Button variant="ghost" size="sm" onClick={() => setShowPrivacy(false)}>
-              Close
+              {t('close')}
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-4">

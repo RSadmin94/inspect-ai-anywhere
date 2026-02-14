@@ -1,7 +1,8 @@
- import { Mic, MicOff, Square } from 'lucide-react';
- import { cn } from '@/lib/utils';
- 
- interface VoiceDictationButtonProps {
+import { Mic, MicOff, Square } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useLanguage } from '@/hooks/useLanguage';
+
+interface VoiceDictationButtonProps {
    isListening: boolean;
    isSupported: boolean;
    onToggle: () => void;
@@ -15,8 +16,9 @@
    onToggle,
    className,
    size = 'md',
- }: VoiceDictationButtonProps) {
-   if (!isSupported) return null;
+}: VoiceDictationButtonProps) {
+  const { t } = useLanguage();
+  if (!isSupported) return null;
  
    const sizeClasses = {
      sm: 'w-8 h-8',
@@ -41,7 +43,7 @@
          sizeClasses[size],
          className
        )}
-       title={isListening ? 'Stop recording' : 'Start voice dictation'}
+       title={isListening ? t('stopRecording') : t('startVoiceDictation')}
      >
        {isListening ? (
          <Square className={iconSizes[size]} />

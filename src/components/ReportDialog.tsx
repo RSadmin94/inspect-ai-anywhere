@@ -112,22 +112,22 @@ export function ReportDialog({ isOpen, onClose, inspection, photos, t }: ReportD
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">Agent Summary</span>
+                      <span className="font-semibold">{t('agentSummary')}</span>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
                         <Sparkles className="w-3 h-3" />
-                        1 Page
+                        {t('onePage')}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Agents get a 1-page summary they actually read. Perfect for forwarding.
+                      {t('agentSummaryDesc')}
                     </p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Send className="w-3 h-3" />
-                        Easy to share
+                        {t('easyToShare')}
                       </span>
                       <span>•</span>
-                      <span>Key findings only</span>
+                      <span>{t('keyFindingsOnly')}</span>
                     </div>
                   </div>
                 </div>
@@ -158,9 +158,9 @@ export function ReportDialog({ isOpen, onClose, inspection, photos, t }: ReportD
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="font-semibold">Full Inspection Report</span>
+                    <span className="font-semibold">{t('fullInspectionReport')}</span>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Complete report with all findings, photos, and recommendations.
+                      {t('completeReportDesc')}
                     </p>
                   </div>
                 </div>
@@ -217,12 +217,12 @@ export function ReportDialog({ isOpen, onClose, inspection, photos, t }: ReportD
             {isGenerating ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Generating...
+                {t('generating')}
               </>
             ) : (
               <>
                 <Download className="w-5 h-5" />
-                {reportType === 'agent' ? 'Download Agent Summary' : t('downloadPdf')}
+                {reportType === 'agent' ? t('downloadAgentSummary') : t('downloadPdf')}
               </>
             )}
           </button>

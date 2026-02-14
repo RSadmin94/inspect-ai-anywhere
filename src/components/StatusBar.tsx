@@ -22,10 +22,10 @@ export function StatusBar({ isOnline, photoCount, language, onToggleLanguage, on
             whileTap={{ scale: 0.95 }}
             onClick={onGoToDashboard}
             className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 text-primary border border-primary/30 hover:border-primary/50 hover:shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all duration-300 touch-target backdrop-blur-sm"
-            title="Go to Dashboard"
+            title={t('dashboard')}
           >
             <LayoutDashboard className="w-4 h-4" />
-            <span className="font-medium">Dashboard</span>
+            <span className="font-medium">{t('dashboard')}</span>
           </motion.button>
         )}
         <div className={cn(

@@ -60,10 +60,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
   };
  
    const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
-     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+     { id: 'dashboard', label: t('overview'), icon: LayoutDashboard },
      { id: 'inspection', label: t('inspection'), icon: Camera },
      { id: 'reports', label: t('generateReport'), icon: FileText },
-     { id: 'settings', label: 'Settings', icon: Settings },
+     { id: 'settings', label: t('settings'), icon: Settings },
    ];
  
    return (
@@ -115,7 +115,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
             />
              <div>
                <h1 className="text-lg font-bold text-foreground">365 InspectAI</h1>
-               <p className="text-xs text-muted-foreground">Pro</p>
+               <p className="text-xs text-muted-foreground">{t('pro')}</p>
              </div>
            </motion.div>
  
@@ -174,7 +174,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
              <div className="flex items-center gap-2 mb-2">
                <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                <span className="text-xs font-semibold text-accent">
-                  {inspectionActive ? t('inspection') + ' ' + t('online') : 'Ready'}
+                  {inspectionActive ? t('inspection') + ' ' + t('online') : t('ready')}
                </span>
              </div>
              <p className="text-xs text-accent/80">

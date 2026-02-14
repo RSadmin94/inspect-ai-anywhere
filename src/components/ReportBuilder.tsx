@@ -308,10 +308,10 @@ export function ReportBuilder({ isOpen, onClose, inspection, photos, language, t
 
               <Tabs defaultValue="photos" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 mb-4">
-                  <TabsTrigger value="photos" className="text-xs">{language === 'es' ? 'Fotos' : 'Photos'}</TabsTrigger>
-                  <TabsTrigger value="deferred" className="text-xs">{language === 'es' ? 'Diferidos' : 'Deferred'}</TabsTrigger>
-                  <TabsTrigger value="maintenance" className="text-xs">{language === 'es' ? 'Mant.' : 'Maint.'}</TabsTrigger>
-                  <TabsTrigger value="disclaimers" className="text-xs">{language === 'es' ? 'Legal' : 'Legal'}</TabsTrigger>
+                  <TabsTrigger value="photos" className="text-xs">{t('photos')}</TabsTrigger>
+                  <TabsTrigger value="deferred" className="text-xs">{t('deferred')}</TabsTrigger>
+                  <TabsTrigger value="maintenance" className="text-xs">{t('maint')}</TabsTrigger>
+                  <TabsTrigger value="disclaimers" className="text-xs">{t('legal')}</TabsTrigger>
                 </TabsList>
 
                 {/* Photos Tab */}

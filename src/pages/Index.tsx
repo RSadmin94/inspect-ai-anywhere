@@ -155,10 +155,10 @@ export default function Index() {
     
     try {
       await analyzeAllPending(photos, (completed, total) => {
-        toast.info(`Analyzing ${completed}/${total}...`);
+        toast.info(`${t('aiAnalyzing')} ${completed}/${total}...`);
       });
       await refreshPhotos();
-      toast.success('All photos analyzed');
+      toast.success(t('allPhotosAnalyzed'));
     } catch (e) {
       toast.error(t('analysisFailed'));
     }
@@ -188,7 +188,7 @@ export default function Index() {
 
   const handleFilesSelected = useCallback(async (files: File[]) => {
     if (!inspection) {
-      toast.error('Please create an inspection first');
+      toast.error(t('pleaseCreateInspectionFirst'));
       return;
     }
     
@@ -198,7 +198,7 @@ export default function Index() {
         await handleCapture(blob);
       }
     }
-  }, [inspection, handleCapture]);
+  }, [inspection, handleCapture, t]);
 
   const handlePageChange = useCallback((page: Page) => {
     if (page === 'reports') {
@@ -215,10 +215,10 @@ export default function Index() {
       setShowNewInspectionForm(false);
       setCurrentPage('inspection');
       setShowReport(true); // Open report builder to show the demo
-      toast.success('Demo inspection loaded with 4 sample photos!');
+      toast.success(t('demoLoaded'));
     } catch (e) {
       console.error('Failed to load demo:', e);
-      toast.error('Failed to load demo inspection');
+      toast.error(t('failedToLoadDemo'));
     }
   }, [loadInspection]);
 
@@ -230,7 +230,7 @@ export default function Index() {
         <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('loading')}</p>
           <p className="text-xs text-muted-foreground mt-4">isLoaded: {String(isLoaded)}, isLoading: {String(isLoading)}</p>
         </div>
         </div>

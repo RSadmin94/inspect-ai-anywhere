@@ -1,13 +1,15 @@
- import React, { useState, useRef } from 'react';
- import { motion } from 'framer-motion';
- import { Upload, Image as ImageIcon } from 'lucide-react';
- import { cn } from '@/lib/utils';
- 
- interface DropZoneProps {
+import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Upload, Image as ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useLanguage } from '@/hooks/useLanguage';
+
+interface DropZoneProps {
    onFilesSelected: (files: File[]) => void;
    accept?: string;
    multiple?: boolean;
    className?: string;
+   t?: (key: string) => string;
  }
  
  export function DropZone({
@@ -15,7 +17,10 @@
    accept = 'image/*',
    multiple = true,
    className,
+   t: tProp,
  }: DropZoneProps) {
+   const { t: tHook } = useLanguage();
+   const t = tProp ?? tHook;
    const [isDragging, setIsDragging] = useState(false);
    const fileInputRef = useRef<HTMLInputElement>(null);
  
@@ -130,17 +135,17 @@
          {/* Text */}
          <div>
            <p className="text-lg font-semibold text-foreground">
-             {isDragging ? 'Drop your images here' : 'Drag images here to upload'}
+             {isDragging ? t('dropImagesHere') : t('dragImagesHere')}
            </p>
            <p className="text-sm text-muted-foreground mt-1">
-             or click to browse your files
+             {t('orClickToBrowse')}
            </p>
          </div>
- 
+
          {/* File info */}
          <div className="flex items-center gap-2 text-xs text-muted-foreground">
            <ImageIcon size={14} />
-           <span>PNG, JPG, WEBP • Max 50MB</span>
+           <span>{t('imageFormatInfo')}</span>
          </div>
        </div>
  

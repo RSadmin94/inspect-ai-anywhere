@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLicense } from '@/hooks/useLicense';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +11,7 @@ import { Loader2, CheckCircle, XCircle, AlertTriangle, Wifi, WifiOff, RefreshCw 
 import { toast } from 'sonner';
 
 export function LicenseSettings() {
+  const { t } = useLanguage();
   const isOnline = useOnlineStatus();
   const {
     licenseState,
@@ -29,7 +31,7 @@ export function LicenseSettings() {
 
   const handleVerify = async () => {
     if (!isOnline) {
-      toast.error('Internet connection required to verify license');
+      toast.error(t('internetRequiredVerify'));
       return;
     }
 
@@ -38,15 +40,15 @@ export function LicenseSettings() {
     const result = await verifyLicense();
     
     if (result.valid) {
-      toast.success('License verified successfully!');
+      toast.success(t('licenseVerifiedSuccess'));
     } else {
-      toast.error(result.message || 'License verification failed');
+      toast.error(result.message || t('licenseVerifyFailed'));
     }
   };
 
   const handleReset = async () => {
     if (!isOnline) {
-      toast.error('Internet connection required to reset devices');
+      toast.error(t('internetRequiredReset'));
       return;
     }
 
@@ -56,26 +58,26 @@ export function LicenseSettings() {
       // Cooldown denial - show warning with next available date
       toast.warning(result.message);
     } else if (result.valid || result.message?.includes('reset')) {
-      toast.success('Devices reset. Please verify again on this device.');
+      toast.success(t('devicesResetVerifyAgain'));
       // Auto-verify after reset
       await verifyLicense();
     } else {
-      toast.error(result.message || 'Failed to reset devices');
+      toast.error(result.message || t('failedResetDevices'));
     }
   };
 
   const getStatusBadge = () => {
     switch (licenseState.status) {
       case 'active':
-        return <Badge className="bg-primary text-primary-foreground"><CheckCircle className="w-3 h-3 mr-1" /> Active</Badge>;
+        return <Badge className="bg-primary text-primary-foreground"><CheckCircle className="w-3 h-3 mr-1" /> {t('active')}</Badge>;
       case 'invalid':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> Invalid</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> {t('invalid')}</Badge>;
       case 'device_limit':
-        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" /> Device Limit</Badge>;
+        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" /> {t('deviceLimit')}</Badge>;
       case 'error':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> Error</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" /> {t('invalid')}</Badge>;
       default:
-        return <Badge variant="secondary">Inactive</Badge>;
+        return <Badge variant="secondary">{t('inactive')}</Badge>;
     }
   };
 
@@ -93,22 +95,22 @@ export function LicenseSettings() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          License Settings
+          {t('licenseSettings')}
           {isOnline ? (
-            <Badge variant="outline" className="text-green-600"><Wifi className="w-3 h-3 mr-1" /> Online</Badge>
+            <Badge variant="outline" className="text-green-600"><Wifi className="w-3 h-3 mr-1" /> {t('online')}</Badge>
           ) : (
-            <Badge variant="outline" className="text-yellow-600"><WifiOff className="w-3 h-3 mr-1" /> Offline</Badge>
+            <Badge variant="outline" className="text-yellow-600"><WifiOff className="w-3 h-3 mr-1" /> {t('offline')}</Badge>
           )}
         </CardTitle>
         <CardDescription>
-          Enter your license key to activate all features
+          {t('enterLicenseToActivate')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* License Status */}
         <div className="p-4 rounded-lg bg-muted/50 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Status</span>
+            <span className="text-sm font-medium">{t('status')}</span>
             {getStatusBadge()}
           </div>
           
@@ -117,23 +119,23 @@ export function LicenseSettings() {
           )}
 
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Devices</span>
+            <span className="text-muted-foreground">{t('devices')}</span>
             <span>{licenseState.device.used} / {licenseState.device.allowed}</span>
           </div>
 
           {licenseState.valid && (
             <>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Create Inspections</span>
+                <span className="text-muted-foreground">{t('createInspections')}</span>
                 <span>{effectivePermissions.allowCreateNew ? '✓' : '✗'}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">AI Analysis</span>
+                <span className="text-muted-foreground">{t('aiStatus')}</span>
                 <span>{effectivePermissions.allowAI ? '✓' : '✗'}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Export PDF</span>
-                <span>✓ (Always available)</span>
+                <span className="text-muted-foreground">{t('exportPdfAlways')}</span>
+                <span>{t('alwaysAvailable')}</span>
               </div>
             </>
           )}
@@ -141,14 +143,14 @@ export function LicenseSettings() {
           {!isOnline && licenseState.valid && (
             <div className="pt-2 border-t border-border">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Offline Grace Period</span>
+                <span className="text-muted-foreground">{t('offlineGracePeriod')}</span>
                 <span className={isWithinGrace ? 'text-primary' : 'text-destructive'}>
-                  {remainingGraceDays} days remaining
+                  {remainingGraceDays} {t('daysRemaining')}
                 </span>
               </div>
               {!isWithinGrace && (
                 <p className="text-xs text-amber-600 mt-1">
-                  Grace period expired. Connect to internet to re-verify license.
+                  {t('graceExpiredNotice')}
                 </p>
               )}
             </div>
@@ -158,12 +160,12 @@ export function LicenseSettings() {
         {/* License Input */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="licenseKey">License Key</Label>
+            <Label htmlFor="licenseKey">{t('licenseKeyLabel')}</Label>
             <Input
               id="licenseKey"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="Enter your license key"
+              placeholder={t('enterLicenseKey')}
               disabled={isVerifying}
               type="password"
             />
@@ -172,7 +174,7 @@ export function LicenseSettings() {
 
         {/* Device ID (read-only) */}
         <div className="space-y-2">
-          <Label className="text-muted-foreground">Device ID</Label>
+          <Label className="text-muted-foreground">{t('deviceId')}</Label>
           <Input
             value={deviceId}
             readOnly
@@ -190,10 +192,10 @@ export function LicenseSettings() {
             {isVerifying ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Verifying...
+                {t('verifyingLicense')}
               </>
             ) : (
-              'Verify License'
+              t('verifyLicense')
             )}
           </Button>
 
@@ -202,23 +204,23 @@ export function LicenseSettings() {
               variant="outline"
               onClick={handleReset}
               disabled={!isOnline || isVerifying}
-              title="Reset all device activations (once per 30 days)"
+              title={t('resetDevicesTooltip')}
             >
               <RefreshCw className="w-4 h-4 mr-2" />
-              Reset Devices
+              {t('resetDevices')}
             </Button>
           )}
         </div>
 
         {licenseState.status === 'device_limit' && (
           <p className="text-sm text-destructive text-center">
-            Device limit reached. Use "Reset Devices" to clear all activations (30-day cooldown applies).
+            {t('deviceLimitReachedNotice')}
           </p>
         )}
 
         {!isOnline && (
           <p className="text-xs text-muted-foreground text-center">
-            Connect to the internet to verify or reset your license.
+            {t('connectToVerify')}
           </p>
         )}
       </CardContent>

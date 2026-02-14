@@ -141,7 +141,7 @@ interface PhotoDetailPanelProps {
            annotatedImageBlob: annotatedImage,
            hasAnnotations: true,
          });
-         toast.success('Annotation saved');
+         toast.success(t('annotationSaved'));
        } catch (error) {
          // Queue for offline sync
          console.warn('Offline - queueing annotation for sync:', error);
@@ -157,10 +157,10 @@ interface PhotoDetailPanelProps {
                annotatedImageBlob: annotatedImage,
              },
            });
-           toast.success('Annotation saved offline');
+           toast.success(t('annotationSavedOffline'));
          } catch (queueError) {
            console.error('Failed to queue annotation for offline sync:', queueError);
-           toast.error('Failed to save annotation');
+           toast.error(t('failedToSaveAnnotation'));
          }
        }
      };
@@ -254,7 +254,7 @@ interface PhotoDetailPanelProps {
                 <button
                   onClick={() => setShowAnnotation(true)}
                   className="absolute top-2 right-2 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Annotate photo"
+                  title={t('annotatePhoto')}
                 >
                   <PenTool className="w-5 h-5" />
                 </button>
@@ -265,7 +265,7 @@ interface PhotoDetailPanelProps {
                   <Maximize2 className="w-5 h-5" />
                 </button>
                 <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur rounded-lg px-2 py-1">
-                  <p className="text-white text-xs">Tap to enlarge</p>
+                  <p className="text-white text-xs">{t('tapToEnlarge')}</p>
                 </div>
               </div>
            </div>

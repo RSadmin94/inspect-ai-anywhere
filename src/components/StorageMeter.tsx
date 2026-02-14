@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { HardDrive, RefreshCw } from 'lucide-react';
 import { calculateStorageUsage, formatBytes, StorageBreakdown } from '@/lib/storageUtils';
 import { Progress } from '@/components/ui/progress';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export function StorageMeter() {
+  const { t } = useLanguage();
   const [storage, setStorage] = useState<StorageBreakdown | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,7 +35,7 @@ export function StorageMeter() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <HardDrive className="w-5 h-5 text-primary" />
-          <span className="font-medium">Storage Usage</span>
+          <span className="font-medium">{t('storageUsage')}</span>
         </div>
         <button
           onClick={loadStorage}
@@ -52,7 +54,7 @@ export function StorageMeter() {
         <>
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Used (Estimated)</span>
+              <span className="text-muted-foreground">{t('usedEstimated')}</span>
               <span className="font-medium">{formatBytes(storage.total)}</span>
             </div>
             <Progress value={usagePercent} className="h-2" />
@@ -60,33 +62,33 @@ export function StorageMeter() {
 
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Photos (Full)</span>
+              <span className="text-muted-foreground">{t('photosFull')}</span>
               <span>{formatBytes(storage.photos)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Thumbnails</span>
+              <span className="text-muted-foreground">{t('thumbnails')}</span>
               <span>{formatBytes(storage.thumbnails)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Annotated Images</span>
+              <span className="text-muted-foreground">{t('annotatedImages')}</span>
               <span>{formatBytes(storage.annotated)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Inspections</span>
+              <span className="text-muted-foreground">{t('inspections')}</span>
               <span>{formatBytes(storage.inspections)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Settings & Other</span>
+              <span className="text-muted-foreground">{t('settingsAndOther')}</span>
               <span>{formatBytes(storage.settings + storage.other)}</span>
             </div>
           </div>
 
           <p className="text-xs text-muted-foreground italic">
-            Storage is local to this device. Delete inspections to free space.
+            {t('storageLocalNotice')}
           </p>
         </>
       ) : (
-        <p className="text-sm text-muted-foreground">Unable to calculate storage</p>
+        <p className="text-sm text-muted-foreground">{t('unableToCalculateStorage')}</p>
       )}
     </div>
   );

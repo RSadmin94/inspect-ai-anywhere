@@ -44,7 +44,7 @@ export function DashboardHub({
 
   const handleExport = async () => {
     if (!inspection) {
-      toast.error('No inspection to export');
+      toast.error(t('noInspectionToExport'));
       return;
     }
 
@@ -53,10 +53,10 @@ export function DashboardHub({
       const zipBlob = await exportInspection(inspection.id);
       const filename = getExportFilename(inspection);
       downloadBlob(zipBlob, filename);
-      toast.success('Inspection exported successfully');
+      toast.success(t('inspectionExported'));
     } catch (error) {
       console.error('Export failed:', error);
-      toast.error('Failed to export inspection');
+      toast.error(t('failedToExport'));
     }
     setIsExporting(false);
   };
@@ -70,7 +70,7 @@ export function DashboardHub({
     if (!file) return;
 
     if (!file.name.endsWith('.zip')) {
-      toast.error('Please select a .zip file');
+      toast.error(t('pleaseSelectZip'));
       return;
     }
 
@@ -80,18 +80,18 @@ export function DashboardHub({
       
       if (result.success) {
         toast.success(
-          `Imported ${result.photosImported} photos` + 
-          (result.photosSkipped > 0 ? ` (${result.photosSkipped} skipped)` : '')
+          t('importedPhotosCount').replace('{count}', String(result.photosImported)) +
+          (result.photosSkipped > 0 ? ` (${result.photosSkipped} ${t('photosSkipped')})` : '')
         );
         if (result.inspectionId && onImportComplete) {
           onImportComplete(result.inspectionId);
         }
       } else {
-        toast.error(`Import failed: ${result.errors[0] || 'Unknown error'}`);
+        toast.error(`${t('failedToImport')}: ${result.errors[0] || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Import failed:', error);
-      toast.error('Failed to import inspection');
+      toast.error(t('failedToImport'));
     }
     setIsImporting(false);
     
@@ -102,14 +102,14 @@ export function DashboardHub({
 
   const stats = [
     {
-      label: 'Photos Captured',
+      label: t('photosCaptured'),
       value: photoCount,
       icon: Camera,
       colorClass: 'text-primary',
       bgClass: 'bg-primary/10 border-primary/30',
     },
     {
-      label: 'Reports Ready',
+      label: t('reportsReady'),
       value: photoCount > 0 ? '1' : '0',
       icon: BarChart3,
       colorClass: 'text-primary',
@@ -148,9 +148,9 @@ export function DashboardHub({
        >
          <div className="flex items-center gap-3 mb-2">
           <img src={logoImage} alt="365 InspectAI" className="w-20 h-20 object-contain" />
-           <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
+           <h1 className="text-4xl font-bold text-foreground">{t('dashboard')}</h1>
          </div>
-         <p className="text-muted-foreground">Welcome to 365 InspectAI Pro</p>
+         <p className="text-muted-foreground">{t('welcomeToPro')}</p>
        </motion.div>
  
       {/* Stats and Actions Row */}
@@ -164,8 +164,8 @@ export function DashboardHub({
         <div className="flex-1 grid grid-cols-2 gap-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
-            const isPhotosClickable = stat.label === 'Photos Captured' && photoCount > 0 && onViewPhotos;
-            const isReportsClickable = stat.label === 'Reports Ready' && photoCount > 0 && onViewReports;
+            const isPhotosClickable = stat.label === t('photosCaptured') && photoCount > 0 && onViewPhotos;
+            const isReportsClickable = stat.label === t('reportsReady') && photoCount > 0 && onViewReports;
             const isClickable = isPhotosClickable || isReportsClickable;
             const handleClick = isPhotosClickable ? onViewPhotos : isReportsClickable ? onViewReports : undefined;
             return (
@@ -230,9 +230,9 @@ export function DashboardHub({
                   )}
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm mb-2">Export Inspection</p>
+              <p className="text-muted-foreground text-sm mb-2">{t('exportInspection')}</p>
               <p className="text-lg font-bold text-foreground">
-                {isExporting ? 'Exporting...' : inspection ? 'Transfer Devices' : 'No Data'}
+                {isExporting ? t('exporting') : inspection ? t('transferDevices') : t('noData')}
               </p>
             </div>
           </motion.div>
@@ -255,9 +255,9 @@ export function DashboardHub({
                   )}
                 </div>
               </div>
-              <p className="text-muted-foreground text-sm mb-2">Import Inspection</p>
+              <p className="text-muted-foreground text-sm mb-2">{t('importInspection')}</p>
               <p className="text-lg font-bold text-foreground">
-                {isImporting ? 'Importing...' : 'From Device'}
+                {isImporting ? t('importing') : t('fromDevice')}
               </p>
             </div>
             
@@ -305,7 +305,7 @@ export function DashboardHub({
               </motion.div>
               <div>
                 <p className="text-lg font-semibold text-foreground">{t('newInspection')}</p>
-                <p className="text-sm text-muted-foreground mt-1">Start a new property audit</p>
+                <p className="text-sm text-muted-foreground mt-1">{t('startNewAudit')}</p>
               </div>
             </div>
           </motion.div>
@@ -328,18 +328,18 @@ export function DashboardHub({
        >
          {[
            {
-             title: 'AI-Powered Analysis',
-             description: 'AI detects defects and issues from photos automatically',
+             title: t('aiPoweredAnalysis'),
+             description: t('aiPoweredDescription'),
              icon: Zap,
            },
            {
-             title: 'Offline-First Design',
-             description: 'Work without internet, sync when connected',
+             title: t('offlineFirstDesign'),
+             description: t('offlineFirstDescription'),
              icon: FileText,
            },
            {
-             title: 'Professional Reports',
-             description: 'Generate PDF reports with findings and recommendations',
+             title: t('generateReport'),
+             description: t('professionalReportsDesc'),
              icon: BarChart3,
            },
          ].map((feature, index) => {

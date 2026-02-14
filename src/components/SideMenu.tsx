@@ -96,7 +96,7 @@ export function SideMenu({
            {/* Footer */}
             <div className="p-4 border-t border-border space-y-2">
               <p className="text-xs text-muted-foreground text-center">
-                365 InspectAI v1.0 • Offline-First PWA
+                {t('appVersionFooter')}
               </p>
               <a 
                 href="mailto:support@365globalsolutions.com" 
