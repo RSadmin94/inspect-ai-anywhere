@@ -1,6 +1,6 @@
 import { PhotoRecord, Severity, Category, updatePhotoAI, getPhoto } from '@/lib/db';
 import { blobToDataUrl } from '@/lib/imageUtils';
-import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 
 // AI Analysis - Uses Lovable AI when online, mock data when offline
 // Follows Best-of Hybrid Inspection Report format
@@ -136,7 +136,7 @@ export async function analyzePhoto(photoId: string, useRealAI: boolean = true): 
   await updatePhotoAI(photoId, { aiStatus: 'analyzing' });
 
   try {
-    if (useRealAI && isSupabaseConfigured && supabase) {
+    if (useRealAI) {
       // Convert blob to base64 for AI
       const imageBase64 = await blobToDataUrl(photo.fullImageBlob);
       

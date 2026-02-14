@@ -19,7 +19,7 @@ import { ImageLightbox } from './ImageLightbox';
  interface ReportReviewScreenProps {
    isOpen: boolean;
    onClose: () => void;
-   inspection: InspectionRecord | null;
+   inspection: InspectionRecord;
    photos?: PhotoRecord[] | null;
    language: Language;
    t: (key: string) => string;
@@ -85,14 +85,14 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], l
 
   // Handle voice dictation completion
   useEffect(() => {
-    if (!isListening && transcript && dictatingRoom && inspection) {
-      const currentNote = inspection?.roomNotes?.[dictatingRoom] || '';
+    if (!isListening && transcript && dictatingRoom) {
+      const currentNote = inspection.roomNotes?.[dictatingRoom] || '';
       const newNote = currentNote ? `${currentNote} ${transcript}` : transcript;
       onUpdateRoomNotes?.(dictatingRoom, newNote);
       resetTranscript();
       setDictatingRoom(null);
     }
-  }, [isListening, transcript, dictatingRoom, inspection?.roomNotes, onUpdateRoomNotes, resetTranscript]);
+  }, [isListening, transcript, dictatingRoom, inspection.roomNotes, onUpdateRoomNotes, resetTranscript]);
  
    // Load photo thumbnails
    useEffect(() => {
@@ -132,7 +132,7 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], l
    }, [safePhotos]);
  
    // Room notes
-   const roomNotes = (inspection?.roomNotes) || {};
+   const roomNotes = inspection.roomNotes || {};
    const roomsWithNotes = Object.entries(roomNotes).filter(([_, notes]) => notes?.trim());
  
   const handleGenerate = async () => {
@@ -183,8 +183,8 @@ export function ReportReviewScreen({ isOpen, onClose, inspection, photos = [], l
      setShowPhraseLibrary(false);
    };
  
-   if (!isOpen || !inspection) return null;
-
+   if (!isOpen) return null;
+ 
    const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
      { id: 'overview', label: t('overview'), icon: <FileText className="w-4 h-4" /> },
       { id: 'findings', label: `${t('findings')} & ${t('notes')}`, icon: <AlertTriangle className="w-4 h-4" /> },
